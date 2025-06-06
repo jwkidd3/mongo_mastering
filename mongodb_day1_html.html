@@ -1,0 +1,1562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MongoDB Mastering Course - Day 1</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/theme/white.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/highlight/monokai.min.css">
+
+    <style>
+        .reveal {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .reveal h1, .reveal h2, .reveal h3, .reveal h4 {
+            color: #2C5F41;
+            text-transform: none;
+        }
+
+        .reveal h1 {
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .reveal .title-slide {
+            background: linear-gradient(135deg, #2C5F41 0%, #4A8B3B 100%);
+            color: white !important;
+            padding: 2em;
+            border-radius: 15px;
+        }
+
+        .reveal .title-slide h1, 
+        .reveal .title-slide h2 {
+            color: white !important;
+        }
+
+        .reveal .section-title {
+            background: linear-gradient(135deg, #4A8B3B 0%, #6BAF47 100%);
+            color: white !important;
+            padding: 1.5em;
+            border-radius: 10px;
+            margin-bottom: 0.5em;
+        }
+
+        .reveal .section-title h2 {
+            color: white !important;
+            margin: 0;
+        }
+
+        .reveal .duration {
+            background: #2C5F41;
+            color: white;
+            padding: 0.5em 1em;
+            border-radius: 20px;
+            font-size: 0.8em;
+            display: inline-block;
+            margin: 0.5em 0;
+        }
+
+        .reveal .highlight-box {
+            background: linear-gradient(120deg, #a8e6cf 0%, #dcedc1 100%);
+            padding: 1em;
+            border-radius: 8px;
+            border-left: 4px solid #4A8B3B;
+            margin: 1em 0;
+        }
+
+        .reveal .info-box {
+            background: #e8f4f8;
+            border: 2px solid #4A8B3B;
+            border-radius: 8px;
+            padding: 1em;
+            margin: 1em 0;
+        }
+
+        .reveal .warning-box {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 8px;
+            padding: 1em;
+            margin: 1em 0;
+        }
+
+        .reveal .lab-slide {
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+            border: 3px solid #ff8a80;
+            border-radius: 15px;
+            padding: 1em;
+        }
+
+        .reveal .lab-slide h3 {
+            color: #d32f2f !important;
+            margin-top: 0;
+        }
+
+        .reveal .objectives {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 1em;
+            margin: 1em 0;
+        }
+
+        .reveal table {
+            margin: auto;
+            border-collapse: collapse;
+            border-spacing: 0;
+            font-size: 0.8em;
+        }
+
+        .reveal table th {
+            background: #4A8B3B;
+            color: white;
+            font-weight: bold;
+        }
+
+        .reveal table th,
+        .reveal table td {
+            text-align: left;
+            padding: 0.5em;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .reveal table tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+
+        .reveal pre code {
+            max-height: 500px;
+            font-size: 0.6em;
+            line-height: 1.2;
+        }
+
+        .reveal .slides section .fragment {
+            opacity: 0.3;
+        }
+
+        .reveal .slides section .fragment.visible {
+            opacity: 1;
+        }
+
+        .reveal .progress {
+            background: rgba(44, 95, 65, 0.2);
+        }
+
+        .reveal .progress span {
+            background: #4A8B3B;
+        }
+
+        .reveal .controls {
+            color: #4A8B3B;
+        }
+
+        .reveal .slide-number {
+            background-color: #2C5F41;
+            color: white;
+        }
+
+        .reveal .two-column {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .reveal .two-column > div {
+            flex: 1;
+            margin: 0 0.5em;
+        }
+
+        .reveal .mongodb-logo {
+            color: #4A8B3B;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+
+        .reveal .small-text {
+            font-size: 0.7em;
+        }
+
+        .reveal .code-title {
+            background: #2C5F41;
+            color: white;
+            padding: 0.5em;
+            margin: 0;
+            border-radius: 5px 5px 0 0;
+            font-size: 0.8em;
+        }
+
+        .reveal .agenda-item {
+            padding: 0.5em;
+            margin: 0.3em 0;
+            background: #f8f9fa;
+            border-left: 4px solid #4A8B3B;
+            border-radius: 0 5px 5px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="reveal">
+        <div class="slides">
+            <!-- Title Slide -->
+            <section class="title-slide">
+                <h1>MongoDB Mastering Course</h1>
+                <h2>Day 1: Fundamentals & Core Operations</h2>
+                <p style="margin-top: 2em; font-size: 1.2em;">
+                    <span class="mongodb-logo">🍃 MongoDB</span> in Docker Environment
+                </p>
+                <p style="margin-top: 1em; opacity: 0.9;">
+                    From Zero to Database Hero
+                </p>
+            </section>
+
+            <!-- Course Overview -->
+            <section>
+                <div class="section-title">
+                    <h2>Course Overview</h2>
+                </div>
+                
+                <div class="agenda-item fragment">
+                    <strong>1. Introduction to NoSQL & MongoDB</strong>
+                </div>
+                <div class="agenda-item fragment">
+                    <strong>2. Basic Operations & CRUD</strong>
+                </div>
+                <div class="agenda-item fragment">
+                    <strong>3. Query Fundamentals</strong>
+                </div>
+                <div class="agenda-item fragment">
+                    <strong>4. Advanced Querying</strong>
+                </div>
+                <div class="agenda-item fragment">
+                    <strong>5. Data Modeling Basics</strong>
+                </div>
+                <div class="agenda-item fragment">
+                    <strong>6. Hands-on Labs</strong>
+                </div>
+            </section>
+
+            <!-- Section 1: Introduction -->
+            <section>
+                <section class="section-title">
+                    <h2>1. Introduction to NoSQL & MongoDB</h2>
+                </section>
+
+                <section>
+                    <h3>What is NoSQL?</h3>
+                    <div class="highlight-box">
+                        <ul>
+                            <li class="fragment"><strong>Not Only SQL</strong> - Modern approach to database design</li>
+                            <li class="fragment">Designed for distributed computing environments</li>
+                            <li class="fragment">Handles unstructured and semi-structured data</li>
+                            <li class="fragment">Horizontal scalability built-in</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>NoSQL vs SQL Comparison</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Aspect</th>
+                                <th>SQL (Relational)</th>
+                                <th>NoSQL</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="fragment">
+                                <td>Schema</td>
+                                <td>Fixed, predefined</td>
+                                <td>Flexible, dynamic</td>
+                            </tr>
+                            <tr class="fragment">
+                                <td>Scaling</td>
+                                <td>Vertical (scale-up)</td>
+                                <td>Horizontal (scale-out)</td>
+                            </tr>
+                            <tr class="fragment">
+                                <td>ACID</td>
+                                <td>Full ACID compliance</td>
+                                <td>Eventual consistency</td>
+                            </tr>
+                            <tr class="fragment">
+                                <td>Relationships</td>
+                                <td>Complex joins</td>
+                                <td>Embedded documents</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <section>
+                    <h3>Types of NoSQL Databases</h3>
+                    <div class="two-column">
+                        <div>
+                            <div class="info-box fragment">
+                                <h4>📄 Document Databases</h4>
+                                <p><strong>MongoDB, CouchDB</strong></p>
+                                <ul>
+                                    <li>JSON-like documents</li>
+                                    <li>Flexible schema</li>
+                                    <li>Natural data representation</li>
+                                </ul>
+                            </div>
+                            <div class="info-box fragment">
+                                <h4>🔑 Key-Value Stores</h4>
+                                <p><strong>Redis, DynamoDB</strong></p>
+                                <ul>
+                                    <li>Simple key-value pairs</li>
+                                    <li>High performance</li>
+                                    <li>Caching and sessions</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="info-box fragment">
+                                <h4>📊 Column-Family</h4>
+                                <p><strong>Cassandra, HBase</strong></p>
+                                <ul>
+                                    <li>Column-oriented storage</li>
+                                    <li>Big data analytics</li>
+                                    <li>Time-series data</li>
+                                </ul>
+                            </div>
+                            <div class="info-box fragment">
+                                <h4>🕸️ Graph Databases</h4>
+                                <p><strong>Neo4j, Amazon Neptune</strong></p>
+                                <ul>
+                                    <li>Nodes and relationships</li>
+                                    <li>Social networks</li>
+                                    <li>Recommendation engines</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>When to Choose NoSQL?</h3>
+                    <div class="two-column">
+                        <div>
+                            <div class="highlight-box">
+                                <h4>✅ Choose NoSQL when:</h4>
+                                <ul>
+                                    <li class="fragment">Rapid development with changing requirements</li>
+                                    <li class="fragment">Large scale and high traffic</li>
+                                    <li class="fragment">Unstructured or semi-structured data</li>
+                                    <li class="fragment">Horizontal scaling needs</li>
+                                    <li class="fragment">Real-time analytics</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="warning-box">
+                                <h4>⚠️ Stick with SQL when:</h4>
+                                <ul>
+                                    <li class="fragment">Complex transactions required</li>
+                                    <li class="fragment">Mature ecosystem needed</li>
+                                    <li class="fragment">Strong consistency required</li>
+                                    <li class="fragment">Complex queries and reporting</li>
+                                    <li class="fragment">Small to medium scale</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>MongoDB Architecture</h3>
+                    <div class="highlight-box">
+                        <h4>Document-oriented NoSQL Database</h4>
+                        <ul>
+                            <li class="fragment">Written in C++</li>
+                            <li class="fragment">Cross-platform compatibility</li>
+                            <li class="fragment">Open source with commercial support</li>
+                            <li class="fragment">BSON (Binary JSON) storage format</li>
+                        </ul>
+                    </div>
+                    <div class="fragment">
+                        <p class="code-title">Core Concepts Hierarchy</p>
+                        <pre><code class="language-text">
+Database
+├── Collection (like SQL table)
+│   ├── Document (like SQL row)
+│   │   ├── Field: Value (like SQL column)
+│   │   ├── Field: Value
+│   │   └── Nested Document
+│   └── Document
+└── Collection
+                        </code></pre>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Document Structure Example</h3>
+                    <p class="code-title">MongoDB Document (BSON)</p>
+                    <pre><code class="language-javascript">
+{
+  "_id": ObjectId("507f1f77bcf86cd799439011"),
+  "name": "John Doe",
+  "email": "john@example.com",
+  "age": 30,
+  "address": {
+    "street": "123 Main St",
+    "city": "New York",
+    "zip": "10001"
+  },
+  "hobbies": ["reading", "swimming", "coding"],
+  "created_at": ISODate("2023-01-15T10:30:00Z")
+}
+                    </code></pre>
+                    <div class="fragment small-text">
+                        <p><strong>Key Features:</strong> Flexible schema, nested objects, arrays, rich data types</p>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>MongoDB Data Types</h3>
+                    <div class="two-column">
+                        <div>
+                            <ul>
+                                <li class="fragment"><strong>String</strong> - UTF-8 text</li>
+                                <li class="fragment"><strong>Number</strong> - Integer, Long, Double, Decimal128</li>
+                                <li class="fragment"><strong>Boolean</strong> - true/false</li>
+                                <li class="fragment"><strong>Array</strong> - List of values</li>
+                                <li class="fragment"><strong>Object</strong> - Embedded document</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <ul>
+                                <li class="fragment"><strong>ObjectId</strong> - Unique identifier</li>
+                                <li class="fragment"><strong>Date</strong> - UNIX timestamp</li>
+                                <li class="fragment"><strong>Null</strong> - Null value</li>
+                                <li class="fragment"><strong>Regular Expression</strong> - Pattern matching</li>
+                                <li class="fragment"><strong>Binary Data</strong> - Binary content</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Setup Options</h3>
+                    <div class="two-column">
+                        <div>
+                            <div class="info-box">
+                                <h4>🐳 Docker Setup (Recommended)</h4>
+                                <pre><code class="language-bash small-text">
+# Pull MongoDB image
+docker pull mongo:latest
+
+# Run MongoDB container
+docker run -d \
+  --name mongodb \
+  -p 27017:27017 \
+  -e MONGO_INITDB_ROOT_USERNAME=admin \
+  -e MONGO_INITDB_ROOT_PASSWORD=password \
+  mongo:latest
+
+# Connect to MongoDB
+docker exec -it mongodb mongosh
+                                </code></pre>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="info-box">
+                                <h4>☁️ MongoDB Atlas (Cloud)</h4>
+                                <ul>
+                                    <li class="fragment">Fully managed service</li>
+                                    <li class="fragment">Free tier available (M0)</li>
+                                    <li class="fragment">Automatic scaling and backup</li>
+                                    <li class="fragment">Built-in security features</li>
+                                    <li class="fragment">Global cluster deployment</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </section>
+
+            <!-- Section 2: CRUD Operations -->
+            <section>
+                <section class="section-title">
+                    <h2>2. Basic Operations & CRUD</h2>
+                </section>
+
+                <section>
+                    <h3>MongoDB Shell Fundamentals</h3>
+                    <p class="code-title">Connecting and Basic Commands</p>
+                    <pre><code class="language-javascript">
+// Connect to MongoDB
+mongosh
+
+// Connect with authentication
+mongosh "mongodb://username:password@host:port/database"
+
+// Basic navigation
+show dbs              // Show databases
+use myDatabase        // Switch/create database
+show collections      // Show collections
+db                    // Show current database
+db.stats()           // Database statistics
+                    </code></pre>
+                </section>
+
+                <section>
+                    <h3>Create Operations</h3>
+                    <div class="two-column">
+                        <div>
+                            <p class="code-title">Insert Single Document</p>
+                            <pre><code class="language-javascript small-text">
+// insertOne()
+db.users.insertOne({
+    name: "Alice Smith",
+    email: "alice@example.com",
+    age: 28,
+    department: "Engineering"
+})
+
+// Result includes:
+// - acknowledged: true
+// - insertedId: ObjectId("...")
+                            </code></pre>
+                        </div>
+                        <div>
+                            <p class="code-title">Insert Multiple Documents</p>
+                            <pre><code class="language-javascript small-text">
+// insertMany()
+db.users.insertMany([
+    {
+        name: "Bob Johnson",
+        email: "bob@example.com",
+        age: 32,
+        department: "Marketing"
+    },
+    {
+        name: "Carol White",
+        email: "carol@example.com",
+        age: 25,
+        department: "Sales"
+    }
+])
+                            </code></pre>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Read Operations</h3>
+                    <p class="code-title">Finding Documents</p>
+                    <pre><code class="language-javascript">
+// Find all documents
+db.users.find()
+
+// Find with condition
+db.users.find({department: "Engineering"})
+
+// Find one document
+db.users.findOne({email: "alice@example.com"})
+
+// Find with multiple conditions (implicit AND)
+db.users.find({
+    department: "Engineering",
+    age: {$gte: 25}
+})
+
+// Nested field queries
+db.users.find({"address.city": "New York"})
+
+// Count documents
+db.users.countDocuments({department: "Engineering"})
+                    </code></pre>
+                </section>
+
+                <section>
+                    <h3>Update Operations</h3>
+                    <div class="two-column">
+                        <div>
+                            <p class="code-title">Update Single Document</p>
+                            <pre><code class="language-javascript small-text">
+// updateOne()
+db.users.updateOne(
+    {name: "Alice Smith"},  // Filter
+    {$set: {age: 29}}       // Update
+)
+
+// Multiple operations
+db.users.updateOne(
+    {_id: ObjectId("...")},
+    {
+        $set: {age: 31},
+        $unset: {department: ""},
+        $push: {hobbies: "gaming"}
+    }
+)
+                            </code></pre>
+                        </div>
+                        <div>
+                            <p class="code-title">Update Multiple Documents</p>
+                            <pre><code class="language-javascript small-text">
+// updateMany()
+db.users.updateMany(
+    {department: "Engineering"},
+    {$inc: {age: 1}}  // Increment age
+)
+
+// Upsert operation
+db.users.updateOne(
+    {email: "new@example.com"},
+    {
+        $set: {name: "New User"},
+        $setOnInsert: {created: new Date()}
+    },
+    {upsert: true}
+)
+                            </code></pre>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Update Operators</h3>
+                    <div class="highlight-box">
+                        <div class="two-column">
+                            <div>
+                                <ul>
+                                    <li class="fragment"><code>$set</code> - Set field value</li>
+                                    <li class="fragment"><code>$unset</code> - Remove field</li>
+                                    <li class="fragment"><code>$inc</code> - Increment/decrement</li>
+                                    <li class="fragment"><code>$push</code> - Add to array</li>
+                                    <li class="fragment"><code>$pull</code> - Remove from array</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <ul>
+                                    <li class="fragment"><code>$addToSet</code> - Add unique to array</li>
+                                    <li class="fragment"><code>$pop</code> - Remove first/last element</li>
+                                    <li class="fragment"><code>$rename</code> - Rename field</li>
+                                    <li class="fragment"><code>$mul</code> - Multiply field value</li>
+                                    <li class="fragment"><code>$setOnInsert</code> - Set on insert only</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Delete Operations</h3>
+                    <p class="code-title">Removing Documents</p>
+                    <pre><code class="language-javascript">
+// Delete single document
+db.users.deleteOne({name: "Alice Smith"})
+
+// Delete by ObjectId
+db.users.deleteOne({_id: ObjectId("507f1f77bcf86cd799439011")})
+
+// Delete multiple documents
+db.users.deleteMany({department: "Sales"})
+
+// Delete all documents (keep collection)
+db.users.deleteMany({})
+
+// Delete with complex condition
+db.users.deleteMany({
+    age: {$lt: 18},
+    status: "inactive"
+})
+                    </code></pre>
+                    <div class="warning-box fragment">
+                        <p><strong>⚠️ Safety Tip:</strong> Always test with <code>find()</code> before <code>delete()</code></p>
+                    </div>
+                </section>
+            </section>
+
+            <!-- Section 3: Query Fundamentals -->
+            <section>
+                <section class="section-title">
+                    <h2>3. Query Fundamentals</h2>
+                </section>
+
+                <section>
+                    <h3>Comparison Operators</h3>
+                    <p class="code-title">Equality and Inequality</p>
+                    <pre><code class="language-javascript">
+// Equal to (default behavior)
+db.products.find({price: 29.99})
+db.products.find({price: {$eq: 29.99}})  // Explicit
+
+// Comparison operators
+db.products.find({price: {$gt: 50}})      // Greater than
+db.products.find({rating: {$gte: 4.0}})   // Greater than or equal
+db.products.find({stock: {$lt: 10}})      // Less than
+db.products.find({discount: {$lte: 0.2}}) // Less than or equal
+db.products.find({status: {$ne: "discontinued"}}) // Not equal
+
+// Range queries
+db.products.find({
+    price: {$gte: 20, $lte: 100}
+})
+                    </code></pre>
+                </section>
+
+                <section>
+                    <h3>In and Not In Arrays</h3>
+                    <p class="code-title">Multiple Value Matching</p>
+                    <pre><code class="language-javascript">
+// $in - Match any value in array
+db.products.find({
+    category: {$in: ["electronics", "books", "clothing"]}
+})
+
+// $nin - Match none of the values in array
+db.products.find({
+    status: {$nin: ["discontinued", "out-of-stock"]}
+})
+
+// Mixed data types in $in
+db.items.find({
+    identifier: {$in: [123, "ABC", ObjectId("507f1f77bcf86cd799439011")]}
+})
+
+// Date ranges
+db.orders.find({
+    orderDate: {
+        $gte: ISODate("2023-01-01"),
+        $lt: ISODate("2024-01-01")
+    }
+})
+                    </code></pre>
+                </section>
+
+                <section>
+                    <h3>Logical Operators</h3>
+                    <div class="two-column">
+                        <div>
+                            <p class="code-title">AND Operations</p>
+                            <pre><code class="language-javascript small-text">
+// Implicit $and
+db.products.find({
+    category: "electronics",
+    price: {$lt: 100},
+    inStock: true
+})
+
+// Explicit $and
+db.products.find({
+    $and: [
+        {category: "electronics"},
+        {price: {$lt: 100}},
+        {inStock: true}
+    ]
+})
+                            </code></pre>
+                        </div>
+                        <div>
+                            <p class="code-title">OR Operations</p>
+                            <pre><code class="language-javascript small-text">
+// $or - Match any condition
+db.products.find({
+    $or: [
+        {category: "electronics"},
+        {category: "books"},
+        {price: {$lt: 20}}
+    ]
+})
+
+// Combining $and and $or
+db.products.find({
+    category: "electronics",
+    $or: [
+        {price: {$lt: 50}},
+        {rating: {$gte: 4.5}}
+    ]
+})
+                            </code></pre>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Element Operators</h3>
+                    <p class="code-title">Field Existence and Type Checking</p>
+                    <pre><code class="language-javascript">
+// $exists - Check if field exists
+db.users.find({email: {$exists: true}})    // Has email field
+db.users.find({phone: {$exists: false}})   // No phone field
+
+// $type - Check field data type
+db.users.find({age: {$type: "number"}})
+db.users.find({age: {$type: "string"}})
+
+// Multiple types
+db.mixed.find({value: {$type: ["number", "string"]}})
+
+// BSON type numbers
+db.users.find({age: {$type: 1}})    // 1 = double
+db.users.find({name: {$type: 2}})   // 2 = string
+
+// Common BSON types: 1=double, 2=string, 3=object, 4=array, 
+//                   7=objectId, 8=boolean, 9=date, 10=null
+                    </code></pre>
+                </section>
+
+                <section>
+                    <h3>Array Operators</h3>
+                    <div class="two-column">
+                        <div>
+                            <p class="code-title">Basic Array Queries</p>
+                            <pre><code class="language-javascript small-text">
+// Match array element
+db.users.find({hobbies: "reading"})
+
+// Exact array match
+db.users.find({
+    hobbies: ["reading", "swimming"]
+})
+
+// Array length
+db.users.find({hobbies: {$size: 3}})
+
+// $all - Match all elements
+db.users.find({
+    hobbies: {$all: ["reading", "swimming"]}
+})
+                            </code></pre>
+                        </div>
+                        <div>
+                            <p class="code-title">Advanced Array Queries</p>
+                            <pre><code class="language-javascript small-text">
+// $elemMatch - Multiple conditions
+db.products.find({
+    reviews: {
+        $elemMatch: {
+            rating: {$gte: 4},
+            helpful: {$gte: 10}
+        }
+    }
+})
+
+// Array element by position
+db.users.find({"scores.0": {$gte: 90}})
+
+// Has third element
+db.users.find({"scores.2": {$exists: true}})
+                            </code></pre>
+                        </div>
+                    </div>
+                </section>
+            </section>
+
+            <!-- Section 4: Advanced Querying -->
+            <section>
+                <section class="section-title">
+                    <h2>4. Advanced Querying</h2>
+                </section>
+
+                <section>
+                    <h3>Regular Expression Queries</h3>
+                    <p class="code-title">Pattern Matching</p>
+                    <pre><code class="language-javascript">
+// Basic regex patterns
+db.users.find({name: /^John/})      // Starts with "John"
+db.users.find({name: /son$/})       // Ends with "son"
+db.users.find({name: /john/})       // Contains "john"
+
+// Case-insensitive matching
+db.users.find({name: /john/i})      // Case-insensitive
+db.users.find({email: /GMAIL/i})    // Case-insensitive email
+
+// Using $regex operator
+db.users.find({
+    name: {
+        $regex: "john",
+        $options: "i"
+    }
+})
+
+// Advanced patterns
+db.products.find({sku: /^[A-Z]{2}\d{4}$/})  // 2 letters + 4 digits
+db.users.find({phone: /^\d{3}-\d{3}-\d{4}$/}) // Phone format
+                    </code></pre>
+                </section>
+
+                <section>
+                    <h3>Projection Techniques</h3>
+                    <div class="two-column">
+                        <div>
+                            <p class="code-title">Basic Projection</p>
+                            <pre><code class="language-javascript small-text">
+// Include specific fields (1 = include)
+db.users.find({}, {name: 1, email: 1})
+
+// Exclude specific fields (0 = exclude)
+db.users.find({}, {password: 0, ssn: 0})
+
+// _id is included by default
+db.users.find({}, {name: 1, email: 1, _id: 0})
+
+// Nested document projection
+db.users.find({}, {
+    "address.city": 1,
+    "address.country": 1
+})
+                            </code></pre>
+                        </div>
+                        <div>
+                            <p class="code-title">Array Projection</p>
+                            <pre><code class="language-javascript small-text">
+// $slice - Limit array elements
+db.students.find({}, {
+    name: 1,
+    scores: {$slice: 3}    // First 3
+})
+
+db.students.find({}, {
+    name: 1,
+    scores: {$slice: -2}   // Last 2
+})
+
+// $elemMatch projection
+db.students.find({}, {
+    name: 1,
+    courses: {$elemMatch: {grade: "A"}}
+})
+
+// $ positional operator
+db.students.find(
+    {"courses.grade": "A"},
+    {"courses.$": 1}
+)
+                            </code></pre>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Sorting and Limiting</h3>
+                    <p class="code-title">Result Manipulation</p>
+                    <pre><code class="language-javascript">
+// Single field sort
+db.products.find().sort({price: 1})     // Ascending
+db.products.find().sort({price: -1})    // Descending
+
+// Multiple field sort
+db.products.find().sort({
+    category: 1,    // First by category (asc)
+    price: -1       // Then by price (desc)
+})
+
+// Limiting and skipping
+db.products.find().limit(10)
+db.products.find().skip(20)
+
+// Pagination pattern
+db.products.find()
+    .sort({_id: 1})
+    .skip(20)
+    .limit(10)
+
+// Method chaining
+db.products.find({category: "electronics"})
+    .sort({rating: -1, price: 1})
+    .skip(10)
+    .limit(5)
+                    </code></pre>
+                </section>
+
+                <section>
+                    <h3>Cursor Methods</h3>
+                    <p class="code-title">Working with Results</p>
+                    <pre><code class="language-javascript">
+// Convert to array
+var results = db.products.find({category: "books"}).toArray()
+
+// Iterate with forEach
+db.products.find({price: {$lt: 50}}).forEach(function(doc) {
+    print(doc.name + ": $" + doc.price)
+})
+
+// Count results
+db.products.countDocuments({category: "electronics"})
+
+// Check if results exist
+var hasResults = db.products.find({category: "rare"}).hasNext()
+
+// Get explain plan
+db.products.find({category: "electronics"}).explain()
+
+// Map results
+var productNames = db.products.find({}, {name: 1}).map(function(doc) {
+    return doc.name.toUpperCase()
+})
+                    </code></pre>
+                </section>
+            </section>
+
+            <!-- Section 5: Data Modeling -->
+            <section>
+                <section class="section-title">
+                    <h2>5. Data Modeling Basics</h2>
+                </section>
+
+                <section>
+                    <h3>Flexible Schema Benefits</h3>
+                    <p class="code-title">Different Document Structures in Same Collection</p>
+                    <pre><code class="language-javascript">
+// Basic user
+{
+    _id: ObjectId("..."),
+    username: "john_doe",
+    email: "john@example.com",
+    created_at: ISODate("2023-01-15")
+}
+
+// Premium user with additional fields
+{
+    _id: ObjectId("..."),
+    username: "premium_user",
+    email: "premium@example.com",
+    subscription: {
+        type: "premium",
+        expires: ISODate("2024-01-15"),
+        features: ["advanced_search", "priority_support"]
+    },
+    preferences: {
+        theme: "dark",
+        notifications: true
+    },
+    created_at: ISODate("2023-01-15")
+}
+                    </code></pre>
+                </section>
+
+                <section>
+                    <h3>Embedding vs Referencing</h3>
+                    <div class="two-column">
+                        <div>
+                            <div class="highlight-box">
+                                <h4>✅ Use Embedding When:</h4>
+                                <ul>
+                                    <li class="fragment">Data is accessed together</li>
+                                    <li class="fragment">Data doesn't grow unbounded</li>
+                                    <li class="fragment">Data is not shared across documents</li>
+                                    <li class="fragment">1:1 or 1:few relationships</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="warning-box">
+                                <h4>⚠️ Use References When:</h4>
+                                <ul>
+                                    <li class="fragment">Data is large or grows unbounded</li>
+                                    <li class="fragment">Data is shared across documents</li>
+                                    <li class="fragment">Need to query referenced data independently</li>
+                                    <li class="fragment">Many:many relationships</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Embedding Example</h3>
+                    <p class="code-title">User Profile with Address (1:1 Relationship)</p>
+                    <pre><code class="language-javascript">
+{
+    _id: ObjectId("..."),
+    name: "John Doe",
+    email: "john@example.com",
+    address: {
+        street: "123 Main St",
+        city: "New York",
+        state: "NY",
+        zip: "10001"
+    },
+    preferences: {
+        theme: "dark",
+        notifications: {
+            email: true,
+            sms: false,
+            push: true
+        }
+    },
+    created_at: ISODate("2023-01-15")
+}
+                    </code></pre>
+                    <div class="fragment small-text">
+                        <p><strong>Benefits:</strong> Single query, atomic updates, natural data grouping</p>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Referencing Example</h3>
+                    <p class="code-title">E-commerce with Separate Collections</p>
+                    <div class="two-column">
+                        <div>
+                            <pre><code class="language-javascript small-text">
+// Users collection
+{
+    _id: ObjectId("user1"),
+    name: "John Doe",
+    email: "john@example.com"
+}
+
+// Products collection
+{
+    _id: ObjectId("product1"),
+    name: "Laptop",
+    price: 999.99,
+    category: "Electronics"
+}
+                            </code></pre>
+                        </div>
+                        <div>
+                            <pre><code class="language-javascript small-text">
+// Orders collection
+{
+    _id: ObjectId("order1"),
+    user_id: ObjectId("user1"),
+    items: [
+        {
+            product_id: ObjectId("product1"),
+            quantity: 1,
+            price: 999.99
+        }
+    ],
+    total: 999.99,
+    order_date: ISODate("2023-01-15")
+}
+                            </code></pre>
+                        </div>
+                    </div>
+                    <div class="fragment small-text">
+                        <p><strong>Benefits:</strong> Normalized data, independent queries, better for many:many relationships</p>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Schema Design Patterns</h3>
+                    <div class="info-box">
+                        <h4>Common Design Patterns</h4>
+                        <ul>
+                            <li class="fragment"><strong>Attribute Pattern</strong> - Varying product attributes</li>
+                            <li class="fragment"><strong>Bucket Pattern</strong> - Time-series data grouping</li>
+                            <li class="fragment"><strong>Outlier Pattern</strong> - Handle unusually large documents</li>
+                            <li class="fragment"><strong>Computed Pattern</strong> - Pre-calculated values</li>
+                            <li class="fragment"><strong>Extended Reference</strong> - Frequently accessed subset</li>
+                            <li class="fragment"><strong>Subset Pattern</strong> - Split large documents</li>
+                            <li class="fragment"><strong>Polymorphic Pattern</strong> - Different document types</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Attribute Pattern Example</h3>
+                    <p class="code-title">Handling Varying Product Attributes</p>
+                    <pre><code class="language-javascript">
+// Instead of sparse documents with many optional fields
+{
+    _id: ObjectId("..."),
+    name: "Laptop",
+    price: 999.99,
+    category: "Electronics",
+    attributes: [
+        {key: "screen_size", value: "15 inch"},
+        {key: "processor", value: "Intel i7"},
+        {key: "ram", value: "16GB"},
+        {key: "storage", value: "512GB SSD"}
+    ]
+}
+
+// Enables indexing on attributes
+db.products.createIndex({"attributes.key": 1, "attributes.value": 1})
+
+// Query by attribute
+db.products.find({
+    "attributes": {
+        $elemMatch: {
+            key: "processor",
+            value: /Intel/i
+        }
+    }
+})
+                    </code></pre>
+                </section>
+
+                <section>
+                    <h3>Data Validation</h3>
+                    <p class="code-title">JSON Schema Validation</p>
+                    <pre><code class="language-javascript small-text">
+// Create collection with validation
+db.createCollection("users", {
+    validator: {
+        $jsonSchema: {
+            bsonType: "object",
+            required: ["name", "email", "age"],
+            properties: {
+                name: {
+                    bsonType: "string",
+                    description: "must be a string and is required"
+                },
+                email: {
+                    bsonType: "string",
+                    pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$",
+                    description: "must be a valid email address"
+                },
+                age: {
+                    bsonType: "int",
+                    minimum: 0,
+                    maximum: 150,
+                    description: "must be an integer between 0 and 150"
+                }
+            },
+            additionalProperties: false
+        }
+    },
+    validationLevel: "strict",
+    validationAction: "error"
+})
+                    </code></pre>
+                </section>
+            </section>
+
+            <!-- Section 6: Labs -->
+            <section>
+                <section class="section-title">
+                    <h2>6. Hands-on Labs</h2>
+                </section>
+
+                <section class="lab-slide">
+                    <h3>🧪 Lab 1: MongoDB Setup & Basic Operations</h3>
+                    
+                    <div class="objectives">
+                        <h4>Objectives</h4>
+                        <ul>
+                            <li>Set up MongoDB environment using Docker</li>
+                            <li>Practice basic CRUD operations</li>
+                            <li>Understand document structure</li>
+                        </ul>
+                    </div>
+
+                    <div class="highlight-box">
+                        <h4>Lab Activities</h4>
+                        <ul>
+                            <li><strong>Part A:</strong> Environment Setup</li>
+                            <li><strong>Part B:</strong> Library Management System</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <section class="lab-slide">
+                    <h3>🧪 Lab 2: Query Mastery Workshop</h3>
+                    
+                    <div class="objectives">
+                        <h4>Objectives</h4>
+                        <ul>
+                            <li>Master MongoDB query operators</li>
+                            <li>Practice complex query combinations</li>
+                            <li>Work with arrays and nested documents</li>
+                        </ul>
+                    </div>
+
+                    <div class="highlight-box">
+                        <h4>Focus Areas</h4>
+                        <ul>
+                            <li>Comparison and logical operators</li>
+                            <li>Array operations and element matching</li>
+                            <li>Complex query combinations</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <section class="lab-slide">
+                    <h3>🧪 Lab 3: Advanced Querying & Projections</h3>
+                    
+                    <div class="objectives">
+                        <h4>Objectives</h4>
+                        <ul>
+                            <li>Master projection techniques</li>
+                            <li>Practice regex queries</li>
+                            <li>Implement sorting and pagination</li>
+                        </ul>
+                    </div>
+
+                    <div class="highlight-box">
+                        <h4>E-commerce Product Database</h4>
+                        <ul>
+                            <li>Product catalog with specifications</li>
+                            <li>Search and filtering capabilities</li>
+                            <li>Performance optimization techniques</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <section class="lab-slide">
+                    <h3>🧪 Lab 4: Data Modeling & Schema Design</h3>
+                    
+                    <div class="objectives">
+                        <h4>Objectives</h4>
+                        <ul>
+                            <li>Design effective document schemas</li>
+                            <li>Practice embedding vs referencing decisions</li>
+                            <li>Implement data validation</li>
+                        </ul>
+                    </div>
+
+                    <div class="highlight-box">
+                        <h4>University System Design</h4>
+                        <ul>
+                            <li>Students, courses, and enrollments</li>
+                            <li>Schema validation implementation</li>
+                            <li>Design pattern applications</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <section class="lab-slide">
+                    <h3>🧪 Lab 5: E-commerce Analytics Project</h3>
+                    
+                    <div class="objectives">
+                        <h4>Objectives</h4>
+                        <ul>
+                            <li>Integrate all Day 1 concepts</li>
+                            <li>Build a complete application database</li>
+                            <li>Practice real-world scenarios</li>
+                        </ul>
+                    </div>
+
+                    <div class="highlight-box">
+                        <h4>Complete E-commerce System</h4>
+                        <ul>
+                            <li>Product catalog with categories and reviews</li>
+                            <li>Customer profiles and order management</li>
+                            <li>Analytics queries and business intelligence</li>
+                            <li>Performance optimization strategies</li>
+                        </ul>
+                    </div>
+                </section>
+            </section>
+
+            <!-- Summary and Next Steps -->
+            <section>
+                <section class="section-title">
+                    <h2>Day 1 Summary & Next Steps</h2>
+                </section>
+
+                <section>
+                    <h3>Key Concepts Mastered</h3>
+                    <div class="highlight-box">
+                        <ol>
+                            <li class="fragment"><strong>NoSQL Fundamentals</strong> - When and why to choose document databases</li>
+                            <li class="fragment"><strong>MongoDB Architecture</strong> - Documents, collections, BSON format</li>
+                            <li class="fragment"><strong>CRUD Operations</strong> - Complete create, read, update, delete mastery</li>
+                            <li class="fragment"><strong>Query Language</strong> - Comparison, logical, element, and array operators</li>
+                            <li class="fragment"><strong>Advanced Querying</strong> - Regex, projection, sorting, and pagination</li>
+                            <li class="fragment"><strong>Data Modeling</strong> - Embedding vs referencing decisions</li>
+                            <li class="fragment"><strong>Schema Patterns</strong> - Attribute, bucket, computed patterns</li>
+                            <li class="fragment"><strong>Data Validation</strong> - JSON Schema implementation</li>
+                        </ol>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Best Practices Learned</h3>
+                    <div class="two-column">
+                        <div>
+                            <div class="info-box">
+                                <h4>✅ Do's</h4>
+                                <ul>
+                                    <li class="fragment">Keep related data together when accessed together</li>
+                                    <li class="fragment">Use indexes for frequently queried fields</li>
+                                    <li class="fragment">Implement validation at database level</li>
+                                    <li class="fragment">Use consistent naming conventions</li>
+                                    <li class="fragment">Test queries with <code>find()</code> before <code>delete()</code></li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="warning-box">
+                                <h4>❌ Don'ts</h4>
+                                <ul>
+                                    <li class="fragment">Over-normalize like relational databases</li>
+                                    <li class="fragment">Miss indexes on frequent queries</li>
+                                    <li class="fragment">Create documents near 16MB limit</li>
+                                    <li class="fragment">Allow unbounded array growth</li>
+                                    <li class="fragment">Ignore schema consistency completely</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Day 2 Preview</h3>
+                    <div class="info-box">
+                        <h4>🚀 Tomorrow's Advanced Topics</h4>
+                        <ul>
+                            <li class="fragment"><strong>Aggregation Framework</strong> - Complex data processing and analytics pipelines</li>
+                            <li class="fragment"><strong>Advanced Indexing</strong> - Performance optimization strategies and index types</li>
+                            <li class="fragment"><strong>Performance Optimization</strong> - Query tuning and monitoring</li>
+                            <li class="fragment"><strong>Production Considerations</strong> - Replica sets, sharding, and best practices</li>
+                            <li class="fragment"><strong>Real-world Integration</strong> - Application patterns and microservices</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Homework & Practice</h3>
+                    <div class="highlight-box">
+                        <h4>📝 Assignment 1: Personal Project Database</h4>
+                        <p>Design a project management system with:</p>
+                        <ul>
+                            <li>Projects with tasks and deadlines</li>
+                            <li>Team members and roles</li>
+                            <li>Time tracking and progress reports</li>
+                            <li>Implement validation and write 10 query examples</li>
+                        </ul>
+                    </div>
+                    <div class="warning-box">
+                        <h4>🎯 Assignment 2: Query Optimization</h4>
+                        <p>Optimize a slow query using proper indexing and aggregation pipeline restructuring</p>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Resources & Q&A</h3>
+                    <div class="two-column">
+                        <div>
+                            <div class="info-box">
+                                <h4>📚 Additional Resources</h4>
+                                <ul>
+                                    <li><strong>MongoDB Docs:</strong> docs.mongodb.com</li>
+                                    <li><strong>MongoDB University:</strong> Free courses</li>
+                                    <li><strong>Community:</strong> community.mongodb.com</li>
+                                    <li><strong>Sample Data:</strong> github.com/mongodb/docs-assets</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="highlight-box">
+                                <h4>❓ Questions & Discussion</h4>
+                                <ul>
+                                    <li>Clarification on complex topics</li>
+                                    <li>Real-world scenarios</li>
+                                    <li>Troubleshooting common issues</li>
+                                    <li>Best practices discussion</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="title-slide">
+                    <h1>Thank You!</h1>
+                    <h2>MongoDB Day 1 Complete</h2>
+                    <p style="margin-top: 2em;">
+                        🎉 You've mastered MongoDB fundamentals!<br>
+                        🚀 Ready for Day 2 advanced topics<br>
+                        🍃 Welcome to the MongoDB community
+                    </p>
+                    <div style="margin-top: 2em;">
+                        <p><strong>Next:</strong> Day 2 - Advanced Operations & Performance</p>
+                    </div>
+                </section>
+            </section>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/notes/notes.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/markdown/markdown.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/highlight/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/search/search.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/zoom/zoom.min.js"></script>
+
+    <script>
+        Reveal.initialize({
+            hash: true,
+            controls: true,
+            progress: true,
+            center: true,
+            transition: 'slide',
+            transitionSpeed: 'default',
+            backgroundTransition: 'fade',
+            
+            // Learn about plugins: https://revealjs.com/plugins/
+            plugins: [ RevealMarkdown, RevealHighlight, RevealNotes, RevealSearch, RevealZoom ],
+            
+            // Presentation size
+            width: 1200,
+            height: 800,
+            margin: 0.1,
+            minScale: 0.2,
+            maxScale: 1.5,
+            
+            // Keyboard shortcuts
+            keyboard: {
+                13: 'next', // Enter
+                27: function() { // Escape
+                    if (Reveal.isOverview()) {
+                        Reveal.toggleOverview();
+                    }
+                }
+            },
+            
+            // Touch navigation
+            touch: true,
+            loop: false,
+            rtl: false,
+            
+            // Fragments
+            fragments: true,
+            fragmentInURL: true,
+            
+            // Auto-slide
+            autoSlide: 0,
+            autoSlideStoppable: true,
+            
+            // Mouse wheel navigation
+            mouseWheel: false,
+            
+            // Rolling links
+            rollingLinks: false,
+            
+            // Hide address bar on mobile
+            hideAddressBar: true,
+            
+            // Parallax background
+            parallaxBackgroundImage: '',
+            parallaxBackgroundSize: '',
+            
+            // Custom highlight theme
+            highlight: {
+                highlightOnLoad: true,
+                beforeHighlight: function(hljs) {
+                    // Custom language definitions can be added here
+                }
+            }
+        });
+
+        // Custom keyboard shortcuts
+        Reveal.addKeyBinding({keyCode: 79, key: 'O', description: 'Toggle overview'}, function() {
+            Reveal.toggleOverview();
+        });
+
+        // Print mode
+        if (window.location.search.match(/print-pdf/gi)) {
+            var link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.type = 'text/css';
+            link.href = 'https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/css/print/pdf.min.css';
+            document.getElementsByTagName('head')[0].appendChild(link);
+        }
+
+        // Add slide numbers
+        Reveal.configure({
+            slideNumber: 'c/t',
+            showSlideNumber: 'all'
+        });
+    </script>
+</body>
+</html>

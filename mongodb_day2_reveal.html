@@ -1,0 +1,1297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MongoDB Mastering Course - Day 2</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/theme/white.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/highlight/monokai.min.css">
+
+    <style>
+        .reveal {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .reveal h1, .reveal h2, .reveal h3, .reveal h4 {
+            color: #2C5F41;
+            text-transform: none;
+        }
+
+        .reveal h1 {
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .reveal .title-slide {
+            background: linear-gradient(135deg, #2C5F41 0%, #4A8B3B 100%);
+            color: white !important;
+            padding: 2em;
+            border-radius: 15px;
+        }
+
+        .reveal .title-slide h1, 
+        .reveal .title-slide h2 {
+            color: white !important;
+        }
+
+        .reveal .section-title {
+            background: linear-gradient(135deg, #4A8B3B 0%, #6BAF47 100%);
+            color: white !important;
+            padding: 1.5em;
+            border-radius: 10px;
+            margin-bottom: 0.5em;
+        }
+
+        .reveal .section-title h2 {
+            color: white !important;
+            margin: 0;
+        }
+
+        .reveal .duration {
+            background: #2C5F41;
+            color: white;
+            padding: 0.5em 1em;
+            border-radius: 20px;
+            font-size: 0.8em;
+            display: inline-block;
+            margin: 0.5em 0;
+        }
+
+        .reveal .highlight-box {
+            background: linear-gradient(120deg, #a8e6cf 0%, #dcedc1 100%);
+            padding: 1em;
+            border-radius: 8px;
+            border-left: 4px solid #4A8B3B;
+            margin: 1em 0;
+        }
+
+        .reveal .info-box {
+            background: #e8f4f8;
+            border: 2px solid #4A8B3B;
+            border-radius: 8px;
+            padding: 1em;
+            margin: 1em 0;
+        }
+
+        .reveal .warning-box {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 8px;
+            padding: 1em;
+            margin: 1em 0;
+        }
+
+        .reveal .lab-slide {
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+            border: 3px solid #ff8a80;
+            border-radius: 15px;
+            padding: 1em;
+        }
+
+        .reveal .lab-slide h3 {
+            color: #d32f2f !important;
+            margin-top: 0;
+        }
+
+        .reveal .objectives {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 1em;
+            margin: 1em 0;
+        }
+
+        .reveal table {
+            margin: auto;
+            border-collapse: collapse;
+            border-spacing: 0;
+            font-size: 0.8em;
+        }
+
+        .reveal table th {
+            background: #4A8B3B;
+            color: white;
+            font-weight: bold;
+        }
+
+        .reveal table th,
+        .reveal table td {
+            text-align: left;
+            padding: 0.5em;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .reveal table tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+
+        .reveal pre code {
+            max-height: 500px;
+            font-size: 0.6em;
+            line-height: 1.2;
+        }
+
+        .reveal .slides section .fragment {
+            opacity: 0.3;
+        }
+
+        .reveal .slides section .fragment.visible {
+            opacity: 1;
+        }
+
+        .reveal .progress {
+            background: rgba(44, 95, 65, 0.2);
+        }
+
+        .reveal .progress span {
+            background: #4A8B3B;
+        }
+
+        .reveal .controls {
+            color: #4A8B3B;
+        }
+
+        .reveal .slide-number {
+            background-color: #2C5F41;
+            color: white;
+        }
+
+        .reveal .two-column {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .reveal .two-column > div {
+            flex: 1;
+            margin: 0 0.5em;
+        }
+
+        .reveal .mongodb-logo {
+            color: #4A8B3B;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+
+        .reveal .small-text {
+            font-size: 0.7em;
+        }
+
+        .reveal .code-title {
+            background: #2C5F41;
+            color: white;
+            padding: 0.5em;
+            margin: 0;
+            border-radius: 5px 5px 0 0;
+            font-size: 0.8em;
+        }
+
+        .reveal .agenda-item {
+            padding: 0.5em;
+            margin: 0.3em 0;
+            background: #f8f9fa;
+            border-left: 4px solid #4A8B3B;
+            border-radius: 0 5px 5px 0;
+        }
+
+        .reveal .performance-metric {
+            background: #2C5F41;
+            color: white;
+            padding: 0.3em 0.8em;
+            border-radius: 15px;
+            font-size: 0.9em;
+            margin: 0.2em;
+            display: inline-block;
+        }
+
+        .reveal .pattern-card {
+            background: #f0f8ff;
+            border: 2px solid #4A8B3B;
+            border-radius: 10px;
+            padding: 1em;
+            margin: 0.5em;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .reveal .comparison-good {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 1em;
+            margin: 0.5em 0;
+        }
+
+        .reveal .comparison-bad {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+            padding: 1em;
+            margin: 0.5em 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="reveal">
+        <div class="slides">
+            <!-- Title Slide -->
+            <section class="title-slide">
+                <h1>MongoDB Mastering Course</h1>
+                <h2>Day 2: Advanced Querying & Performance</h2>
+                <p style="margin-top: 2em; font-size: 1.2em;">
+                    <span class="mongodb-logo">🍃 MongoDB</span> in Docker Environment
+                </p>
+                <p style="margin-top: 1em; opacity: 0.9;">
+                    From Fundamentals to Performance Optimization
+                </p>
+            </section>
+
+            <!-- Learning Objectives -->
+            <section>
+                <div class="section-title">
+                    <h2>Learning Objectives</h2>
+                </div>
+                
+                <div class="objectives">
+                    <p>By the end of Day 2, participants will:</p>
+                    <ul>
+                        <li class="fragment">Master MongoDB's aggregation framework</li>
+                        <li class="fragment">Understand and implement indexing strategies</li>
+                        <li class="fragment">Design efficient query patterns</li>
+                        <li class="fragment">Optimize MongoDB performance</li>
+                        <li class="fragment">Apply schema design best practices</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Session Agenda -->
+            <section>
+                <div class="section-title">
+                    <h2>Session Agenda</h2>
+                </div>
+                
+                <div class="agenda-item fragment">
+                    <strong>1. Advanced Querying Techniques</strong>
+                </div>
+                <div class="agenda-item fragment">
+                    <strong>2. MongoDB Aggregation Framework</strong>
+                </div>
+                <div class="agenda-item fragment">
+                    <strong>3. Indexing Fundamentals</strong>
+                </div>
+                <div class="agenda-item fragment">
+                    <strong>4. Performance Optimization</strong>
+                </div>
+                <div class="agenda-item fragment">
+                    <strong>5. Schema Design Patterns</strong>
+                </div>
+            </section>
+
+            <!-- Section 1: Advanced Querying -->
+            <section>
+                <section class="section-title">
+                    <h2>1. Advanced Querying Techniques</h2>
+                </section>
+
+                <section>
+                    <h3>Query Operators Deep Dive</h3>
+                    <div class="highlight-box">
+                        <h4>Comparison Operators</h4>
+                    </div>
+                    <p class="code-title">Greater than, less than</p>
+                    <pre><code class="language-javascript">// Greater than, less than
+db.products.find({price: {$gt: 100, $lt: 500}})
+
+// In/Not in arrays
+db.products.find({category: {$in: ["Electronics", "Books"]}})
+db.products.find({status: {$nin: ["discontinued", "out-of-stock"]}})
+
+// Exists and type checking
+db.products.find({description: {$exists: true}})
+db.products.find({price: {$type: "number"}})</code></pre>
+                </section>
+
+                <section>
+                    <h3>Array Query Operators</h3>
+                    <p class="code-title">Working with Arrays</p>
+                    <pre><code class="language-javascript">// All elements match
+db.products.find({tags: {$all: ["wireless", "bluetooth"]}})
+
+// Array size
+db.products.find({reviews: {$size: 5}})
+
+// Element match in arrays of objects
+db.products.find({
+  reviews: {
+    $elemMatch: {
+      rating: {$gte: 4},
+      verified: true
+    }
+  }
+})</code></pre>
+                </section>
+
+                <section>
+                    <h3>Text Search Capabilities</h3>
+                    <div class="two-column">
+                        <div>
+                            <p class="code-title">Create Text Index</p>
+                            <pre><code class="language-javascript small-text">// Create text index
+db.products.createIndex({
+  name: "text", 
+  description: "text"
+})
+
+// Text search
+db.products.find({
+  $text: {$search: "laptop gaming"}
+})</code></pre>
+                        </div>
+                        <div>
+                            <p class="code-title">Search with Score</p>
+                            <pre><code class="language-javascript small-text">// Text search with score
+db.products.find(
+  {$text: {$search: "wireless mouse"}},
+  {score: {$meta: "textScore"}}
+).sort({score: {$meta: "textScore"}})</code></pre>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Regular Expressions</h3>
+                    <p class="code-title">Pattern Matching</p>
+                    <pre><code class="language-javascript">// Case-insensitive pattern matching
+db.products.find({name: {$regex: /^laptop/i}})
+
+// Complex patterns
+db.users.find({
+  email: {
+    $regex: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
+  }
+})</code></pre>
+                </section>
+
+                <section>
+                    <h3>Geospatial Queries</h3>
+                    <div class="two-column">
+                        <div>
+                            <p class="code-title">Find Nearby Locations</p>
+                            <pre><code class="language-javascript small-text">// Create 2dsphere index
+db.stores.createIndex({location: "2dsphere"})
+
+// Find nearby locations
+db.stores.find({
+  location: {
+    $near: {
+      $geometry: {
+        type: "Point", 
+        coordinates: [-73.9857, 40.7484]
+      },
+      $maxDistance: 1000
+    }
+  }
+})</code></pre>
+                        </div>
+                        <div>
+                            <p class="code-title">Find Within Polygon</p>
+                            <pre><code class="language-javascript small-text">// Find within polygon
+db.stores.find({
+  location: {
+    $geoWithin: {
+      $geometry: {
+        type: "Polygon",
+        coordinates: [[
+          [-74.0, 40.7], [-74.0, 40.8],
+          [-73.9, 40.8], [-73.9, 40.7],
+          [-74.0, 40.7]
+        ]]
+      }
+    }
+  }
+})</code></pre>
+                        </div>
+                    </div>
+                </section>
+            </section>
+
+            <!-- Section 2: Aggregation Framework -->
+            <section>
+                <section class="section-title">
+                    <h2>2. MongoDB Aggregation Framework</h2>
+                </section>
+
+                <section>
+                    <h3>Aggregation Pipeline Concept</h3>
+                    <div class="highlight-box">
+                        <p>The aggregation pipeline processes documents through multiple stages, transforming data step by step.</p>
+                    </div>
+                    <div class="fragment">
+                        <p class="code-title">Pipeline Flow</p>
+                        <pre><code class="language-text">Input Documents → Stage 1 → Stage 2 → Stage 3 → Output</code></pre>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Core Pipeline Stages</h3>
+                    <div class="two-column">
+                        <div>
+                            <p class="code-title">$match - Filtering Documents</p>
+                            <pre><code class="language-javascript small-text">db.orders.aggregate([
+  {$match: {
+    status: "completed", 
+    orderDate: {$gte: ISODate("2024-01-01")}
+  }}
+])</code></pre>
+                        </div>
+                        <div>
+                            <p class="code-title">$sort and $limit</p>
+                            <pre><code class="language-javascript small-text">db.products.aggregate([
+  {$group: {
+    _id: "$category", 
+    avgPrice: {$avg: "$price"}
+  }},
+  {$sort: {avgPrice: -1}},
+  {$limit: 5}
+])</code></pre>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>$project - Selecting and Reshaping Fields</h3>
+                    <p class="code-title">Field Selection and Transformation</p>
+                    <pre><code class="language-javascript">db.orders.aggregate([
+  {$project: {
+    customerName: 1,
+    totalAmount: 1,
+    year: {$year: "$orderDate"},
+    discountPercent: {
+      $multiply: [
+        {$divide: ["$discount", "$subtotal"]}, 
+        100
+      ]
+    }
+  }}
+])</code></pre>
+                </section>
+
+                <section>
+                    <h3>$group - Aggregating Data</h3>
+                    <div class="two-column">
+                        <div>
+                            <p class="code-title">Group by Single Field</p>
+                            <pre><code class="language-javascript small-text">// Group by category and calculate statistics
+db.products.aggregate([
+  {$group: {
+    _id: "$category",
+    totalProducts: {$sum: 1},
+    averagePrice: {$avg: "$price"},
+    maxPrice: {$max: "$price"},
+    minPrice: {$min: "$price"}
+  }}
+])</code></pre>
+                        </div>
+                        <div>
+                            <p class="code-title">Group by Multiple Fields</p>
+                            <pre><code class="language-javascript small-text">// Group by multiple fields
+db.orders.aggregate([
+  {$group: {
+    _id: {
+      year: {$year: "$orderDate"},
+      month: {$month: "$orderDate"}
+    },
+    totalRevenue: {$sum: "$totalAmount"},
+    orderCount: {$sum: 1}
+  }}
+])</code></pre>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>$unwind - Deconstructing Arrays</h3>
+                    <div class="info-box">
+                        <p><strong>Before unwind:</strong> {name: "Product A", tags: ["electronics", "mobile"]}</p>
+                        <p><strong>After unwind:</strong> Two documents with individual tags</p>
+                    </div>
+                    <p class="code-title">Array Deconstruction Example</p>
+                    <pre><code class="language-javascript">db.products.aggregate([
+  {$unwind: "$tags"},
+  {$group: {_id: "$tags", count: {$sum: 1}}},
+  {$sort: {count: -1}}
+])</code></pre>
+                </section>
+
+                <section>
+                    <h3>$lookup - Joining Collections</h3>
+                    <p class="code-title">Left Outer Join</p>
+                    <pre><code class="language-javascript">db.orders.aggregate([
+  {$lookup: {
+    from: "customers",
+    localField: "customerId",
+    foreignField: "_id",
+    as: "customerDetails"
+  }},
+  {$unwind: "$customerDetails"},
+  {$project: {
+    orderDate: 1,
+    totalAmount: 1,
+    customerName: "$customerDetails.name",
+    customerEmail: "$customerDetails.email"
+  }}
+])</code></pre>
+                </section>
+
+                <section>
+                    <h3>$addFields - Adding Computed Fields</h3>
+                    <p class="code-title">Computed Field Examples</p>
+                    <pre><code class="language-javascript">db.orders.aggregate([
+  {$addFields: {
+    tax: {$multiply: ["$subtotal", 0.08]},
+    finalTotal: {$add: ["$subtotal", {$multiply: ["$subtotal", 0.08]}]},
+    isLargeOrder: {$gte: ["$totalAmount", 1000]}
+  }}
+])</code></pre>
+                </section>
+
+                <section>
+                    <h3>Complex Sales Analytics Pipeline</h3>
+                    <p class="code-title">Multi-Stage Aggregation Example</p>
+                    <pre class="small-text"><code class="language-javascript">db.orders.aggregate([
+  // Match orders from last 6 months
+  {$match: {
+    orderDate: {$gte: new Date(Date.now() - 6*30*24*60*60*1000)}
+  }},
+  
+  // Unwind line items
+  {$unwind: "$lineItems"},
+  
+  // Lookup product details
+  {$lookup: {
+    from: "products",
+    localField: "lineItems.productId",
+    foreignField: "_id",
+    as: "product"
+  }},
+  {$unwind: "$product"},
+  
+  // Group by product category
+  {$group: {
+    _id: "$product.category",
+    totalRevenue: {$sum: {$multiply: ["$lineItems.quantity", "$lineItems.price"]}},
+    totalQuantity: {$sum: "$lineItems.quantity"},
+    averageOrderValue: {$avg: "$totalAmount"}
+  }},
+  
+  // Sort by revenue
+  {$sort: {totalRevenue: -1}}
+])</code></pre>
+                </section>
+            </section>
+
+            <!-- Section 3: Indexing -->
+            <section>
+                <section class="section-title">
+                    <h2>3. Indexing Fundamentals</h2>
+                </section>
+
+                <section>
+                    <h3>Why Indexes Matter</h3>
+                    <div class="two-column">
+                        <div>
+                            <div class="comparison-bad">
+                                <h4>❌ Without Index</h4>
+                                <p>MongoDB scans every document (Collection Scan)</p>
+                                <div class="performance-metric">~2000ms</div>
+                                <p class="small-text">1 million documents</p>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="comparison-good">
+                                <h4>✅ With Index</h4>
+                                <p>MongoDB uses index to jump directly to matching documents</p>
+                                <div class="performance-metric">~5ms</div>
+                                <p class="small-text">Same query with index</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="fragment">
+                        <p class="code-title">Performance Impact Example</p>
+                        <pre><code class="language-javascript">db.users.createIndex({email: 1})
+db.users.find({email: "john@example.com"}).explain("executionStats")</code></pre>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Index Types</h3>
+                    <div class="two-column">
+                        <div>
+                            <div class="pattern-card">
+                                <h4>Single Field Indexes</h4>
+                                <pre><code class="language-javascript small-text">// Ascending index
+db.products.createIndex({price: 1})
+
+// Descending index
+db.products.createIndex({createdAt: -1})
+
+// Unique index
+db.users.createIndex({email: 1}, {unique: true})
+
+// Sparse index
+db.users.createIndex({phoneNumber: 1}, {sparse: true})</code></pre>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="pattern-card">
+                                <h4>Compound Indexes</h4>
+                                <div class="warning-box">
+                                    <p class="small-text"><strong>Order matters!</strong> This index supports queries in prefix order only.</p>
+                                </div>
+                                <pre><code class="language-javascript small-text">db.products.createIndex({
+  category: 1, 
+  price: 1, 
+  brand: 1
+})
+
+// Supports:
+// 1. {category: "Electronics"}
+// 2. {category: "Electronics", price: {$gt: 100}}
+// 3. All three fields combined</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>ESR Rule (Equality, Sort, Range)</h3>
+                    <div class="highlight-box">
+                        <h4>Index Optimization Strategy</h4>
+                        <p>For optimal performance, structure compound indexes in ESR order:</p>
+                    </div>
+                    <p class="code-title">Query: Find Electronics, sort by price, price > 100</p>
+                    <pre><code class="language-javascript">// Optimal index order:
+db.products.createIndex({
+  category: 1,    // Equality first
+  price: 1        // Sort + Range second
+})</code></pre>
+                </section>
+
+                <section>
+                    <h3>Multikey Indexes (Arrays)</h3>
+                    <p class="code-title">Automatic Array Indexing</p>
+                    <pre><code class="language-javascript">// Automatically created when indexing array fields
+db.products.createIndex({tags: 1})
+
+// Supports queries like:
+db.products.find({tags: "wireless"})
+db.products.find({tags: {$in: ["wireless", "bluetooth"]}})</code></pre>
+                </section>
+
+                <section>
+                    <h3>Text Indexes</h3>
+                    <div class="two-column">
+                        <div>
+                            <p class="code-title">Single Field Text Index</p>
+                            <pre><code class="language-javascript small-text">// Single field text index
+db.products.createIndex({description: "text"})</code></pre>
+                        </div>
+                        <div>
+                            <p class="code-title">Compound Text Index with Weights</p>
+                            <pre><code class="language-javascript small-text">// Compound text index
+db.products.createIndex({
+  title: "text",
+  description: "text",
+  tags: "text"
+}, {
+  weights: {
+    title: 10,
+    description: 5,
+    tags: 1
+  }
+})</code></pre>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Index Management</h3>
+                    <div class="two-column">
+                        <div>
+                            <div class="info-box">
+                                <h4>Viewing Indexes</h4>
+                                <pre><code class="language-javascript small-text">// List all indexes on collection
+db.products.getIndexes()
+
+// Index usage statistics
+db.products.aggregate([{$indexStats: {}}])</code></pre>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="info-box">
+                                <h4>Dropping Indexes</h4>
+                                <pre><code class="language-javascript small-text">// Drop specific index
+db.products.dropIndex({price: 1})
+
+// Drop by name
+db.products.dropIndex("price_1")
+
+// Drop all indexes except _id
+db.products.dropIndexes()</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </section>
+
+            <!-- Section 4: Performance Optimization -->
+            <section>
+                <section class="section-title">
+                    <h2>4. Performance Optimization</h2>
+                </section>
+
+                <section>
+                    <h3>Query Performance Analysis</h3>
+                    <div class="highlight-box">
+                        <h4>Using explain()</h4>
+                    </div>
+                    <p class="code-title">Execution Statistics</p>
+                    <pre><code class="language-javascript">// Basic execution stats
+db.products.find({category: "Electronics"}).explain("executionStats")
+
+// Key metrics to watch:
+// - totalDocsExamined vs totalDocsReturned
+// - executionTimeMillis
+// - indexesUsed</code></pre>
+                    <div class="fragment">
+                        <p class="code-title">Detailed Execution Plans</p>
+                        <pre><code class="language-javascript">// Winning plan details
+db.products.find({category: "Electronics", price: {$gt: 100}})
+           .explain("allPlansExecution")</code></pre>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Query Optimization Techniques</h3>
+                    <div class="two-column">
+                        <div>
+                            <div class="comparison-bad">
+                                <h4>❌ BAD: Leading with range query</h4>
+                                <pre><code class="language-javascript small-text">db.orders.find({
+  amount: {$gt: 100},     // Range query first
+  status: "completed"     // Equality query second
+})</code></pre>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="comparison-good">
+                                <h4>✅ GOOD: Leading with equality</h4>
+                                <pre><code class="language-javascript small-text">db.orders.find({
+  status: "completed",    // Equality query first
+  amount: {$gt: 100}     // Range query second
+})</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Projection to Reduce Data Transfer</h3>
+                    <div class="two-column">
+                        <div>
+                            <div class="comparison-bad">
+                                <h4>❌ BAD: Returning entire documents</h4>
+                                <pre><code class="language-javascript small-text">db.users.find({status: "active"})</code></pre>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="comparison-good">
+                                <h4>✅ GOOD: Only return needed fields</h4>
+                                <pre><code class="language-javascript small-text">db.users.find(
+  {status: "active"},
+  {name: 1, email: 1, lastLogin: 1, _id: 0}
+)</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Limit Result Sets</h3>
+                    <p class="code-title">Preventing Large Result Sets</p>
+                    <pre><code class="language-javascript">// Use limit() to prevent large result sets
+db.products.find({category: "Electronics"})
+           .sort({price: -1})
+           .limit(20)
+
+// Use skip() carefully (can be slow for large offsets)
+db.products.find().skip(10000).limit(20)  // Slower
+// Consider cursor-based pagination instead</code></pre>
+                </section>
+
+                <section>
+                    <h3>Aggregation Performance</h3>
+                    <div class="two-column">
+                        <div>
+                            <div class="comparison-bad">
+                                <h4>❌ BAD: $match after expensive operations</h4>
+                                <pre><code class="language-javascript small-text">db.orders.aggregate([
+  {$lookup: {
+    from: "customers", 
+    localField: "customerId", 
+    foreignField: "_id", 
+    as: "customer"
+  }},
+  {$unwind: "$customer"},
+  {$match: {status: "completed"}}  // Should be first!
+])</code></pre>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="comparison-good">
+                                <h4>✅ GOOD: $match early in pipeline</h4>
+                                <pre><code class="language-javascript small-text">db.orders.aggregate([
+  {$match: {status: "completed"}},  // Filter early
+  {$lookup: {
+    from: "customers", 
+    localField: "customerId", 
+    foreignField: "_id", 
+    as: "customer"
+  }},
+  {$unwind: "$customer"}
+])</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Memory Management</h3>
+                    <div class="highlight-box">
+                        <h4>Working Set Size</h4>
+                        <ul>
+                            <li class="fragment">Keep frequently accessed data in memory</li>
+                            <li class="fragment">Monitor memory usage with <code>db.serverStatus().mem</code></li>
+                            <li class="fragment">Consider sharding for large datasets</li>
+                        </ul>
+                    </div>
+                    <div class="fragment">
+                        <div class="warning-box">
+                            <h4>Document Size Considerations</h4>
+                            <p class="small-text">Avoid large documents (>16MB limit). Use separate collections for unbounded arrays instead of embedding.</p>
+                        </div>
+                    </div>
+                </section>
+            </section>
+
+            <!-- Section 5: Schema Design -->
+            <section>
+                <section class="section-title">
+                    <h2>5. Schema Design Patterns</h2>
+                </section>
+
+                <section>
+                    <h3>Embed vs Reference Decision Tree</h3>
+                    <div class="two-column">
+                        <div>
+                            <div class="comparison-good">
+                                <h4>✅ Embed When:</h4>
+                                <ul class="small-text">
+                                    <li>Data accessed together</li>
+                                    <li>Data doesn't change often</li>
+                                    <li>Limited growth (bounded arrays)</li>
+                                    <li>1:1 or 1:few relationships</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="comparison-bad">
+                                <h4>⚠️ Reference When:</h4>
+                                <ul class="small-text">
+                                    <li>Data accessed independently</li>
+                                    <li>Frequently changing data</li>
+                                    <li>Unbounded growth</li>
+                                    <li>Many:many relationships</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Embedded Documents Pattern</h3>
+                    <p class="code-title">User Profile with Address (1:1 Relationship)</p>
+                    <pre><code class="language-javascript">{
+  _id: ObjectId("..."),
+  name: "John Doe",
+  email: "john@example.com",
+  address: {
+    street: "123 Main St",
+    city: "New York",
+    state: "NY",
+    zip: "10001"
+  },
+  preferences: {
+    theme: "dark",
+    notifications: {
+      email: true,
+      sms: false,
+      push: true
+    }
+  },
+  created_at: ISODate("2023-01-15")
+}</code></pre>
+                    <div class="fragment">
+                        <div class="highlight-box small-text">
+                            <p><strong>Benefits:</strong> Single query, atomic updates, natural data grouping</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Reference Pattern</h3>
+                    <p class="code-title">E-commerce with Separate Collections</p>
+                    <div class="two-column">
+                        <div>
+                            <pre><code class="language-javascript small-text">// Users collection
+{
+  _id: ObjectId("user1"),
+  name: "John Doe",
+  email: "john@example.com"
+}
+
+// Products collection
+{
+  _id: ObjectId("product1"),
+  name: "Laptop",
+  price: 999.99,
+  category: "Electronics"
+}</code></pre>
+                        </div>
+                        <div>
+                            <pre><code class="language-javascript small-text">// Orders collection
+{
+  _id: ObjectId("order1"),
+  user_id: ObjectId("user1"),
+  items: [
+    {
+      product_id: ObjectId("product1"),
+      quantity: 1,
+      price: 999.99
+    }
+  ],
+  total: 999.99,
+  order_date: ISODate("2023-01-15")
+}</code></pre>
+                        </div>
+                    </div>
+                    <div class="fragment">
+                        <div class="highlight-box small-text">
+                            <p><strong>Benefits:</strong> Normalized data, independent queries, better for many:many relationships</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Advanced Schema Patterns</h3>
+                    <div class="info-box">
+                        <h4>Common Design Patterns</h4>
+                        <ul>
+                            <li class="fragment"><strong>Attribute Pattern</strong> - Varying product attributes</li>
+                            <li class="fragment"><strong>Bucket Pattern</strong> - Time-series data grouping</li>
+                            <li class="fragment"><strong>Outlier Pattern</strong> - Handle unusually large documents</li>
+                            <li class="fragment"><strong>Computed Pattern</strong> - Pre-calculated values</li>
+                            <li class="fragment"><strong>Extended Reference</strong> - Frequently accessed subset</li>
+                            <li class="fragment"><strong>Polymorphic Pattern</strong> - Different document types</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Bucket Pattern (Time Series Data)</h3>
+                    <p class="code-title">Handling Time-Series Data Efficiently</p>
+                    <pre><code class="language-javascript">// Instead of one document per measurement:
+{timestamp: ISODate("2024-01-01T10:00:00Z"), sensor: "temp001", value: 23.5}
+{timestamp: ISODate("2024-01-01T10:01:00Z"), sensor: "temp001", value: 23.7}
+
+// Group into buckets:
+{
+  _id: ObjectId("..."),
+  sensor: "temp001",
+  date: ISODate("2024-01-01"),
+  measurements: [
+    {time: "10:00", value: 23.5},
+    {time: "10:01", value: 23.7},
+    // ... up to 60 measurements per hour
+  ]
+}</code></pre>
+                </section>
+
+                <section>
+                    <h3>Polymorphic Pattern</h3>
+                    <p class="code-title">Different Document Types in Same Collection</p>
+                    <div class="two-column">
+                        <div>
+                            <pre><code class="language-javascript small-text">// Product
+{
+  _id: ObjectId("..."),
+  type: "product",
+  name: "Laptop",
+  price: 999.99,
+  specs: {cpu: "Intel i7", ram: "16GB"}
+}
+
+// Service
+{
+  _id: ObjectId("..."),
+  type: "service",
+  name: "Setup Service",
+  price: 99.99,
+  duration: "2 hours"
+}</code></pre>
+                        </div>
+                        <div>
+                            <pre><code class="language-javascript small-text">// Digital
+{
+  _id: ObjectId("..."),
+  type: "digital",
+  name: "Software License",
+  price: 199.99,
+  downloadUrl: "https://...",
+  licenseKey: "ABC-123-XYZ"
+}</code></pre>
+                        </div>
+                    </div>
+                </section>
+            </section>
+
+            <!-- Performance Monitoring -->
+            <section>
+                <section class="section-title">
+                    <h2>Performance Monitoring and Best Practices</h2>
+                </section>
+
+                <section>
+                    <h3>Monitoring Tools</h3>
+                    <div class="two-column">
+                        <div>
+                            <div class="pattern-card">
+                                <h4>Database Profiler</h4>
+                                <pre><code class="language-javascript small-text">// Enable profiler for slow operations
+db.setProfilingLevel(2, {slowms: 100})
+
+// View profile data
+db.system.profile.find()
+  .sort({ts: -1})
+  .limit(5)</code></pre>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="pattern-card">
+                                <h4>MongoDB Compass</h4>
+                                <ul class="small-text">
+                                    <li>Visual query performance analysis</li>
+                                    <li>Index usage statistics</li>
+                                    <li>Real-time performance metrics</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="fragment">
+                        <div class="highlight-box">
+                            <h4>MongoDB Atlas (Cloud)</h4>
+                            <ul class="small-text">
+                                <li>Built-in monitoring and alerting</li>
+                                <li>Performance advisor</li>
+                                <li>Index suggestions</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Production Best Practices</h3>
+                    <div class="two-column">
+                        <div>
+                            <div class="info-box">
+                                <h4>Capacity Planning</h4>
+                                <ul class="small-text">
+                                    <li>Monitor disk space growth</li>
+                                    <li>Plan for memory requirements</li>
+                                    <li>Consider read/write patterns for sharding</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="info-box">
+                                <h4>Security Considerations</h4>
+                                <ul class="small-text">
+                                    <li>Enable authentication</li>
+                                    <li>Use role-based access control</li>
+                                    <li>Network security (firewalls, VPN)</li>
+                                    <li>Encrypt data at rest and in transit</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </section>
+
+            <!-- Summary -->
+            <section>
+                <section class="section-title">
+                    <h2>Day 2 Summary</h2>
+                </section>
+
+                <section>
+                    <h3>Key Takeaways</h3>
+                    <div class="highlight-box">
+                        <ol>
+                            <li class="fragment"><strong>Advanced querying</strong> enables complex data retrieval patterns</li>
+                            <li class="fragment"><strong>Aggregation framework</strong> provides powerful data processing capabilities</li>
+                            <li class="fragment"><strong>Proper indexing</strong> is crucial for query performance</li>
+                            <li class="fragment"><strong>Schema design</strong> should match access patterns</li>
+                            <li class="fragment"><strong>Performance monitoring</strong> is essential for production systems</li>
+                        </ol>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Next Steps</h3>
+                    <div class="two-column">
+                        <div>
+                            <div class="info-box">
+                                <h4>Practice Activities</h4>
+                                <ul class="small-text">
+                                    <li>Practice aggregation pipelines with real data</li>
+                                    <li>Analyze your application's query patterns</li>
+                                    <li>Design indexes based on your queries</li>
+                                    <li>Monitor performance in production</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="info-box">
+                                <h4>Day 3 Preview</h4>
+                                <ul class="small-text">
+                                    <li>Replica Sets and High Availability</li>
+                                    <li>Sharding and Horizontal Scaling</li>
+                                    <li>Change Streams and Real-time Applications</li>
+                                    <li>Production Deployment Strategies</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Additional Resources</h3>
+                    <div class="two-column">
+                        <div>
+                            <div class="info-box">
+                                <h4>📚 Learning Resources</h4>
+                                <ul class="small-text">
+                                    <li><strong>MongoDB University:</strong> Free courses</li>
+                                    <li><strong>MongoDB Docs:</strong> docs.mongodb.com</li>
+                                    <li><strong>Community:</strong> community.mongodb.com</li>
+                                    <li><strong>Sample Data:</strong> github.com/mongodb/docs-assets</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="highlight-box">
+                                <h4>❓ Support & Community</h4>
+                                <ul class="small-text">
+                                    <li>MongoDB certification programs</li>
+                                    <li>Stack Overflow community</li>
+                                    <li>MongoDB user groups</li>
+                                    <li>Professional support options</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="title-slide">
+                    <h1>Thank You!</h1>
+                    <h2>MongoDB Day 2 Complete</h2>
+                    <p style="margin-top: 2em;">
+                        🎉 You've mastered advanced MongoDB techniques!<br>
+                        🚀 Ready for Day 3 production topics<br>
+                        🍃 Performance optimization achieved
+                    </p>
+                    <div style="margin-top: 2em;">
+                        <p><strong>Next:</strong> Day 3 - Production & Scaling</p>
+                    </div>
+                </section>
+            </section>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/notes/notes.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/markdown/markdown.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/highlight/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/search/search.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/zoom/zoom.min.js"></script>
+
+    <script>
+        Reveal.initialize({
+            hash: true,
+            controls: true,
+            progress: true,
+            center: true,
+            transition: 'slide',
+            transitionSpeed: 'default',
+            backgroundTransition: 'fade',
+            
+            plugins: [ RevealMarkdown, RevealHighlight, RevealNotes, RevealSearch, RevealZoom ],
+            
+            width: 1200,
+            height: 800,
+            margin: 0.1,
+            minScale: 0.2,
+            maxScale: 1.5,
+            
+            keyboard: {
+                13: 'next',
+                27: function() {
+                    if (Reveal.isOverview()) {
+                        Reveal.toggleOverview();
+                    }
+                }
+            },
+            
+            touch: true,
+            loop: false,
+            rtl: false,
+            fragments: true,
+            fragmentInURL: true,
+            autoSlide: 0,
+            autoSlideStoppable: true,
+            mouseWheel: false,
+            rollingLinks: false,
+            hideAddressBar: true,
+            
+            highlight: {
+                highlightOnLoad: true
+            }
+        });
+
+        Reveal.addKeyBinding({keyCode: 79, key: 'O', description: 'Toggle overview'}, function() {
+            Reveal.toggleOverview();
+        });
+
+        if (window.location.search.match(/print-pdf/gi)) {
+            var link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.type = 'text/css';
+            link.href = 'https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/css/print/pdf.min.css';
+            document.getElementsByTagName('head')[0].appendChild(link);
+        }
+
+        Reveal.configure({
+            slideNumber: 'c/t',
+            showSlideNumber: 'all'
+        });
+    </script>
+</body>
+</html>
