@@ -374,6 +374,7 @@ Create a database structure for a university system with collections for student
    var customId = new ObjectId()
    db.products.insertOne({
      _id: customId,
+     category: "Computers",
      name: "Custom ID Product",
      price: 199.99
    })
@@ -381,6 +382,7 @@ Create a database structure for a university system with collections for student
    // Verify insertion with different data types
    db.products.insertOne({
      name: "Multi-Type Product",
+     category: "Electronics",
      price: NumberDecimal("99.99"),
      quantity: NumberInt(100),
      weight: 2.5,
@@ -505,14 +507,14 @@ Create a database structure for a university system with collections for student
    ```javascript
    // Insert with write concern
    db.products.insertOne(
-     {name: "Acknowledged Product", price: 99.99},
+     {name: "Acknowledged Product", price: 99.99,category: "Electronics"},
      {writeConcern: {w: 1, j: true}}
    )
    
    // Batch insert with write concern
    db.products.insertMany([
-     {name: "Batch Product 1", price: 19.99},
-     {name: "Batch Product 2", price: 29.99}
+     {name: "Batch Product 1", price: 19.99,category: "Electronics"},
+     {name: "Batch Product 2", price: 29.99,category: "Electronics"}
    ], {writeConcern: {w: "majority"}})
    ```
 
@@ -641,6 +643,8 @@ Create a realistic e-commerce product catalog with 5000 products across multiple
      {
        name: "Smartphone",
        tags: ["mobile", "communication", "camera"],
+       category: "Electronics",
+       price: 55,
        ratings: [4, 5, 3, 4, 5],
        features: [
          {name: "camera", megapixels: 12},
@@ -650,6 +654,8 @@ Create a realistic e-commerce product catalog with 5000 products across multiple
      {
        name: "Tablet", 
        tags: ["mobile", "entertainment"],
+       category: "Clothing",
+       price: 124,
        ratings: [4, 4, 5],
        features: [
          {name: "screen", inches: 10.1},
@@ -710,7 +716,7 @@ Create a realistic e-commerce product catalog with 5000 products across multiple
    db.products.find({}, {"specifications.processor": 1, name: 1})
    
    // Array element projection
-   db.products.find({}, {name: 1, "tags.$": 1})
+   db.products.find({}, {name: 1, "tags.1": 1})
    ```
 
 2. **Sorting, Limiting, and Skipping**
@@ -954,14 +960,17 @@ Build a comprehensive product search system that supports:
 3. **Update with Array Filters**
    ```javascript
    // Update specific array elements
-   db.products.insertOne({
+
+   db.products.insertOne ({
      name: "Multi-Variant Product",
+     price: 29.99,
+     category: "Clothes",
      variants: [
-       {size: "S", price: 29.99, inStock: true},
-       {size: "M", price: 32.99, inStock: false},
-       {size: "L", price: 34.99, inStock: true}
+       { size: "S",  inStock: true},
+       { size: "M", inStock: false},
+       { size: "L", inStock: true}
      ]
-   })
+  }) 
    
    // Update specific variant
    db.products.updateOne(
