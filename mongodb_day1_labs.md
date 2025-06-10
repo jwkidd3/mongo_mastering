@@ -193,8 +193,9 @@ Write a JavaScript function in the shell that connects to three different databa
    // Database profiling setup
    use ecommerce
    db.setProfilingLevel(1, {slowms: 100})
-   
+
    // Check database locks
+   use admin
    db.runCommand({currentOp: 1})
    ```
 
@@ -263,7 +264,7 @@ Write a JavaScript function in the shell that connects to three different databa
    
    // Convert to capped collection
    db.runCommand({
-     convertToCapped: "regular_collection",
+     convertToCapped: "clients",
      size: 100000
    })
    
@@ -287,6 +288,9 @@ Write a JavaScript function in the shell that connects to three different databa
 #### Part C: Naming Conventions and Best Practices (5 minutes)
 1. **Collection Naming Standards**
    ```javascript
+
+   use test
+
    // Good naming examples
    db.createCollection("user_profiles")
    db.createCollection("order_items")
@@ -303,6 +307,8 @@ Write a JavaScript function in the shell that connects to three different databa
      db.createCollection(name)
      print("Created collection: " + name)
    })
+
+   db.dropDatabase()
    ```
 
 ### Challenge Exercise
