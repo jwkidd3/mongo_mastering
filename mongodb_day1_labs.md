@@ -23,11 +23,6 @@
    # Connect to MongoDB (assuming Docker container on localhost:27017)
    mongosh mongodb://localhost:27017
    
-   # Connect with authentication if enabled
-   mongosh mongodb://admin:password123@localhost:27017
-   
-   # Connect and specify database
-   mongosh mongodb://localhost:27017/testdb
    ```
 
 2. **Server Information Commands**
@@ -58,6 +53,7 @@
    db.getName()
    
    // Check if database exists
+   use admin
    db.runCommand({listDatabases: 1})
    ```
 
@@ -82,12 +78,10 @@
    ```javascript
    // Database helpers
    use company  // Switch to 'company' database
-   db.dropDatabase()  // Drop current database
    
    // Collection helpers
    show collections  // List collections in current database
    db.createCollection("employees")
-   db.employees.drop()
    
    // Index helpers
    db.employees.getIndexes()
@@ -129,9 +123,7 @@
 2. **Shell Customization**
    ```javascript
    // Set custom prompt
-   prompt = function() {
-     return db + "> ";
-   }
+   prompt = function() { return db.getName() + "> ";}
    
    // Disable line wrapping for long output
    DBQuery.shellBatchSize = 10

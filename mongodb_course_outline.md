@@ -3,7 +3,7 @@
 ## Course Overview
 A comprehensive 3-day intensive course designed to take participants from MongoDB basics to advanced production-ready skills. This course combines theoretical knowledge with hands-on practical exercises using Docker and command-line tools to ensure mastery of MongoDB concepts and real-world application.
 
-**Duration:** 3 Days (24 hours total)  
+**Duration:** 3 Days (approx 22 hours total)  
 **Format:** Instructor-led with hands-on labs  
 **Platform:** Docker-based MongoDB environment  
 **Prerequisites:** Basic database concepts, command-line familiarity  
@@ -11,9 +11,9 @@ A comprehensive 3-day intensive course designed to take participants from MongoD
 ---
 
 ## Day 1: MongoDB Fundamentals & Core Operations
-**Duration:** 8 hours (including breaks and labs)
+**Duration:** 7 hours (including breaks and labs)
 
-### Morning Session (4 hours)
+### Morning Session (3.5 hours)
 
 #### Introduction to NoSQL & MongoDB (45 minutes)
 - **NoSQL Database Landscape**
