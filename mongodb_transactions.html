@@ -1,0 +1,1219 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MongoDB Transactions</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/theme/black.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/monokai.min.css">
+    
+    <style>
+        .reveal .slides section {
+            text-align: left;
+        }
+        .reveal h1, .reveal h2, .reveal h3 {
+            text-align: center;
+            color: #42affa;
+        }
+        .reveal .code-wrapper {
+            background: #2d3748;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .reveal code {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+        }
+        .reveal pre code {
+            background: transparent;
+            padding: 0;
+            font-size: 0.8em;
+            line-height: 1.4;
+        }
+        .highlight-green { color: #68d391 !important; }
+        .highlight-red { color: #fc8181 !important; }
+        .highlight-yellow { color: #fbd38d !important; }
+        .transaction-flow {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            margin: 30px 0;
+        }
+        .flow-box {
+            background: #2d3748;
+            border: 2px solid #42affa;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            min-width: 120px;
+        }
+        .flow-arrow {
+            font-size: 2em;
+            color: #42affa;
+        }
+        .acid-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 30px 0;
+        }
+        .acid-card {
+            background: #2d3748;
+            border-left: 4px solid #42affa;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        .comparison-table th,
+        .comparison-table td {
+            border: 1px solid #4a5568;
+            padding: 12px;
+            text-align: left;
+        }
+        .comparison-table th {
+            background: #2d3748;
+            color: #42affa;
+        }
+        .check { color: #68d391; }
+        .cross { color: #fc8181; }
+        .warning { color: #fbd38d; }
+    </style>
+</head>
+<body>
+    <div class="reveal">
+        <div class="slides">
+            
+            <!-- Title Slide -->
+            <section data-background-gradient="linear-gradient(45deg, #1a202c, #2d3748)">
+                <h1>MongoDB Transactions</h1>
+                <h3>ACID Compliance in Document Databases</h3>
+                <p style="text-align: center;">
+                    <small>MongoDB Mastering Course</small><br>
+                    <small>Building Reliable, Consistent Applications</small>
+                </p>
+            </section>
+
+            <!-- Table of Contents -->
+            <section>
+                <h2>What We'll Cover</h2>
+                <div style="font-size: 0.9em;">
+                    <ol>
+                        <li>Introduction to MongoDB Transactions</li>
+                        <li>ACID Properties in MongoDB</li>
+                        <li>Transaction Fundamentals</li>
+                        <li>Single vs Multi-Document Transactions</li>
+                        <li>Working with Sessions</li>
+                        <li>Read and Write Concerns</li>
+                        <li>Performance and Best Practices</li>
+                        <li>Real-World Use Cases</li>
+                        <li>Error Handling</li>
+                        <li>Hands-On Exercises</li>
+                    </ol>
+                </div>
+            </section>
+
+            <!-- Introduction -->
+            <section>
+                <section>
+                    <h2>What are Database Transactions?</h2>
+                    <blockquote style="margin: 30px 0;">
+                        A <strong>transaction</strong> is a sequence of database operations that are treated as a single logical unit of work.
+                    </blockquote>
+                    <div class="fragment">
+                        <p><strong>Key Principle:</strong> All operations must either succeed together (commit) or fail together (rollback).</p>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>The Classic Example: Bank Transfer</h3>
+                    <div class="code-wrapper">
+                        <pre><code class="javascript">// ❌ WITHOUT transactions - DANGEROUS!
+db.accounts.updateOne({_id: "accountA"}, {$inc: {balance: -100}});
+// ⚠️ What if system crashes here?
+db.accounts.updateOne({_id: "accountB"}, {$inc: {balance: 100}});
+
+// ✅ WITH transactions - SAFE!
+const session = db.getMongo().startSession();
+session.startTransaction();
+try {
+    db.accounts.updateOne({_id: "accountA"}, 
+        {$inc: {balance: -100}}, {session});
+    db.accounts.updateOne({_id: "accountB"}, 
+        {$inc: {balance: 100}}, {session});
+    session.commitTransaction();
+} catch (error) {
+    session.abortTransaction();
+} finally {
+    session.endSession();
+}</code></pre>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Transaction Evolution in MongoDB</h3>
+                    <table class="comparison-table">
+                        <thead>
+                            <tr>
+                                <th>Version</th>
+                                <th>Transaction Support</th>
+                                <th>Environment</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>MongoDB 4.0</td>
+                                <td class="check">Multi-document transactions</td>
+                                <td>Replica sets only</td>
+                            </tr>
+                            <tr>
+                                <td>MongoDB 4.2</td>
+                                <td class="check">Multi-document transactions</td>
+                                <td>Sharded clusters</td>
+                            </tr>
+                            <tr>
+                                <td>MongoDB 5.0+</td>
+                                <td class="check">Enhanced performance</td>
+                                <td>All deployments</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+            </section>
+
+            <!-- ACID Properties -->
+            <section>
+                <section>
+                    <h2>ACID Properties in MongoDB</h2>
+                    <div class="acid-grid">
+                        <div class="acid-card">
+                            <h4 class="highlight-green">Atomicity</h4>
+                            <p>All operations succeed or fail together</p>
+                        </div>
+                        <div class="acid-card">
+                            <h4 class="highlight-yellow">Consistency</h4>
+                            <p>Database remains in valid state</p>
+                        </div>
+                        <div class="acid-card">
+                            <h4 class="highlight-red">Isolation</h4>
+                            <p>Concurrent transactions don't interfere</p>
+                        </div>
+                        <div class="acid-card">
+                            <h4 class="highlight-green">Durability</h4>
+                            <p>Committed changes persist</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Atomicity Example</h3>
+                    <div class="code-wrapper">
+                        <pre><code class="javascript">// E-commerce Order Processing
+const session = db.getMongo().startSession();
+session.startTransaction();
+
+try {
+    // ALL operations succeed or ALL fail
+    db.orders.insertOne({
+        _id: "order123",
+        customerId: "customer456",
+        items: [{productId: "prod789", quantity: 2}],
+        total: 199.98,
+        status: "pending"
+    }, {session});
+    
+    db.inventory.updateOne(
+        {productId: "prod789"},
+        {$inc: {quantity: -2}},
+        {session}
+    );
+    
+    db.customers.updateOne(
+        {_id: "customer456"},
+        {$push: {orderHistory: "order123"}},
+        {session}
+    );
+    
+    session.commitTransaction();
+    print("✅ Order processed successfully");
+} catch (error) {
+    session.abortTransaction();
+    print("❌ Order failed - all changes rolled back");
+}</code></pre>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Consistency Example</h3>
+                    <div class="code-wrapper">
+                        <pre><code class="javascript">// Ensuring business rules are maintained
+session.startTransaction();
+
+try {
+    // Business rule: Account balance cannot go negative
+    const account = db.accounts.findOne({_id: "acc123"}, {session});
+    
+    if (account.balance >= withdrawAmount) {
+        db.accounts.updateOne(
+            {_id: "acc123"},
+            {$inc: {balance: -withdrawAmount}},
+            {session}
+        );
+        
+        db.transactions.insertOne({
+            accountId: "acc123",
+            type: "withdrawal",
+            amount: withdrawAmount,
+            timestamp: new Date()
+        }, {session});
+        
+        session.commitTransaction();
+    } else {
+        throw new Error("Insufficient funds");
+    }
+} catch (error) {
+    session.abortTransaction();
+}</code></pre>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Isolation & Durability</h3>
+                    <div class="code-wrapper">
+                        <pre><code class="javascript">// Isolation: Snapshot reads ensure consistent view
+db.accounts.find({_id: "acc123"})
+    .readConcern("snapshot");
+
+// Durability: Write concern ensures persistence
+db.collection.insertOne(document, {
+    writeConcern: {
+        w: "majority",  // Write to majority of nodes
+        j: true         // Journal acknowledgment
+    }
+});</code></pre>
+                    </div>
+                </section>
+            </section>
+
+            <!-- Transaction Fundamentals -->
+            <section>
+                <section>
+                    <h2>Transaction Fundamentals</h2>
+                    <div class="transaction-flow">
+                        <div class="flow-box">Session<br>Created</div>
+                        <div class="flow-arrow">→</div>
+                        <div class="flow-box">Transaction<br>Started</div>
+                        <div class="flow-arrow">→</div>
+                        <div class="flow-box">Operations<br>Executed</div>
+                        <div class="flow-arrow">→</div>
+                        <div class="flow-box">Commit/Abort<br>Completed</div>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Basic Transaction Structure</h3>
+                    <div class="code-wrapper">
+                        <pre><code class="javascript">// Standard transaction pattern
+const session = db.getMongo().startSession();
+
+try {
+    session.startTransaction({
+        readConcern: {level: "snapshot"},
+        writeConcern: {w: "majority", j: true}
+    });
+    
+    // Perform operations with session
+    db.collection1.operation1({session});
+    db.collection2.operation2({session});
+    
+    // Commit if all operations succeed
+    session.commitTransaction();
+    
+} catch (error) {
+    // Rollback on any error
+    session.abortTransaction();
+    throw error;
+    
+} finally {
+    // Always clean up session
+    session.endSession();
+}</code></pre>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Transaction State Management</h3>
+                    <div class="code-wrapper">
+                        <pre><code class="javascript">// Check transaction state
+function getTransactionState(session) {
+    return {
+        inTransaction: session.inTransaction(),
+        transactionNumber: session.getTxnNumber(),
+        operationTime: session.getOperationTime()
+    };
+}
+
+// Transaction states
+const states = {
+    INACTIVE: "No active transaction",
+    STARTING: "Transaction starting",
+    IN_PROGRESS: "Transaction in progress", 
+    COMMITTING: "Transaction committing",
+    COMMITTED: "Transaction committed",
+    ABORTED: "Transaction aborted"
+};</code></pre>
+                    </div>
+                </section>
+            </section>
+
+            <!-- Single vs Multi-Document -->
+            <section>
+                <section>
+                    <h2>Single vs Multi-Document Transactions</h2>
+                </section>
+
+                <section>
+                    <h3>Single-Document Transactions</h3>
+                    <p class="highlight-green">✅ Always ACID - No explicit transaction needed</p>
+                    <div class="code-wrapper">
+                        <pre><code class="javascript">// Single document operations are automatically atomic
+db.accounts.updateOne(
+    {_id: "acc123"},
+    {
+        $inc: {balance: -100},
+        $push: {
+            transactions: {
+                type: "withdrawal",
+                amount: 100,
+                timestamp: new Date()
+            }
+        }
+    }
+);
+// This entire operation is atomic!</code></pre>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>When to Use Multi-Document Transactions</h3>
+                    <ul>
+                        <li class="fragment">Operations span <strong>multiple collections</strong></li>
+                        <li class="fragment">Operations span <strong>multiple documents</strong></li>
+                        <li class="fragment">Complex <strong>business logic</strong> requires atomicity</li>
+                        <li class="fragment"><strong>Data consistency</strong> across related entities</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h3>Multi-Document Example: User Registration</h3>
+                    <div class="code-wrapper">
+                        <pre><code class="javascript">const session = db.getMongo().startSession();
+session.startTransaction();
+
+try {
+    // Create user account
+    const userId = new ObjectId();
+    db.users.insertOne({
+        _id: userId,
+        username: "newuser",
+        email: "user@example.com",
+        createdAt: new Date(),
+        status: "active"
+    }, {session});
+    
+    // Create user profile  
+    db.profiles.insertOne({
+        userId: userId,
+        firstName: "John",
+        lastName: "Doe",
+        preferences: {theme: "dark", notifications: true}
+    }, {session});
+    
+    // Initialize user settings
+    db.settings.insertOne({
+        userId: userId,
+        privacy: "public",
+        twoFactorEnabled: false
+    }, {session});
+    
+    // Update statistics
+    db.stats.updateOne(
+        {type: "userCount"},
+        {$inc: {count: 1}},
+        {session}
+    );
+    
+    session.commitTransaction();
+} catch (error) {
+    session.abortTransaction();
+}</code></pre>
+                    </div>
+                </section>
+            </section>
+
+            <!-- Working with Sessions -->
+            <section>
+                <section>
+                    <h2>Working with Sessions</h2>
+                    <p>Sessions provide the foundation for transactions and causal consistency.</p>
+                </section>
+
+                <section>
+                    <h3>Session Configuration</h3>
+                    <div class="code-wrapper">
+                        <pre><code class="javascript">// Basic session creation
+const session = db.getMongo().startSession();
+
+// Session with configuration
+const configuredSession = db.getMongo().startSession({
+    readPreference: {mode: "primary"},
+    readConcern: {level: "majority"},
+    writeConcern: {w: "majority", j: true}
+});
+
+// Session with causal consistency
+const causalSession = db.getMongo().startSession({
+    causalConsistency: true
+});</code></pre>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Complete Transfer Function</h3>
+                    <div class="code-wrapper">
+                        <pre><code class="javascript">function transferFunds(fromAccount, toAccount, amount) {
+    const session = db.getMongo().startSession();
+    
+    try {
+        session.startTransaction({
+            readConcern: {level: "snapshot"},
+            writeConcern: {w: "majority"}
+        });
+        
+        // Check source account balance
+        const fromAccountDoc = db.accounts.findOne(
+            {_id: fromAccount}, 
+            {session}
+        );
+        
+        if (fromAccountDoc.balance < amount) {
+            throw new Error("Insufficient funds");
+        }
+        
+        // Perform transfer
+        db.accounts.updateOne(
+            {_id: fromAccount},
+            {$inc: {balance: -amount}},
+            {session}
+        );
+        
+        db.accounts.updateOne(
+            {_id: toAccount},
+            {$inc: {balance: amount}},
+            {session}
+        );
+        
+        // Log transaction
+        db.transferLog.insertOne({
+            from: fromAccount,
+            to: toAccount,
+            amount: amount,
+            timestamp: new Date(),
+            status: "completed"
+        }, {session});
+        
+        session.commitTransaction();
+        return {success: true, message: "Transfer completed"};
+        
+    } catch (error) {
+        session.abortTransaction();
+        return {success: false, error: error.message};
+        
+    } finally {
+        session.endSession();
+    }
+}</code></pre>
+                    </div>
+                </section>
+            </section>
+
+            <!-- Read and Write Concerns -->
+            <section>
+                <section>
+                    <h2>Read and Write Concerns</h2>
+                    <p>Control consistency and durability guarantees</p>
+                </section>
+
+                <section>
+                    <h3>Read Concerns in Transactions</h3>
+                    <div class="code-wrapper">
+                        <pre><code class="javascript">const readConcerns = {
+    // Snapshot isolation (default for transactions)
+    snapshot: {level: "snapshot"},
+    
+    // Read majority committed data
+    majority: {level: "majority"},
+    
+    // Local read (fastest, least consistent)
+    local: {level: "local"}
+};
+
+// Setting read concern for transaction
+session.startTransaction({
+    readConcern: {level: "snapshot"}
+});</code></pre>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Write Concerns in Transactions</h3>
+                    <div class="code-wrapper">
+                        <pre><code class="javascript">const writeConcerns = {
+    // Majority acknowledgment (recommended)
+    majority: {w: "majority", j: true},
+    
+    // Single node acknowledgment (faster, less durable)
+    single: {w: 1, j: false},
+    
+    // All nodes acknowledgment (slowest, most durable)
+    all: {w: "all", j: true}
+};
+
+// Setting write concern for transaction
+session.startTransaction({
+    writeConcern: {
+        w: "majority", 
+        j: true, 
+        wtimeout: 5000
+    }
+});</code></pre>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Causal Consistency</h3>
+                    <div class="code-wrapper">
+                        <pre><code class="javascript">// Session with causal consistency ensures 
+// read-after-write consistency
+const session = db.getMongo().startSession({
+    causalConsistency: true
+});
+
+session.startTransaction();
+
+// Write operation
+db.posts.insertOne({
+    title: "New Post",
+    authorId: "user123",
+    createdAt: new Date()
+}, {session});
+
+session.commitTransaction();
+
+// This read will see the write above due to causal consistency
+const posts = db.posts.find({authorId: "user123"}, {session});
+session.endSession();</code></pre>
+                    </div>
+                </section>
+            </section>
+
+            <!-- Transaction Syntax -->
+            <section>
+                <section>
+                    <h2>Transaction Operations</h2>
+                </section>
+
+                <section>
+                    <h3>Supported Operations</h3>
+                    <div class="comparison-table">
+                        <thead>
+                            <tr>
+                                <th>Operation Type</th>
+                                <th>Supported</th>
+                                <th>Example</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>CRUD Operations</td>
+                                <td class="check">✅ All</td>
+                                <td>insertOne, updateMany, deleteOne</td>
+                            </tr>
+                            <tr>
+                                <td>Aggregation</td>
+                                <td class="check">✅ Yes</td>
+                                <td>aggregate(), $merge, $out</td>
+                            </tr>
+                            <tr>
+                                <td>Index Operations</td>
+                                <td class="cross">❌ No</td>
+                                <td>createIndex, dropIndex</td>
+                            </tr>
+                            <tr>
+                                <td>Collection Operations</td>
+                                <td class="cross">❌ No</td>
+                                <td>createCollection, drop</td>
+                            </tr>
+                            <tr>
+                                <td>Text Search</td>
+                                <td class="cross">❌ No</td>
+                                <td>$text queries</td>
+                            </tr>
+                        </tbody>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Core Transaction Methods</h3>
+                    <div class="code-wrapper">
+                        <pre><code class="javascript">// Transaction control methods
+session.startTransaction(options)
+session.commitTransaction()
+session.abortTransaction()
+session.endSession()
+
+// Transaction state queries
+session.inTransaction()           // Returns boolean
+session.getTxnNumber()           // Returns transaction number
+session.getOperationTime()       // Returns operation timestamp
+
+// All CRUD operations support session parameter
+db.collection.insertOne(doc, {session})
+db.collection.updateMany(filter, update, {session})
+db.collection.find(filter, {session})
+db.collection.deleteOne(filter, {session})</code></pre>
+                    </div>
+                </section>
+            </section>
+
+            <!-- Performance and Limitations -->
+            <section>
+                <section>
+                    <h2>Performance & Limitations</h2>
+                </section>
+
+                <section>
+                    <h3>Transaction Limits</h3>
+                    <table class="comparison-table">
+                        <thead>
+                            <tr>
+                                <th>Limit Type</th>
+                                <th>Default Value</th>
+                                <th>Configurable</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Max Time</td>
+                                <td>60 seconds</td>
+                                <td class="check">✅ Yes</td>
+                            </tr>
+                            <tr>
+                                <td>Max Size</td>
+                                <td>16MB</td>
+                                <td class="cross">❌ No</td>
+                            </tr>
+                            <tr>
+                                <td>Max Documents</td>
+                                <td>1000 (practical)</td>
+                                <td class="warning">⚠️ Performance</td>
+                            </tr>
+                            <tr>
+                                <td>Max Collections</td>
+                                <td>100 (practical)</td>
+                                <td class="warning">⚠️ Performance</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <section>
+                    <h3>Performance Monitoring</h3>
+                    <div class="code-wrapper">
+                        <pre><code class="javascript">function analyzeTransactionPerformance() {
+    const serverStatus = db.serverStatus();
+    const txnStats = serverStatus.transactions;
+    
+    print("=== Transaction Performance Metrics ===");
+    print(`Current Open: ${txnStats.currentOpen}`);
+    print(`Current Active: ${txnStats.currentActive}`);
+    print(`Total Started: ${txnStats.totalStarted}`);
+    print(`Total Committed: ${txnStats.totalCommitted}`);
+    print(`Total Aborted: ${txnStats.totalAborted}`);
+    
+    // Calculate abort rate
+    const abortRate = txnStats.totalAborted / 
+        (txnStats.totalStarted || 1);
+    print(`Abort Rate: ${(abortRate * 100).toFixed(2)}%`);
+    
+    // Alert on high abort rate
+    if (abortRate > 0.1) {
+        print("⚠️ HIGH ABORT RATE - Check for conflicts");
+    }
+}
+
+analyzeTransactionPerformance();</code></pre>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Optimization Best Practices</h3>
+                    <ul>
+                        <li class="fragment"><strong>Keep transactions short</strong> - Reduce lock time</li>
+                        <li class="fragment"><strong>Batch operations</strong> - Use bulkWrite when possible</li>
+                        <li class="fragment"><strong>Consistent ordering</strong> - Prevent deadlocks</li>
+                        <li class="fragment"><strong>Appropriate timeouts</strong> - Don't let transactions hang</li>
+                        <li class="fragment"><strong>Monitor metrics</strong> - Track abort rates</li>
+                    </ul>
+                </section>
+            </section>
+
+            <!-- Error Handling -->
+            <section>
+                <section>
+                    <h2>Error Handling & Retry Logic</h2>
+                </section>
+
+                <section>
+                    <h3>Transaction Error Types</h3>
+                    <div class="code-wrapper">
+                        <pre><code class="javascript">// Transient errors (can be retried)
+const TRANSIENT_ERRORS = [
+    "TransientTransactionError",
+    "UnknownTransactionCommitResult"
+];
+
+// Permanent errors (should not be retried)
+const PERMANENT_ERRORS = [
+    "InvalidTransaction", 
+    "TransactionTooOld",
+    "TransactionSizeLimitExceeded"
+];
+
+function isRetryableError(error) {
+    return error.hasErrorLabel("TransientTransactionError") ||
+           error.hasErrorLabel("UnknownTransactionCommitResult");
+}</code></pre>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Robust Retry Pattern</h3>
+                    <div class="code-wrapper">
+                        <pre><code class="javascript">function robustTransactionWithRetry(operation, maxRetries = 3) {
+    let attempt = 0;
+    
+    while (attempt < maxRetries) {
+        const session = db.getMongo().startSession();
+        attempt++;
+        
+        try {
+            session.startTransaction({
+                readConcern: {level: "majority"},
+                writeConcern: {w: "majority", j: true},
+                maxTimeMS: 30000
+            });
+            
+            const result = operation(session);
+            
+            // Commit with retry logic
+            while (true) {
+                try {
+                    session.commitTransaction();
+                    session.endSession();
+                    return result;
+                } catch (commitError) {
+                    if (commitError.hasErrorLabel("UnknownTransactionCommitResult")) {
+                        continue; // Retry commit
+                    } else {
+                        throw commitError;
+                    }
+                }
+            }
+            
+        } catch (error) {
+            session.abortTransaction();
+            session.endSession();
+            
+            if (isRetryableError(error) && attempt < maxRetries) {
+                const backoffMs = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
+                sleep(backoffMs);
+                continue;
+            } else {
+                throw new Error(`Transaction failed after ${attempt} attempts`);
+            }
+        }
+    }
+}</code></pre>
+                    </div>
+                </section>
+            </section>
+
+            <!-- Real-World Use Cases -->
+            <section>
+                <section>
+                    <h2>Real-World Use Cases</h2>
+                </section>
+
+                <section>
+                    <h3>E-commerce Order Processing</h3>
+                    <div style="font-size: 0.8em;">
+                        <ol>
+                            <li><strong>Validate customer</strong> and cart items</li>
+                            <li><strong>Check inventory</strong> for all products</li>
+                            <li><strong>Reserve inventory</strong> atomically</li>
+                            <li><strong>Process payment</strong> (external service)</li>
+                            <li><strong>Create order</strong> document</li>
+                            <li><strong>Update customer</strong> order history</li>
+                            <li><strong>Clear shopping cart</strong></li>
+                            <li><strong>Create audit trail</strong></li>
+                        </ol>
+                        <p class="fragment highlight-green">
+                            <strong>Critical:</strong> If any step fails, entire order must be rolled back to maintain data integrity.
+                        </p>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Banking System</h3>
+                    <div style="font-size: 0.8em;">
+                        <ol>
+                            <li><strong>Validate accounts</strong> (active, exists)</li>
+                            <li><strong>Check daily limits</strong> and transaction history</li>
+                            <li><strong>Verify sufficient balance</strong> (including overdraft)</li>
+                            <li><strong>Calculate fees</strong> (wire, international, overdraft)</li>
+                            <li><strong>Debit source account</strong></li>
+                            <li><strong>Credit destination account</strong></li>
+                            <li><strong>Record transaction</strong> details</li>
+                            <li><strong>Update transaction history</strong></li>
+                            <li><strong>Create compliance audit log</strong></li>
+                        </ol>
+                        <p class="fragment highlight-red">
+                            <strong>Zero tolerance:</strong> Money must never be lost or created due to system errors.
+                        </p>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Social Media Platform</h3>
+                    <div style="font-size: 0.8em;">
+                        <ol>
+                            <li><strong>Validate user</strong> and posting limits</li>
+                            <li><strong>Process media files</strong> and metadata</li>
+                            <li><strong>Create post</strong> document</li>
+                            <li><strong>Update user stats</strong> (post count, activity)</li>
+                            <li><strong>Add to followers' feeds</strong></li>
+                            <li><strong>Update trending hashtags</strong></li>
+                            <li><strong>Send notifications</strong> (async)</li>
+                        </ol>
+                        <p class="fragment highlight-yellow">
+                            <strong>Consistency goal:</strong> User's posts, stats, and feeds must stay synchronized.
+                        </p>
+                    </div>
+                </section>
+            </section>
+
+            <!-- Best Practices -->
+            <section>
+                <section>
+                    <h2>Transaction Best Practices</h2>
+                </section>
+
+                <section>
+                    <h3>Design Principles</h3>
+                    <div class="acid-grid">
+                        <div class="acid-card">
+                            <h4>Keep It Short</h4>
+                            <p>Minimize transaction duration to reduce lock contention</p>
+                        </div>
+                        <div class="acid-card">
+                            <h4>Single Purpose</h4>
+                            <p>One transaction should accomplish one business goal</p>
+                        </div>
+                        <div class="acid-card">
+                            <h4>Consistent Ordering</h4>
+                            <p>Always access documents in the same order to prevent deadlocks</p>
+                        </div>
+                        <div class="acid-card">
+                            <h4>Proper Cleanup</h4>
+                            <p>Always end sessions in finally blocks</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Schema Design for Transactions</h3>
+                    <div class="code-wrapper">
+                        <pre><code class="javascript">// ✅ GOOD: Embed related data updated together
+const orderSchema = {
+    _id: ObjectId(),
+    customerId: ObjectId(),
+    status: "pending",          // Updated atomically
+    items: [                    // Embedded - updated together
+        {
+            productId: ObjectId(),
+            quantity: 2,
+            price: 29.99,
+            status: "available"
+        }
+    ],
+    totals: {                   // Calculated together
+        subtotal: 59.98,
+        tax: 4.80,
+        total: 64.78
+    },
+    audit: {                    // Tracking fields together
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        version: 1
+    }
+};</code></pre>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Performance Optimization</h3>
+                    <div class="code-wrapper">
+                        <pre><code class="javascript">// Use appropriate read/write concerns based on priority
+const getOptimalConcerns = (priority) => {
+    switch (priority) {
+        case "performance":
+            return {
+                readConcern: {level: "local"},
+                writeConcern: {w: 1, j: false}
+            };
+        case "consistency":
+            return {
+                readConcern: {level: "majority"},
+                writeConcern: {w: "majority", j: true}
+            };
+        case "durability":
+            return {
+                readConcern: {level: "snapshot"},
+                writeConcern: {w: "all", j: true}
+            };
+    }
+};
+
+// Batch operations when possible
+const bulkOps = updates.map(update => ({
+    updateOne: {
+        filter: update.filter,
+        update: update.update
+    }
+}));
+
+db.collection.bulkWrite(bulkOps, {session});</code></pre>
+                    </div>
+                </section>
+            </section>
+
+            <!-- Hands-On Exercise -->
+            <section>
+                <section>
+                    <h2>Hands-On Exercise</h2>
+                    <h3>Build a Bank Transfer System</h3>
+                </section>
+
+                <section>
+                    <h3>Exercise: Complete the Transfer Function</h3>
+                    <div class="code-wrapper">
+                        <pre><code class="javascript">function bankTransfer(fromAccountId, toAccountId, amount) {
+    // TODO: Create session
+    const session = /* YOUR CODE HERE */;
+    
+    try {
+        // TODO: Start transaction with appropriate concerns
+        session.startTransaction(/* YOUR CODE HERE */);
+        
+        // TODO: Find and validate source account
+        const sourceAccount = /* YOUR CODE HERE */;
+        
+        // TODO: Find and validate destination account  
+        const destAccount = /* YOUR CODE HERE */;
+        
+        // TODO: Check if source has sufficient balance
+        if (/* YOUR CODE HERE */) {
+            throw new Error("Insufficient funds");
+        }
+        
+        // TODO: Update source account (subtract amount)
+        /* YOUR CODE HERE */
+        
+        // TODO: Update destination account (add amount)
+        /* YOUR CODE HERE */
+        
+        // TODO: Log the transaction
+        /* YOUR CODE HERE */
+        
+        // TODO: Commit transaction
+        /* YOUR CODE HERE */
+        
+        return {success: true, message: "Transfer completed"};
+        
+    } catch (error) {
+        // TODO: Abort transaction and handle error
+        /* YOUR CODE HERE */
+        
+    } finally {
+        // TODO: Clean up session
+        /* YOUR CODE HERE */
+    }
+}</code></pre>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Exercise Setup</h3>
+                    <div class="code-wrapper">
+                        <pre><code class="javascript">// Setup test data
+db.accounts.insertMany([
+    {_id: "acc1", owner: "Alice", balance: 1000},
+    {_id: "acc2", owner: "Bob", balance: 500}
+]);
+
+// Test the function
+const result = bankTransfer("acc1", "acc2", 100);
+printjson(result);
+
+// Verify the results
+db.accounts.find();
+db.transferLog.find();</code></pre>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Challenge Extensions</h3>
+                    <ul>
+                        <li class="fragment"><strong>Add daily limits</strong> - Check transaction history</li>
+                        <li class="fragment"><strong>Implement fees</strong> - Different rates for transfer types</li>
+                        <li class="fragment"><strong>Add retry logic</strong> - Handle transient errors</li>
+                        <li class="fragment"><strong>Create audit trail</strong> - Compliance logging</li>
+                        <li class="fragment"><strong>Add overdraft protection</strong> - Business rules</li>
+                    </ul>
+                </section>
+            </section>
+
+            <!-- Summary -->
+            <section>
+                <section>
+                    <h2>Key Takeaways</h2>
+                </section>
+
+                <section>
+                    <h3>When to Use Transactions</h3>
+                    <div class="acid-grid">
+                        <div class="acid-card">
+                            <h4 class="highlight-green">✅ Use Transactions For</h4>
+                            <ul style="font-size: 0.8em;">
+                                <li>Multi-document operations</li>
+                                <li>Financial operations</li>
+                                <li>Inventory management</li>
+                                <li>User registration workflows</li>
+                                <li>Complex business logic</li>
+                            </ul>
+                        </div>
+                        <div class="acid-card">
+                            <h4 class="highlight-red">❌ Avoid Transactions For</h4>
+                            <ul style="font-size: 0.8em;">
+                                <li>Single document operations</li>
+                                <li>Read-only operations</li>
+                                <li>Long-running processes</li>
+                                <li>Eventually consistent scenarios</li>
+                                <li>High-frequency simple updates</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Production Checklist</h3>
+                    <div style="font-size: 0.9em;">
+                        <ul>
+                            <li class="fragment">✅ <strong>Monitor transaction abort rates</strong> (&lt; 10%)</li>
+                            <li class="fragment">✅ <strong>Set appropriate timeouts</strong> (10-30 seconds)</li>
+                            <li class="fragment">✅ <strong>Implement retry logic</strong> for transient errors</li>
+                            <li class="fragment">✅ <strong>Use connection pooling</strong> efficiently</li>
+                            <li class="fragment">✅ <strong>Design schemas</strong> to minimize transaction scope</li>
+                            <li class="fragment">✅ <strong>Test failure scenarios</strong> thoroughly</li>
+                            <li class="fragment">✅ <strong>Plan disaster recovery</strong> procedures</li>
+                            <li class="fragment">✅ <strong>Monitor performance metrics</strong> continuously</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Next Steps</h3>
+                    <div style="font-size: 0.9em;">
+                        <ol>
+                            <li class="fragment"><strong>Practice</strong> with the provided exercises</li>
+                            <li class="fragment"><strong>Implement transactions</strong> in your applications</li>
+                            <li class="fragment"><strong>Monitor performance</strong> in production</li>
+                            <li class="fragment"><strong>Study advanced patterns</strong> like saga transactions</li>
+                            <li class="fragment"><strong>Explore distributed</strong> transaction patterns</li>
+                        </ol>
+                        <div class="fragment" style="margin-top: 30px; text-align: center;">
+                            <p><strong>Remember:</strong> Transactions are powerful tools - use them wisely!</p>
+                        </div>
+                    </div>
+                </section>
+            </section>
+
+            <!-- Questions -->
+            <section data-background-gradient="linear-gradient(45deg, #1a202c, #2d3748)">
+                <h2>Questions & Discussion</h2>
+                <div style="text-align: center; margin-top: 50px;">
+                    <p style="font-size: 1.2em;">What transaction challenges have you encountered?</p>
+                    <p style="font-size: 1.2em;">How would you implement transactions in your use case?</p>
+                </div>
+                <div style="text-align: center; margin-top: 80px;">
+                    <p><strong>Thank you!</strong></p>
+                    <p><small>MongoDB Transactions - Building Reliable Applications</small></p>
+                </div>
+            </section>
+
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/highlight/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/notes/notes.min.js"></script>
+    
+    <script>
+        Reveal.initialize({
+            hash: true,
+            transition: 'slide',
+            transitionSpeed: 'default',
+            backgroundTransition: 'fade',
+            
+            plugins: [RevealHighlight, RevealNotes],
+            
+            highlight: {
+                highlightOnLoad: true,
+                escapeHTML: false
+            },
+            
+            keyboard: {
+                40: 'next', // Down arrow
+                38: 'prev', // Up arrow
+                37: 'prev', // Left arrow  
+                39: 'next'  // Right arrow
+            }
+        });
+        
+        // Custom animations
+        Reveal.on('slidechanged', event => {
+            // Add any custom slide change animations here
+        });
+    </script>
+</body>
+</html>
