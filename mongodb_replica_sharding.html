@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MongoDB: Replica Sets and Sharding</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/theme/white.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.6.0/styles/default.min.css">
+    <style>
+        .reveal h1, .reveal h2, .reveal h3 { color: #00684A; }
+        .reveal .slides section { text-align: left; }
+        .reveal .slides section h1, .reveal .slides section h2 { text-align: center; }
+        .reveal pre { font-size: 0.5em; }
+        .reveal code { color: #d63384; }
+        .diagram { background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .highlight { background: #fff3cd; padding: 10px; border-left: 4px solid #ffc107; }
+        .two-column { display: flex; gap: 40px; }
+        .column { flex: 1; }
+        .pro { color: #198754; }
+        .con { color: #dc3545; }
+        .architecture { text-align: center; font-family: monospace; line-height: 1.8; }
+    </style>
+</head>
+<body>
+    <div class="reveal">
+        <div class="slides">
+            
+            <!-- Title Slide -->
+            <section>
+                <h1>MongoDB</h1>
+                <h2>Replica Sets and Sharding</h2>
+                <p><em>High Availability and Horizontal Scaling</em></p>
+                <div style="margin-top: 40px; text-align: center;">
+                    <small>Comprehensive Guide to MongoDB Distributed Architecture</small>
+                </div>
+            </section>
+
+            <!-- Table of Contents -->
+            <section>
+                <h2>Chapter Overview</h2>
+                <ul>
+                    <li><strong>Part I: Replica Sets</strong>
+                        <ul>
+                            <li>Introduction and Architecture</li>
+                            <li>Setup and Configuration</li>
+                            <li>Read Preferences and Write Concerns</li>
+                        </ul>
+                    </li>
+                    <li><strong>Part II: Sharding</strong>
+                        <ul>
+                            <li>Sharding Architecture</li>
+                            <li>Shard Keys and Distribution</li>
+                            <li>Configuration and Management</li>
+                        </ul>
+                    </li>
+                    <li><strong>Part III: Best Practices</strong></li>
+                </ul>
+            </section>
+
+            <!-- PART I: REPLICA SETS -->
+            <section>
+                <section>
+                    <h1>Part I</h1>
+                    <h2>Replica Sets</h2>
+                    <p><em>High Availability and Data Redundancy</em></p>
+                </section>
+
+                <section>
+                    <h2>What is a Replica Set?</h2>
+                    <div class="highlight">
+                        <p><strong>Definition:</strong> A replica set is a group of MongoDB instances that maintain the same data set, providing redundancy and high availability.</p>
+                    </div>
+                    <ul>
+                        <li><strong>Primary Node:</strong> Receives all write operations</li>
+                        <li><strong>Secondary Nodes:</strong> Replicate data from primary</li>
+                        <li><strong>Arbiter (optional):</strong> Participates in elections but holds no data</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h2>Replica Set Architecture</h2>
+                    <div class="architecture diagram">
+                        <pre>
+┌─────────────────────────────────────────────────┐
+│                Client Application                │
+└─────────────┬───────────────────────────────────┘
+              │ Writes to Primary
+              │ Reads from Primary/Secondary
+              ▼
+┌─────────────────────────────────────────────────┐
+│              MongoDB Driver                     │
+└─────────────┬───────────────────────────────────┘
+              │
+              ▼
+┌─────────────────────────────────────────────────┐
+│                                                 │
+│  ┌─────────┐    ┌─────────┐    ┌─────────┐     │
+│  │ PRIMARY │◄──►│SECONDARY│◄──►│SECONDARY│     │
+│  │ Node A  │    │ Node B  │    │ Node C  │     │
+│  │  :27017 │    │  :27018 │    │  :27019 │     │
+│  └─────────┘    └─────────┘    └─────────┘     │
+│       ▲              ▲              ▲          │
+│       └──────────────┼──────────────┘          │
+│                   Heartbeats                   │
+│                                                 │
+└─────────────────────────────────────────────────┘
+                        </pre>
+                    </div>
+                </section>
+
+                <section>
+                    <h2>Benefits of Replica Sets</h2>
+                    <div class="two-column">
+                        <div class="column">
+                            <h3 class="pro">✓ Advantages</h3>
+                            <ul>
+                                <li><strong>High Availability:</strong> Automatic failover</li>
+                                <li><strong>Data Redundancy:</strong> Multiple copies</li>
+                                <li><strong>Read Scaling:</strong> Distribute read load</li>
+                                <li><strong>Backup Support:</strong> No downtime backups</li>
+                                <li><strong>Disaster Recovery:</strong> Geographic distribution</li>
+                            </ul>
+                        </div>
+                        <div class="column">
+                            <h3>Use Cases</h3>
+                            <ul>
+                                <li>Production applications requiring 99.9%+ uptime</li>
+                                <li>Applications with read-heavy workloads</li>
+                                <li>Multi-region deployments</li>
+                                <li>Applications requiring zero-downtime maintenance</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h2>Setting Up a Replica Set</h2>
+                    <h3>Step 1: Start MongoDB Instances</h3>
+                    <pre><code class="bash"># Start three MongoDB instances
+mongod --replSet myReplicaSet --port 27017 --dbpath /data/rs1
+mongod --replSet myReplicaSet --port 27018 --dbpath /data/rs2
+mongod --replSet myReplicaSet --port 27019 --dbpath /data/rs3</code></pre>
+
+                    <h3>Step 2: Initiate Replica Set</h3>
+                    <pre><code class="javascript">// Connect to one instance and initiate
+mongosh --port 27017
+
+rs.initiate({
+  _id: "myReplicaSet",
+  members: [
+    { _id: 0, host: "localhost:27017" },
+    { _id: 1, host: "localhost:27018" },
+    { _id: 2, host: "localhost:27019" }
+  ]
+})</code></pre>
+                </section>
+
+                <section>
+                    <h2>Replica Set Configuration</h2>
+                    <pre><code class="javascript">// View current configuration
+rs.conf()
+
+// Add a new member
+rs.add("localhost:27020")
+
+// Remove a member
+rs.remove("localhost:27020")
+
+// Set member priority (0-1000, higher = more likely to be primary)
+cfg = rs.conf()
+cfg.members[1].priority = 0.5
+rs.reconfig(cfg)
+
+// Set member as hidden (won't receive client reads)
+cfg.members[2].hidden = true
+cfg.members[2].priority = 0
+rs.reconfig(cfg)</code></pre>
+                </section>
+
+                <section>
+                    <h2>Member Types and Roles</h2>
+                    <div class="two-column">
+                        <div class="column">
+                            <h3>Standard Members</h3>
+                            <ul>
+                                <li><strong>Primary:</strong> Handles writes, can handle reads</li>
+                                <li><strong>Secondary:</strong> Replicates data, can handle reads</li>
+                                <li><strong>Priority 0:</strong> Cannot become primary</li>
+                            </ul>
+                        </div>
+                        <div class="column">
+                            <h3>Special Members</h3>
+                            <ul>
+                                <li><strong>Arbiter:</strong> Votes only, no data</li>
+                                <li><strong>Hidden:</strong> Not visible to clients</li>
+                                <li><strong>Delayed:</strong> Maintains delayed copy</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <pre><code class="javascript">// Add an arbiter
+rs.addArb("localhost:27021")
+
+// Configure delayed member (1 hour delay)
+cfg = rs.conf()
+cfg.members[2].slaveDelay = 3600
+cfg.members[2].priority = 0
+cfg.members[2].hidden = true
+rs.reconfig(cfg)</code></pre>
+                </section>
+
+                <section>
+                    <h2>Read Preferences</h2>
+                    <div class="highlight">
+                        <p><strong>Read Preference:</strong> Determines which replica set members receive read operations.</p>
+                    </div>
+                    <ul>
+                        <li><strong>primary:</strong> All reads from primary (default)</li>
+                        <li><strong>primaryPreferred:</strong> Primary if available, secondary otherwise</li>
+                        <li><strong>secondary:</strong> Only from secondary members</li>
+                        <li><strong>secondaryPreferred:</strong> Secondary if available, primary otherwise</li>
+                        <li><strong>nearest:</strong> Lowest network latency</li>
+                    </ul>
+                    <pre><code class="javascript">// Set read preference
+db.collection.find().readPref("secondary")
+
+// With tag sets
+db.collection.find().readPref("secondary", [{"region": "us-east"}])</code></pre>
+                </section>
+
+                <section>
+                    <h2>Write Concerns</h2>
+                    <div class="highlight">
+                        <p><strong>Write Concern:</strong> Describes the acknowledgment of write operations to MongoDB.</p>
+                    </div>
+                    <div class="two-column">
+                        <div class="column">
+                            <h3>Write Concern Levels</h3>
+                            <ul>
+                                <li><code>w: 1</code> - Acknowledged by primary</li>
+                                <li><code>w: 2</code> - Acknowledged by primary + 1 secondary</li>
+                                <li><code>w: "majority"</code> - Majority of members</li>
+                                <li><code>j: true</code> - Written to journal</li>
+                            </ul>
+                        </div>
+                        <div class="column">
+                            <pre><code class="javascript">// Examples
+db.users.insertOne(
+  { name: "Alice" },
+  { writeConcern: { w: "majority", j: true } }
+)
+
+// With timeout
+db.users.insertOne(
+  { name: "Bob" },
+  { 
+    writeConcern: { 
+      w: "majority", 
+      wtimeout: 5000 
+    } 
+  }
+)</code></pre>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h2>Monitoring Replica Sets</h2>
+                    <pre><code class="javascript">// Check replica set status
+rs.status()
+
+// Check replication lag
+rs.printSlaveReplicationInfo()
+
+// Check oplog size and utilization
+db.oplog.rs.stats()
+
+// Monitor replication
+while(true) {
+  print("=== Replica Set Status ===")
+  printjson(rs.status().members.map(m => ({
+    name: m.name,
+    state: m.stateStr,
+    health: m.health,
+    lag: m.optimeDate ? 
+      (new Date() - m.optimeDate)/1000 + "s" : "unknown"
+  })))
+  sleep(5000)
+}</code></pre>
+                </section>
+            </section>
+
+            <!-- PART II: SHARDING -->
+            <section>
+                <section>
+                    <h1>Part II</h1>
+                    <h2>Sharding</h2>
+                    <p><em>Horizontal Scaling and Data Distribution</em></p>
+                </section>
+
+                <section>
+                    <h2>What is Sharding?</h2>
+                    <div class="highlight">
+                        <p><strong>Definition:</strong> Sharding is a method for distributing data across multiple machines to support deployments with very large data sets and high throughput operations.</p>
+                    </div>
+                    <ul>
+                        <li><strong>Horizontal Scaling:</strong> Add more machines to handle growth</li>
+                        <li><strong>Data Distribution:</strong> Split collections across multiple shards</li>
+                        <li><strong>Transparent to Applications:</strong> Appears as single database</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h2>Sharded Cluster Architecture</h2>
+                    <div class="architecture diagram">
+                        <pre>
+┌─────────────────────────────────────────────────┐
+│                Client Application                │
+└─────────────┬───────────────────────────────────┘
+              │
+              ▼
+┌─────────────────────────────────────────────────┐
+│                   mongos                        │
+│              (Query Router)                     │
+│    ┌─────────┐  ┌─────────┐  ┌─────────┐       │
+│    │ mongos1 │  │ mongos2 │  │ mongos3 │       │
+│    └─────────┘  └─────────┘  └─────────┘       │
+└─────────────┬───────────────────────────────────┘
+              │
+              ▼
+┌─────────────────────────────────────────────────┐
+│              Config Servers                     │
+│               (Metadata)                        │
+│  ┌─────────┐ ┌─────────┐ ┌─────────┐           │
+│  │Config RS│ │Config RS│ │Config RS│           │
+│  │ Svr 1   │ │ Svr 2   │ │ Svr 3   │           │
+│  └─────────┘ └─────────┘ └─────────┘           │
+└─────────────┬───────────────────────────────────┘
+              │
+              ▼
+┌─────────────────────────────────────────────────┐
+│                  Shards                         │
+│ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ │
+│ │   Shard A   │ │   Shard B   │ │   Shard C   │ │
+│ │ ┌─────────┐ │ │ ┌─────────┐ │ │ ┌─────────┐ │ │
+│ │ │ Primary │ │ │ │ Primary │ │ │ │ Primary │ │ │
+│ │ └─────────┘ │ │ └─────────┘ │ │ └─────────┘ │ │
+│ │ ┌─────────┐ │ │ ┌─────────┐ │ │ ┌─────────┐ │ │
+│ │ │Secondary│ │ │ │Secondary│ │ │ │Secondary│ │ │
+│ │ └─────────┘ │ │ └─────────┘ │ │ └─────────┘ │ │
+│ └─────────────┘ └─────────────┘ └─────────────┘ │
+└─────────────────────────────────────────────────┘
+                        </pre>
+                    </div>
+                </section>
+
+                <section>
+                    <h2>Sharding Components</h2>
+                    <div class="two-column">
+                        <div class="column">
+                            <h3>mongos (Query Router)</h3>
+                            <ul>
+                                <li>Routes client requests</li>
+                                <li>Merges results from shards</li>
+                                <li>Handles query optimization</li>
+                            </ul>
+                            
+                            <h3>Config Servers</h3>
+                            <ul>
+                                <li>Store cluster metadata</li>
+                                <li>Track chunk locations</li>
+                                <li>Maintain shard topology</li>
+                            </ul>
+                        </div>
+                        <div class="column">
+                            <h3>Shards</h3>
+                            <ul>
+                                <li>Store subset of data</li>
+                                <li>Can be replica sets</li>
+                                <li>Handle shard-specific operations</li>
+                            </ul>
+                            
+                            <h3>Chunks</h3>
+                            <ul>
+                                <li>Contiguous ranges of data</li>
+                                <li>Default size: 128MB</li>
+                                <li>Unit of migration</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h2>Shard Keys</h2>
+                    <div class="highlight">
+                        <p><strong>Shard Key:</strong> The field(s) used to distribute documents across shards.</p>
+                    </div>
+                    <h3>Good Shard Key Characteristics</h3>
+                    <ul>
+                        <li><strong>High Cardinality:</strong> Many distinct values</li>
+                        <li><strong>Low Frequency:</strong> No single value appears too often</li>
+                        <li><strong>Non-Monotonic:</strong> Avoids hotspots</li>
+                        <li><strong>Query-Friendly:</strong> Aligns with query patterns</li>
+                    </ul>
+                    
+                    <div class="two-column">
+                        <div class="column">
+                            <h4 class="pro">✓ Good Examples</h4>
+                            <ul>
+                                <li><code>{ userId: 1 }</code></li>
+                                <li><code>{ category: 1, productId: 1 }</code></li>
+                                <li><code>{ region: 1, timestamp: 1 }</code></li>
+                            </ul>
+                        </div>
+                        <div class="column">
+                            <h4 class="con">✗ Poor Examples</h4>
+                            <ul>
+                                <li><code>{ _id: 1 }</code> (ObjectId)</li>
+                                <li><code>{ timestamp: 1 }</code></li>
+                                <li><code>{ status: 1 }</code> (low cardinality)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h2>Setting Up Sharding</h2>
+                    <h3>Step 1: Start Config Servers</h3>
+                    <pre><code class="bash"># Start config server replica set
+mongod --configsvr --replSet configReplSet --port 27019 --dbpath /data/configdb1
+mongod --configsvr --replSet configReplSet --port 27020 --dbpath /data/configdb2
+mongod --configsvr --replSet configReplSet --port 27021 --dbpath /data/configdb3
+
+# Initialize config replica set
+mongosh --port 27019
+rs.initiate({
+  _id: "configReplSet",
+  configsvr: true,
+  members: [
+    { _id: 0, host: "localhost:27019" },
+    { _id: 1, host: "localhost:27020" },
+    { _id: 2, host: "localhost:27021" }
+  ]
+})</code></pre>
+                </section>
+
+                <section>
+                    <h2>Setting Up Sharding (continued)</h2>
+                    <h3>Step 2: Start Shard Replica Sets</h3>
+                    <pre><code class="bash"># Shard 1
+mongod --shardsvr --replSet shard1 --port 27001 --dbpath /data/shard1a
+mongod --shardsvr --replSet shard1 --port 27002 --dbpath /data/shard1b
+
+# Shard 2  
+mongod --shardsvr --replSet shard2 --port 27003 --dbpath /data/shard2a
+mongod --shardsvr --replSet shard2 --port 27004 --dbpath /data/shard2b</code></pre>
+
+                    <h3>Step 3: Start mongos</h3>
+                    <pre><code class="bash"># Start query router
+mongos --configdb configReplSet/localhost:27019,localhost:27020,localhost:27021 --port 27017</code></pre>
+                </section>
+
+                <section>
+                    <h2>Configuring Shards</h2>
+                    <pre><code class="javascript">// Connect to mongos
+mongosh --port 27017
+
+// Add shards to cluster
+sh.addShard("shard1/localhost:27001,localhost:27002")
+sh.addShard("shard2/localhost:27003,localhost:27004")
+
+// Check cluster status
+sh.status()
+
+// Enable sharding on database
+sh.enableSharding("ecommerce")
+
+// Shard a collection
+sh.shardCollection("ecommerce.products", { "category": 1, "productId": 1 })
+
+// Check sharding status
+db.products.getShardDistribution()</code></pre>
+                </section>
+
+                <section>
+                    <h2>Chunk Management</h2>
+                    <div class="two-column">
+                        <div class="column">
+                            <h3>Automatic Balancing</h3>
+                            <ul>
+                                <li>MongoDB automatically moves chunks</li>
+                                <li>Maintains even distribution</li>
+                                <li>Runs in background</li>
+                            </ul>
+                            <pre><code class="javascript">// Check balancer status
+sh.getBalancerState()
+
+// Enable/disable balancer
+sh.startBalancer()
+sh.stopBalancer()</code></pre>
+                        </div>
+                        <div class="column">
+                            <h3>Manual Chunk Operations</h3>
+                            <pre><code class="javascript">// Split chunk manually
+sh.splitAt("ecommerce.products", 
+  { "category": "electronics", "productId": 1000 })
+
+// Move chunk
+sh.moveChunk("ecommerce.products",
+  { "category": "electronics" },
+  "shard2")
+
+// View chunks
+db.chunks.find({"ns": "ecommerce.products"})</code></pre>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h2>Query Routing</h2>
+                    <div class="two-column">
+                        <div class="column">
+                            <h3>Targeted Queries</h3>
+                            <p>Include shard key in query</p>
+                            <pre><code class="javascript">// Targeted to specific shard
+db.products.find({
+  "category": "electronics",
+  "productId": 12345
+})
+
+// Range query on shard key
+db.products.find({
+  "category": "electronics",
+  "productId": { $gte: 1000, $lt: 2000 }
+})</code></pre>
+                        </div>
+                        <div class="column">
+                            <h3>Broadcast Queries</h3>
+                            <p>Query all shards</p>
+                            <pre><code class="javascript">// Broadcast to all shards
+db.products.find({
+  "name": /laptop/i
+})
+
+// Aggregation across shards
+db.products.aggregate([
+  { $match: { "price": { $gte: 100 } } },
+  { $group: { _id: "$category", total: { $sum: "$price" } } }
+])</code></pre>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h2>Monitoring Sharded Clusters</h2>
+                    <pre><code class="javascript">// Comprehensive cluster status
+sh.status()
+
+// Database sharding info
+db.stats()
+
+// Collection sharding statistics
+db.products.getShardDistribution()
+
+// Find unsharded collections
+db.runCommand("listCollections").cursor.firstBatch.filter(
+  c => !c.options.hasOwnProperty("sharded")
+)
+
+// Monitor chunk distribution
+use config
+db.chunks.aggregate([
+  { $group: { _id: "$shard", count: { $sum: 1 } } },
+  { $sort: { count: -1 } }
+])</code></pre>
+                </section>
+
+                <section>
+                    <h2>Sharding Strategies</h2>
+                    <div class="two-column">
+                        <div class="column">
+                            <h3>Range-based Sharding</h3>
+                            <ul>
+                                <li>Default strategy</li>
+                                <li>Documents grouped by shard key ranges</li>
+                                <li>Good for range queries</li>
+                                <li>Risk of hotspots</li>
+                            </ul>
+                        </div>
+                        <div class="column">
+                            <h3>Hashed Sharding</h3>
+                            <ul>
+                                <li>Uses hash of shard key</li>
+                                <li>Even distribution</li>
+                                <li>No range query benefits</li>
+                                <li>Prevents hotspots</li>
+                            </ul>
+                            <pre><code class="javascript">// Enable hashed sharding
+sh.shardCollection("mydb.users", 
+  { "userId": "hashed" })</code></pre>
+                        </div>
+                    </div>
+                </section>
+            </section>
+
+            <!-- PART III: BEST PRACTICES -->
+            <section>
+                <section>
+                    <h1>Part III</h1>
+                    <h2>Best Practices</h2>
+                    <p><em>Production Deployment Guidelines</em></p>
+                </section>
+
+                <section>
+                    <h2>Replica Set Best Practices</h2>
+                    <div class="two-column">
+                        <div class="column">
+                            <h3>Architecture</h3>
+                            <ul>
+                                <li>Use odd number of voting members (3, 5, 7)</li>
+                                <li>Deploy across availability zones</li>
+                                <li>Use dedicated hardware for production</li>
+                                <li>Configure appropriate write concerns</li>
+                            </ul>
+                            
+                            <h3>Monitoring</h3>
+                            <ul>
+                                <li>Monitor replication lag</li>
+                                <li>Set up alerts for failover events</li>
+                                <li>Track oplog utilization</li>
+                            </ul>
+                        </div>
+                        <div class="column">
+                            <h3>Performance</h3>
+                            <ul>
+                                <li>Size oplog appropriately</li>
+                                <li>Use read preferences for scaling</li>
+                                <li>Consider hidden members for analytics</li>
+                                <li>Implement proper indexing strategy</li>
+                            </ul>
+                            
+                            <h3>Security</h3>
+                            <ul>
+                                <li>Enable authentication</li>
+                                <li>Use TLS for inter-node communication</li>
+                                <li>Implement proper access controls</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h2>Sharding Best Practices</h2>
+                    <div class="two-column">
+                        <div class="column">
+                            <h3>Shard Key Selection</h3>
+                            <ul>
+                                <li>Choose based on query patterns</li>
+                                <li>Ensure high cardinality</li>
+                                <li>Avoid monotonically increasing values</li>
+                                <li>Consider compound shard keys</li>
+                            </ul>
+                            
+                            <h3>Cluster Sizing</h3>
+                            <ul>
+                                <li>Start with fewer, larger shards</li>
+                                <li>Plan for growth</li>
+                                <li>Use replica sets for each shard</li>
+                            </ul>
+                        </div>
+                        <div class="column">
+                            <h3>Operations</h3>
+                            <ul>
+                                <li>Monitor chunk distribution</li>
+                                <li>Schedule maintenance windows for balancing</li>
+                                <li>Use targeted queries when possible</li>
+                                <li>Implement proper connection pooling</li>
+                            </ul>
+                            
+                            <h3>Performance</h3>
+                            <ul>
+                                <li>Pre-split chunks for bulk loading</li>
+                                <li>Use appropriate chunk size</li>
+                                <li>Monitor query performance</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h2>Common Pitfalls and Solutions</h2>
+                    <div class="highlight">
+                        <h3>Replica Sets</h3>
+                        <ul>
+                            <li><strong>Issue:</strong> Split-brain scenarios
+                                <br><em>Solution:</em> Use odd number of voting members</li>
+                            <li><strong>Issue:</strong> High replication lag
+                                <br><em>Solution:</em> Optimize write patterns, increase oplog size</li>
+                            <li><strong>Issue:</strong> Read preference confusion
+                                <br><em>Solution:</em> Document and test read preferences</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="highlight">
+                        <h3>Sharding</h3>
+                        <ul>
+                            <li><strong>Issue:</strong> Hotspotting on monotonic shard keys
+                                <br><em>Solution:</em> Use hashed sharding or compound keys</li>
+                            <li><strong>Issue:</strong> Uneven chunk distribution
+                                <br><em>Solution:</em> Monitor and manually rebalance if needed</li>
+                            <li><strong>Issue:</strong> Orphaned documents
+                                <br><em>Solution:</em> Run cleanupOrphaned command</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <section>
+                    <h2>Production Checklist</h2>
+                    <div class="two-column">
+                        <div class="column">
+                            <h3>Before Going Live</h3>
+                            <ul>
+                                <li>✓ Test failover scenarios</li>
+                                <li>✓ Validate backup/restore procedures</li>
+                                <li>✓ Performance test with realistic data</li>
+                                <li>✓ Configure monitoring and alerting</li>
+                                <li>✓ Document operational procedures</li>
+                                <li>✓ Set up log aggregation</li>
+                            </ul>
+                        </div>
+                        <div class="column">
+                            <h3>Ongoing Maintenance</h3>
+                            <ul>
+                                <li>✓ Regular cluster health checks</li>
+                                <li>✓ Monitor disk space and growth</li>
+                                <li>✓ Review and optimize slow queries</li>
+                                <li>✓ Update MongoDB versions regularly</li>
+                                <li>✓ Capacity planning and scaling</li>
+                                <li>✓ Security audits and updates</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h2>Summary</h2>
+                    <div class="two-column">
+                        <div class="column">
+                            <h3>Replica Sets</h3>
+                            <ul>
+                                <li>Provide high availability and data redundancy</li>
+                                <li>Enable read scaling and zero-downtime maintenance</li>
+                                <li>Essential for production deployments</li>
+                                <li>Require proper configuration and monitoring</li>
+                            </ul>
+                        </div>
+                        <div class="column">
+                            <h3>Sharding</h3>
+                            <ul>
+                                <li>Enables horizontal scaling for large datasets</li>
+                                <li>Distributes data across multiple machines</li>
+                                <li>Requires careful shard key selection</li>
+                                <li>More complex but handles massive scale</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="highlight" style="margin-top: 30px;">
+                        <p><strong>Remember:</strong> Start with replica sets for high availability, add sharding when you need to scale beyond a single machine's capacity.</p>
+                    </div>
+                </section>
+            </section>
+
+            <!-- Final Slide -->
+            <section>
+                <h1>Questions?</h1>
+                <div style="margin-top: 40px;">
+                    <h3>Key Takeaways</h3>
+                    <ul>
+                        <li>Replica sets are essential for production MongoDB</li>
+                        <li>Sharding enables massive horizontal scale</li>
+                        <li>Proper planning and monitoring are crucial</li>
+                        <li>Start simple, scale as needed</li>
+                    </ul>
+                </div>
+                <div style="margin-top: 40px; text-align: center;">
+                    <small>Thank you for your attention!</small>
+                </div>
+            </section>
+
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/highlight/highlight.min.js"></script>
+    <script>
+        Reveal.initialize({
+            hash: true,
+            controls: true,
+            progress: true,
+            center: true,
+            transition: 'slide',
+            plugins: [ RevealHighlight ]
+        });
+    </script>
+</body>
+</html>
