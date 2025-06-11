@@ -3,14 +3,10 @@ docker run -d --name mongodb --hostname mongo -p 27017:27017 mongo:8.0-rc --repl
 
 docker exec -it mongodb mongosh
 
-rs.initiate({
-  _id: "rs0",
-  members: [
-    { _id: 0, host: "localhost:27017" }  // or use your host IP
-  ]
-})
+rs.initiate({ _id: "rs0", members: [{id: 0, host: "localhost:27017" }  // or use your host IP] })
 
-
+close mongosh (exit)
+open compass and paste in and run the below
 session = db.getMongo().startSession()
 session.startTransaction()
 
