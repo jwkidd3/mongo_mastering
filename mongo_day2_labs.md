@@ -41,17 +41,18 @@
    ```javascript
    // Find products with specific tags and price range
    db.products.find({
-     tags: { $all: ["electronics", "mobile"] },
-     price: { $gte: 100, $lte: 500 },
-     "reviews.rating": { $elemMatch: { $gte: 4 } }
-   })
+  tags: { $in: ['programming', 'javascript'] },
+  "reviews.average": { $gte: 1 },  // Dot notation instead of $elemMatch
+  price: { $gte: 4, $lte: 5000 }
+  })
    ```
+
 
 #### Part B: Aggregation Pipeline (25 minutes)
 1. **Sales Analysis Pipeline**
    ```javascript
    db.orders.aggregate([
-     { $match: { status: "completed", orderDate: { $gte: new Date("2024-01-01") } } },
+     { $match: { status: "shipped", orderDate: { $gte: new Date("2024-01-01") } } },
      { $unwind: "$items" },
      { $group: {
        _id: "$items.productId",

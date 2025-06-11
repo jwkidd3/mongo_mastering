@@ -1,4 +1,5 @@
-//switch is ecommerce DB
+// Switch to your database
+use ecommerce;
 
 // Insert stores with geospatial data
 db.stores.insertMany([
