@@ -1,9 +1,5 @@
 
-docker run -d \
-  --name mongodb \
-  --hostname mongo \
-  -p 27017:27017 \
-  mongo:8.0-rc --replSet rs0
+docker run -d --name mongodb --hostname mongo -p 27017:27017 mongo:8.0-rc --replSet rs0
 
 
 docker exec -it mongodb mongosh
