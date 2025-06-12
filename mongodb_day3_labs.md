@@ -386,12 +386,25 @@ sleep 10
 
 **Using Compass MongoSH:**
 ```javascript
+// Lab 2 Step 2 - Fix for replica set reconfiguration
+
+// First, set the default write concern to avoid the error
+// Remove all extra members first
+rs.remove("mongo-arbiter:27017");
+rs.remove("mongo-hidden:27017");
+
+// Set write concern
+db.adminCommand({
+  "setDefaultRWConcern": 1,
+  "defaultWriteConcern": { "w": "majority" }
+});
+
 // Add arbiter
 rs.add({
   _id: 3,
   host: "mongo-arbiter:27017",
   arbiterOnly: true
-})
+});
 
 // Add hidden member
 rs.add({
@@ -400,35 +413,9 @@ rs.add({
   priority: 0,
   hidden: true,
   votes: 0
-})
+});
 
-// Check configuration
-rs.conf()
-rs.status()
-```
-
-#### Step 3: Configure Priorities and Tags
-
-```javascript
-// Get current configuration
-var config = rs.conf();
-
-// Set priorities (higher = preferred primary)
-config.members[0].priority = 3;  // mongo1 - primary preference
-config.members[1].priority = 2;  // mongo2 - secondary preference  
-config.members[2].priority = 1;  // mongo3 - lower priority
-
-// Add geographic tags for read preferences
-config.members[0].tags = { datacenter: "dc1", region: "east" };
-config.members[1].tags = { datacenter: "dc2", region: "west" };
-config.members[2].tags = { datacenter: "dc3", region: "east" };
-config.members[4].tags = { datacenter: "dc1", region: "east", usage: "analytics" };
-
-// Apply configuration
-rs.reconfig(config);
-
-// Verify changes
-rs.conf();
+rs.status();
 ```
 
 **Monitor in Compass:**
@@ -568,30 +555,37 @@ function monitorReplicaSet() {
   // Member status
   print("\n--- Member Status ---");
   status.members.forEach(function(member) {
-    print(`${member.name}: ${member.stateStr} (Health: ${member.health})`);
+    print(member.name + ": " + member.stateStr + " (Health: " + member.health + ")");
     if (member.optimeDate) {
-      print(`  Last Optime: ${member.optimeDate}`);
+      print("  Last Optime: " + member.optimeDate);
     }
     if (member.lastHeartbeat) {
-      print(`  Last Heartbeat: ${member.lastHeartbeat}`);
+      print("  Last Heartbeat: " + member.lastHeartbeat);
     }
   });
   
   // Replication lag
   print("\n--- Replication Lag ---");
-  var primary = status.members.filter(m => m.state === 1)[0];
+  var primary = status.members.filter(function(m) { return m.state === 1; })[0];
   if (primary) {
-    status.members.filter(m => m.state === 2).forEach(function(secondary) {
+    status.members.filter(function(m) { return m.state === 2; }).forEach(function(secondary) {
       var lag = (primary.optimeDate - secondary.optimeDate) / 1000;
-      print(`${secondary.name}: ${lag.toFixed(2)} seconds behind primary`);
+      print(secondary.name + ": " + lag.toFixed(2) + " seconds behind primary");
     });
   }
   
   // Oplog information
   print("\n--- Oplog Information ---");
-  var oplogStats = db.oplog.rs.stats();
-  print(`Oplog Size: ${(oplogStats.size / 1024 / 1024).toFixed(2)} MB`);
-  print(`Oplog Used: ${(oplogStats.storageSize / 1024 / 1024).toFixed(2)} MB`);
+  var oplogStats = db.getSiblingDB("local").oplog.rs.stats();
+  print("Oplog Size: " + (oplogStats.size / 1024 / 1024).toFixed(2) + " MB");
+  print("Oplog Used: " + (oplogStats.storageSize / 1024 / 1024).toFixed(2) + " MB");
+  
+  var firstOp = db.getSiblingDB("local").oplog.rs.find().sort({ ts: 1 }).limit(1).next();
+  var lastOp = db.getSiblingDB("local").oplog.rs.find().sort({ ts: -1 }).limit(1).next();
+  
+  // Fix: Access timestamp seconds directly
+  var oplogWindow = (lastOp.ts.t - firstOp.ts.t) / 3600;
+  print("Oplog Window: " + oplogWindow.toFixed(2) + " hours");
 }
 
 // Run monitoring
