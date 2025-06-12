@@ -1,4 +1,4 @@
-# MongoDB Day 3 Labs: Advanced Features
+# MongoDB Day 3 Labs: Advanced Features (Updated)
 *5 hands-on labs covering Transactions, Replication, Sharding, Change Streams, and C# API*
 
 ---
@@ -7,16 +7,9 @@
 
 ### Environment Setup
 - Docker Desktop installed and running
-- Docker Compose available
 - MongoDB Compass (optional but recommended)
 - .NET 8 SDK (for C# lab)
 - Visual Studio Code
-
-### Base Docker Network
-```bash
-# Create dedicated network for MongoDB labs
-docker network create mongodb-lab-network
-```
 
 ---
 
@@ -28,123 +21,43 @@ docker network create mongodb-lab-network
 - Handle transaction errors and rollbacks
 - Practice real-world transaction scenarios
 
-### Part A: Setup Replica Set for Transactions (15 minutes)
+### Part A: Setup Replica Set for Transactions (10 minutes)
 
-#### 1. Create Docker Compose for Replica Set
-```yaml
-# docker-compose-replica.yml
-version: '3.8'
-
-services:
-  mongo-primary:
-    image: mongo:7.0
-    container_name: mongo-primary
-    restart: always
-    ports:
-      - "27017:27017"
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: password123
-    command: |
-      mongod --replSet rs0 --bind_ip_all --keyFile /opt/keyfile/mongodb-keyfile
-    volumes:
-      - ./keyfile:/opt/keyfile
-      - mongo-primary-data:/data/db
-    networks:
-      - mongodb-lab-network
-
-  mongo-secondary1:
-    image: mongo:7.0
-    container_name: mongo-secondary1
-    restart: always
-    ports:
-      - "27018:27017"
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: password123
-    command: |
-      mongod --replSet rs0 --bind_ip_all --keyFile /opt/keyfile/mongodb-keyfile
-    volumes:
-      - ./keyfile:/opt/keyfile
-      - mongo-secondary1-data:/data/db
-    networks:
-      - mongodb-lab-network
-
-  mongo-secondary2:
-    image: mongo:7.0
-    container_name: mongo-secondary2
-    restart: always
-    ports:
-      - "27019:27017"
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: password123
-    command: |
-      mongod --replSet rs0 --bind_ip_all --keyFile /opt/keyfile/mongodb-keyfile
-    volumes:
-      - ./keyfile:/opt/keyfile
-      - mongo-secondary2-data:/data/db
-    networks:
-      - mongodb-lab-network
-
-volumes:
-  mongo-primary-data:
-  mongo-secondary1-data:
-  mongo-secondary2-data:
-
-networks:
-  mongodb-lab-network:
-    external: true
+#### 1. Start Replica Set Nodes
+```bash
+# Start three MongoDB nodes for replica set
+docker run -d --name mongo1 -p 27017:27017 mongo:8.0 --replSet rs0 --bind_ip_all
+docker run -d --name mongo2 -p 27018:27017 mongo:8.0 --replSet rs0 --bind_ip_all
+docker run -d --name mongo3 -p 27019:27017 mongo:8.0 --replSet rs0 --bind_ip_all
 ```
 
-#### 2. Create Keyfile for Authentication
+#### 2. Initialize Replica Set
 ```bash
-# Create keyfile directory
-mkdir keyfile
-
-# Generate keyfile (Linux/Mac)
-openssl rand -base64 756 > keyfile/mongodb-keyfile
-
-# For Windows (PowerShell)
-# $bytes = New-Object byte[] 1024
-# $rng = [System.Security.Cryptography.RNGCryptoServiceProvider]::Create()
-# $rng.GetBytes($bytes)
-# [System.Convert]::ToBase64String($bytes) | Out-File -Encoding ASCII keyfile/mongodb-keyfile
-
-# Set proper permissions
-chmod 400 keyfile/mongodb-keyfile
-```
-
-#### 3. Start Replica Set
-```bash
-# Start the replica set
-docker-compose -f docker-compose-replica.yml up -d
-
-# Wait for containers to be ready
+# Wait for containers to start
 sleep 10
 
 # Initialize replica set
-docker exec -it mongo-primary mongosh --username admin --password password123 --authenticationDatabase admin --eval "
+docker exec -it mongo1 mongosh --eval "
 rs.initiate({
   _id: 'rs0',
   members: [
-    { _id: 0, host: 'mongo-primary:27017' },
-    { _id: 1, host: 'mongo-secondary1:27017' },
-    { _id: 2, host: 'mongo-secondary2:27017' }
+    { _id: 0, host: '127.0.0.1:27017' },
+    { _id: 1, host: '127.0.0.1:27018' },
+    { _id: 2, host: '127.0.0.1:27019' }
   ]
 })
 "
 
-# Check replica set status
-docker exec -it mongo-primary mongosh --username admin --password password123 --authenticationDatabase admin --eval "rs.status()"
+# Verify replica set status
+docker exec -it mongo1 mongosh --eval "rs.status()"
 ```
 
-### Part B: Basic Transaction Operations (20 minutes)
+### Part B: Basic Transaction Operations (25 minutes)
 
-#### 4. Create E-commerce Database Structure
+#### 3. Create E-commerce Database Structure
 ```javascript
 // Connect to primary
-docker exec -it mongo-primary mongosh --username admin --password password123 --authenticationDatabase admin
+docker exec -it mongo1 mongosh
 
 // Switch to ecommerce database
 use ecommerce
@@ -161,11 +74,11 @@ db.customers.insertMany([
   { _id: "cust2", name: "Jane Smith", email: "jane@example.com", balance: 800.00 }
 ])
 
-// Create orders collection (empty initially)
+// Create orders collection with unique index
 db.orders.createIndex({ orderId: 1 }, { unique: true })
 ```
 
-#### 5. Implement Order Processing Transaction
+#### 4. Implement Order Processing Transaction
 ```javascript
 // Function to process an order with transaction
 function processOrder(customerId, items) {
@@ -272,7 +185,7 @@ var result3 = processOrder("cust2", [
 
 ### Part C: Advanced Transaction Scenarios (10 minutes)
 
-#### 6. Money Transfer Transaction
+#### 5. Money Transfer Transaction
 ```javascript
 // Bank transfer simulation
 function transferMoney(fromAccount, toAccount, amount) {
@@ -343,12 +256,6 @@ transferMoney("cust2", "cust1", 100.00);
 db.customers.find({}, { name: 1, balance: 1 });
 ```
 
-### Deliverables
-- Functioning replica set with authentication
-- Order processing system with transaction integrity
-- Money transfer system demonstrating ACID properties
-- Error handling for various failure scenarios
-
 ---
 
 ## Lab 2: Replica Sets and High Availability (45 minutes)
@@ -363,62 +270,32 @@ db.customers.find({}, { name: 1, balance: 1 });
 
 #### 1. Add Arbiter and Hidden Member
 ```bash
-# Add arbiter container
-cat >> docker-compose-replica.yml << 'EOF'
+# Add arbiter node (no data, voting only)
+docker run -d --name mongo-arbiter -p 27020:27017 mongo:8.0 --replSet rs0 --bind_ip_all
 
-  mongo-arbiter:
-    image: mongo:7.0
-    container_name: mongo-arbiter
-    restart: always
-    ports:
-      - "27020:27017"
-    command: |
-      mongod --replSet rs0 --bind_ip_all --keyFile /opt/keyfile/mongodb-keyfile
-    volumes:
-      - ./keyfile:/opt/keyfile
-    networks:
-      - mongodb-lab-network
+# Add hidden member (data replication, no client reads)
+docker run -d --name mongo-hidden -p 27021:27017 mongo:8.0 --replSet rs0 --bind_ip_all
 
-  mongo-hidden:
-    image: mongo:7.0
-    container_name: mongo-hidden
-    restart: always
-    ports:
-      - "27021:27017"
-    command: |
-      mongod --replSet rs0 --bind_ip_all --keyFile /opt/keyfile/mongodb-keyfile
-    volumes:
-      - ./keyfile:/opt/keyfile
-      - mongo-hidden-data:/data/db
-    networks:
-      - mongodb-lab-network
-EOF
-
-# Update volumes section
-cat >> docker-compose-replica.yml << 'EOF'
-  mongo-hidden-data:
-EOF
-
-# Restart to add new members
-docker-compose -f docker-compose-replica.yml up -d
+# Wait for containers to start
+sleep 5
 ```
 
 #### 2. Reconfigure Replica Set with Special Members
 ```javascript
 // Connect to primary
-docker exec -it mongo-primary mongosh --username admin --password password123 --authenticationDatabase admin
+docker exec -it mongo1 mongosh
 
 // Add arbiter
 rs.add({
   _id: 3,
-  host: "mongo-arbiter:27017",
+  host: "127.0.0.1:27020",
   arbiterOnly: true
 })
 
 // Add hidden member
 rs.add({
   _id: 4,
-  host: "mongo-hidden:27017",
+  host: "127.0.0.1:27021",
   priority: 0,
   hidden: true,
   votes: 0
@@ -434,12 +311,12 @@ rs.status()
 // Get current configuration
 var config = rs.conf();
 
-// Set priorities
+// Set priorities (higher number = preferred primary)
 config.members[0].priority = 3;  // Primary preference
 config.members[1].priority = 2;  // Secondary preference
 config.members[2].priority = 1;  // Lower priority
 
-// Add tags for geographic distribution
+// Add tags for geographic distribution simulation
 config.members[0].tags = { datacenter: "dc1", region: "east" };
 config.members[1].tags = { datacenter: "dc2", region: "west" };
 config.members[2].tags = { datacenter: "dc3", region: "east" };
@@ -455,56 +332,55 @@ rs.conf();
 ### Part B: Failover Testing and Read Preferences (15 minutes)
 
 #### 4. Test Automatic Failover
-```javascript
-// Check current primary
-rs.status().members.filter(m => m.state === 1)[0].name
+```bash
+# Check current primary
+docker exec -it mongo1 mongosh --eval "
+var primary = rs.status().members.filter(m => m.state === 1)[0];
+print('Current primary: ' + primary.name);
+"
 
-// In another terminal, simulate primary failure
-docker stop mongo-primary
+# Simulate primary failure
+docker stop mongo1
 
-// Monitor election process
-docker exec -it mongo-secondary1 mongosh --username admin --password password123 --authenticationDatabase admin --eval "
-while(true) {
-  try {
-    var status = rs.status();
-    var primary = status.members.filter(m => m.state === 1)[0];
-    if (primary) {
-      print(new Date() + ' - Primary: ' + primary.name);
-      break;
-    } else {
-      print(new Date() + ' - No primary found, election in progress...');
-    }
-  } catch(e) {
-    print(new Date() + ' - Error: ' + e);
-  }
-  sleep(2000);
+# Monitor election process (run this in a loop)
+docker exec -it mongo2 mongosh --eval "
+var status = rs.status();
+var primary = status.members.filter(m => m.state === 1)[0];
+if (primary) {
+  print(new Date() + ' - New primary: ' + primary.name);
+} else {
+  print(new Date() + ' - Election in progress...');
 }
 "
 
-// Restart the failed primary
-docker start mongo-primary
+# Wait 30 seconds for election, then restart failed node
+sleep 30
+docker start mongo1
 
-// Observe it becomes secondary
-sleep 5
-docker exec -it mongo-primary mongosh --username admin --password password123 --authenticationDatabase admin --eval "rs.status().members.filter(m => m.name.includes('mongo-primary'))[0]"
+# Observe original primary becomes secondary
+sleep 10
+docker exec -it mongo1 mongosh --eval "rs.status().members[0]"
 ```
 
 #### 5. Implement Read Preferences
 ```javascript
 // Connect to the replica set
-// Use connection string: mongodb://admin:password123@localhost:27017,localhost:27018,localhost:27019/ecommerce?authSource=admin&replicaSet=rs0
+// Use any available node, MongoDB driver will find primary
 
-// Test different read preferences
 use ecommerce
 
+// Test different read preferences
 // Primary read preference (default)
 db.products.find().readPref("primary");
 
-// Secondary preferred
+// Secondary preferred - read from secondary if available
 db.products.find().readPref("secondaryPreferred");
 
-// Nearest with tags
-db.products.find().readPref("nearest", [
+// Nearest - read from member with lowest network latency
+db.products.find().readPref("nearest");
+
+// Secondary with tags - read from specific tagged members
+db.products.find().readPref("secondary", [
   { "datacenter": "dc1" },
   { "region": "east" }
 ]);
@@ -523,7 +399,7 @@ use ecommerce
 // Default write concern
 db.test_writes.insertOne({ test: "default", timestamp: new Date() });
 
-// Majority write concern
+// Majority write concern (wait for majority of replica set)
 db.test_writes.insertOne(
   { test: "majority", timestamp: new Date() },
   { writeConcern: { w: "majority" } }
@@ -535,15 +411,15 @@ db.test_writes.insertOne(
   { writeConcern: { w: "majority", wtimeout: 5000 } }
 );
 
-// Journal write concern
+// Journal write concern (wait for write to journal)
 db.test_writes.insertOne(
   { test: "journal", timestamp: new Date() },
   { writeConcern: { w: 1, j: true } }
 );
 
 // Test read concerns
-db.test_writes.find().readConcern("local");
-db.test_writes.find().readConcern("majority");
+db.test_writes.find().readConcern("local");      // Read from local replica
+db.test_writes.find().readConcern("majority");   // Read majority-committed data
 ```
 
 ### Part C: Monitoring and Maintenance (10 minutes)
@@ -599,19 +475,14 @@ monitorReplicaSet();
 
 #### 8. Maintenance Operations
 ```javascript
-// Step down primary for maintenance
+// Step down primary for maintenance (forces new election)
 rs.stepDown(60);  // Step down for 60 seconds
 
 // Freeze a secondary to prevent it from becoming primary
 rs.freeze(300);   // Freeze for 5 minutes
 
 // Check if member is frozen
-rs.status().members.filter(m => m.name.includes("secondary1"))[0].health
-
-// Force a member to sync (resync)
-// Note: This is destructive and removes all data
-// rs.remove("mongo-secondary2:27017");
-// rs.add("mongo-secondary2:27017");
+rs.status().members.filter(m => m.name.includes("27018"))[0]
 
 // Reconfigure replica set settings
 var config = rs.conf();
@@ -620,12 +491,6 @@ config.settings.electionTimeoutMillis = 15000;  // 15 seconds
 config.settings.heartbeatIntervalMillis = 3000;  // 3 seconds
 rs.reconfig(config);
 ```
-
-### Deliverables
-- Replica set with arbiter and hidden member
-- Failover testing documentation
-- Read preference configuration examples
-- Monitoring scripts for replica set health
 
 ---
 
@@ -639,167 +504,52 @@ rs.reconfig(config);
 
 ### Part A: Sharded Cluster Setup (25 minutes)
 
-#### 1. Create Sharded Cluster Docker Compose
-```yaml
-# docker-compose-sharded.yml
-version: '3.8'
-
-services:
-  # Config Server Replica Set
-  config1:
-    image: mongo:7.0
-    container_name: config1
-    command: mongod --configsvr --replSet configrs --port 27017 --bind_ip_all
-    volumes:
-      - config1-data:/data/db
-    networks:
-      - mongodb-lab-network
-
-  config2:
-    image: mongo:7.0
-    container_name: config2
-    command: mongod --configsvr --replSet configrs --port 27017 --bind_ip_all
-    volumes:
-      - config2-data:/data/db
-    networks:
-      - mongodb-lab-network
-
-  config3:
-    image: mongo:7.0
-    container_name: config3
-    command: mongod --configsvr --replSet configrs --port 27017 --bind_ip_all
-    volumes:
-      - config3-data:/data/db
-    networks:
-      - mongodb-lab-network
-
-  # Shard 1 Replica Set
-  shard1-1:
-    image: mongo:7.0
-    container_name: shard1-1
-    command: mongod --shardsvr --replSet shard1rs --port 27017 --bind_ip_all
-    volumes:
-      - shard1-1-data:/data/db
-    networks:
-      - mongodb-lab-network
-
-  shard1-2:
-    image: mongo:7.0
-    container_name: shard1-2
-    command: mongod --shardsvr --replSet shard1rs --port 27017 --bind_ip_all
-    volumes:
-      - shard1-2-data:/data/db
-    networks:
-      - mongodb-lab-network
-
-  shard1-3:
-    image: mongo:7.0
-    container_name: shard1-3
-    command: mongod --shardsvr --replSet shard1rs --port 27017 --bind_ip_all
-    volumes:
-      - shard1-3-data:/data/db
-    networks:
-      - mongodb-lab-network
-
-  # Shard 2 Replica Set
-  shard2-1:
-    image: mongo:7.0
-    container_name: shard2-1
-    command: mongod --shardsvr --replSet shard2rs --port 27017 --bind_ip_all
-    volumes:
-      - shard2-1-data:/data/db
-    networks:
-      - mongodb-lab-network
-
-  shard2-2:
-    image: mongo:7.0
-    container_name: shard2-2
-    command: mongod --shardsvr --replSet shard2rs --port 27017 --bind_ip_all
-    volumes:
-      - shard2-2-data:/data/db
-    networks:
-      - mongodb-lab-network
-
-  shard2-3:
-    image: mongo:7.0
-    container_name: shard2-3
-    command: mongod --shardsvr --replSet shard2rs --port 27017 --bind_ip_all
-    volumes:
-      - shard2-3-data:/data/db
-    networks:
-      - mongodb-lab-network
-
-  # Query Routers
-  mongos1:
-    image: mongo:7.0
-    container_name: mongos1
-    command: mongos --configdb configrs/config1:27017,config2:27017,config3:27017 --bind_ip_all --port 27017
-    ports:
-      - "27017:27017"
-    depends_on:
-      - config1
-      - config2
-      - config3
-    networks:
-      - mongodb-lab-network
-
-  mongos2:
-    image: mongo:7.0
-    container_name: mongos2
-    command: mongos --configdb configrs/config1:27017,config2:27017,config3:27017 --bind_ip_all --port 27017
-    ports:
-      - "27018:27017"
-    depends_on:
-      - config1
-      - config2
-      - config3
-    networks:
-      - mongodb-lab-network
-
-volumes:
-  config1-data:
-  config2-data:
-  config3-data:
-  shard1-1-data:
-  shard1-2-data:
-  shard1-3-data:
-  shard2-1-data:
-  shard2-2-data:
-  shard2-3-data:
-
-networks:
-  mongodb-lab-network:
-    external: true
-```
-
-#### 2. Initialize Sharded Cluster
+#### 1. Start Config Server Replica Set
 ```bash
-# Start all containers
-docker-compose -f docker-compose-sharded.yml up -d
+# Config servers (store cluster metadata)
+docker run -d --name config1 -p 27100:27017 mongo:8.0 --configsvr --replSet configrs --bind_ip_all
+docker run -d --name config2 -p 27101:27017 mongo:8.0 --configsvr --replSet configrs --bind_ip_all
+docker run -d --name config3 -p 27102:27017 mongo:8.0 --configsvr --replSet configrs --bind_ip_all
 
 # Wait for containers to start
-sleep 15
+sleep 10
 
 # Initialize config server replica set
 docker exec -it config1 mongosh --eval "
 rs.initiate({
   _id: 'configrs',
   members: [
-    { _id: 0, host: 'config1:27017' },
-    { _id: 1, host: 'config2:27017' },
-    { _id: 2, host: 'config3:27017' }
+    { _id: 0, host: '127.0.0.1:27100' },
+    { _id: 1, host: '127.0.0.1:27101' },
+    { _id: 2, host: '127.0.0.1:27102' }
   ]
 })
 "
+```
+
+#### 2. Start Shard Replica Sets
+```bash
+# Shard 1 replica set
+docker run -d --name shard1-1 -p 27201:27017 mongo:8.0 --shardsvr --replSet shard1rs --bind_ip_all
+docker run -d --name shard1-2 -p 27202:27017 mongo:8.0 --shardsvr --replSet shard1rs --bind_ip_all
+docker run -d --name shard1-3 -p 27203:27017 mongo:8.0 --shardsvr --replSet shard1rs --bind_ip_all
+
+# Shard 2 replica set
+docker run -d --name shard2-1 -p 27301:27017 mongo:8.0 --shardsvr --replSet shard2rs --bind_ip_all
+docker run -d --name shard2-2 -p 27302:27017 mongo:8.0 --shardsvr --replSet shard2rs --bind_ip_all
+docker run -d --name shard2-3 -p 27303:27017 mongo:8.0 --shardsvr --replSet shard2rs --bind_ip_all
+
+# Wait for containers to start
+sleep 10
 
 # Initialize shard 1 replica set
 docker exec -it shard1-1 mongosh --eval "
 rs.initiate({
   _id: 'shard1rs',
   members: [
-    { _id: 0, host: 'shard1-1:27017' },
-    { _id: 1, host: 'shard1-2:27017' },
-    { _id: 2, host: 'shard1-3:27017' }
+    { _id: 0, host: '127.0.0.1:27201' },
+    { _id: 1, host: '127.0.0.1:27202' },
+    { _id: 2, host: '127.0.0.1:27203' }
   ]
 })
 "
@@ -809,25 +559,32 @@ docker exec -it shard2-1 mongosh --eval "
 rs.initiate({
   _id: 'shard2rs',
   members: [
-    { _id: 0, host: 'shard2-1:27017' },
-    { _id: 1, host: 'shard2-2:27017' },
-    { _id: 2, host: 'shard2-3:27017' }
+    { _id: 0, host: '127.0.0.1:27301' },
+    { _id: 1, host: '127.0.0.1:27302' },
+    { _id: 2, host: '127.0.0.1:27303' }
   ]
 })
 "
+```
 
-# Wait for replica sets to be ready
+#### 3. Start Query Routers (mongos)
+```bash
+# Query routers (mongos instances)
+docker run -d --name mongos1 -p 27017:27017 mongo:8.0 mongos --configdb configrs/127.0.0.1:27100,127.0.0.1:27101,127.0.0.1:27102 --bind_ip_all
+docker run -d --name mongos2 -p 27018:27017 mongo:8.0 mongos --configdb configrs/127.0.0.1:27100,127.0.0.1:27101,127.0.0.1:27102 --bind_ip_all
+
+# Wait for mongos to start
 sleep 10
 ```
 
-#### 3. Add Shards to Cluster
+#### 4. Add Shards to Cluster
 ```javascript
 // Connect to mongos
 docker exec -it mongos1 mongosh
 
 // Add shards to the cluster
-sh.addShard("shard1rs/shard1-1:27017,shard1-2:27017,shard1-3:27017")
-sh.addShard("shard2rs/shard2-1:27017,shard2-2:27017,shard2-3:27017")
+sh.addShard("shard1rs/127.0.0.1:27201,127.0.0.1:27202,127.0.0.1:27203")
+sh.addShard("shard2rs/127.0.0.1:27301,127.0.0.1:27302,127.0.0.1:27303")
 
 // Check cluster status
 sh.status()
@@ -835,7 +592,7 @@ sh.status()
 
 ### Part B: Sharding Strategy and Implementation (15 minutes)
 
-#### 4. Enable Sharding on Database and Collections
+#### 5. Enable Sharding on Database and Collections
 ```javascript
 // Enable sharding on the ecommerce database
 sh.enableSharding("ecommerce")
@@ -844,25 +601,23 @@ sh.enableSharding("ecommerce")
 use ecommerce
 
 // 1. Hashed sharding for even distribution
-db.users.createIndex({ _id: "hashed" })
 sh.shardCollection("ecommerce.users", { _id: "hashed" })
 
-// 2. Range-based sharding for queries
-db.orders.createIndex({ customerId: 1, orderDate: 1 })
+// 2. Range-based sharding for query targeting
 sh.shardCollection("ecommerce.orders", { customerId: 1, orderDate: 1 })
 
 // 3. Geographic sharding
-db.stores.createIndex({ region: 1, storeId: 1 })
 sh.shardCollection("ecommerce.stores", { region: 1, storeId: 1 })
 
 // Check sharding status
 sh.status()
 ```
 
-#### 5. Load Test Data and Observe Distribution
+#### 6. Load Test Data and Observe Distribution
 ```javascript
 // Generate test data for users (hashed sharding)
 use ecommerce
+print("Generating user data...");
 for (let i = 1; i <= 10000; i++) {
   db.users.insertOne({
     _id: `user${i}`,
@@ -871,13 +626,14 @@ for (let i = 1; i <= 10000; i++) {
     registrationDate: new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28))
   });
   
-  if (i % 1000 === 0) {
+  if (i % 2000 === 0) {
     print(`Inserted ${i} users`);
   }
 }
 
 // Generate test data for orders (range sharding)
-var customers = ["user1", "user2", "user3", "user4", "user5"];
+print("Generating order data...");
+var customers = ["user1", "user100", "user500", "user1000", "user2000"];
 for (let i = 1; i <= 5000; i++) {
   var customerId = customers[Math.floor(Math.random() * customers.length)];
   var orderDate = new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28));
@@ -898,6 +654,7 @@ for (let i = 1; i <= 5000; i++) {
 }
 
 // Generate geographic store data
+print("Generating store data...");
 var regions = ["north", "south", "east", "west"];
 for (let i = 1; i <= 1000; i++) {
   var region = regions[Math.floor(Math.random() * regions.length)];
@@ -919,7 +676,7 @@ for (let i = 1; i <= 1000; i++) {
 }
 ```
 
-#### 6. Analyze Chunk Distribution
+#### 7. Analyze Chunk Distribution
 ```javascript
 // Check chunk distribution across shards
 db.adminCommand("flushRouterConfig")
@@ -927,24 +684,27 @@ sh.status()
 
 // Get detailed chunk information
 use config
-db.chunks.find({ ns: "ecommerce.users" }).count()
-db.chunks.find({ ns: "ecommerce.orders" }).count()
-db.chunks.find({ ns: "ecommerce.stores" }).count()
+print("Chunk counts by collection:");
+print("Users: " + db.chunks.find({ ns: "ecommerce.users" }).count());
+print("Orders: " + db.chunks.find({ ns: "ecommerce.orders" }).count());
+print("Stores: " + db.chunks.find({ ns: "ecommerce.stores" }).count());
 
 // Check chunks per shard
+print("\nChunks per shard:");
 db.chunks.aggregate([
   { $group: { _id: "$shard", count: { $sum: 1 } } },
   { $sort: { count: -1 } }
-])
+]).forEach(printjson);
 
 // Check balancer status
-sh.getBalancerState()
-sh.isBalancerRunning()
+print("\nBalancer status:");
+print("Enabled: " + sh.getBalancerState());
+print("Running: " + sh.isBalancerRunning());
 ```
 
-### Part C: Shard Management and Zone Sharding (5 minutes)
+### Part C: Zone Sharding and Management (5 minutes)
 
-#### 7. Zone Sharding for Geographic Distribution
+#### 8. Zone Sharding for Geographic Distribution
 ```javascript
 // Add tags to shards for geographic zones
 sh.addShardTag("shard1rs", "US-EAST")
@@ -983,12 +743,12 @@ sh.addTagRange(
 sh.status()
 ```
 
-#### 8. Manual Chunk Operations
+#### 9. Manual Chunk Operations
 ```javascript
-// Split chunks manually
-sh.splitAt("ecommerce.orders", { customerId: "user3", orderDate: new Date("2024-06-01") })
+// Split chunks manually for better distribution
+sh.splitAt("ecommerce.orders", { customerId: "user500", orderDate: new Date("2024-06-01") })
 
-// Move chunks between shards
+// Move chunks between shards (if needed)
 sh.moveChunk(
   "ecommerce.orders",
   { customerId: "user1", orderDate: MinKey },
@@ -998,18 +758,12 @@ sh.moveChunk(
 // Check balancer operations
 db.settings.find({ _id: "balancer" })
 
-// Disable balancer temporarily
+// Temporarily disable balancer
 sh.stopBalancer()
 
 // Re-enable balancer
 sh.startBalancer()
 ```
-
-### Deliverables
-- Functioning sharded cluster with multiple shards
-- Different sharding strategies implemented
-- Zone sharding configuration for geographic distribution
-- Chunk distribution analysis and management scripts
 
 ---
 
@@ -1025,8 +779,8 @@ sh.startBalancer()
 
 #### 1. Setup Change Stream Environment
 ```javascript
-// Connect to replica set (reuse from Lab 1)
-// Connection string: mongodb://admin:password123@localhost:27017,localhost:27018,localhost:27019/ecommerce?authSource=admin&replicaSet=rs0
+// Connect to replica set from Lab 1
+// Connection: mongodb://localhost:27017,localhost:27018,localhost:27019/?replicaSet=rs0
 
 use ecommerce
 
@@ -1038,24 +792,50 @@ db.activity_log.createIndex({ timestamp: -1 })
 #### 2. Basic Change Stream Implementation
 ```javascript
 // Watch all changes on orders collection
+print("Setting up change stream for orders collection...");
+
 var orderChangeStream = db.orders.watch();
 
-// Set up change handler
-orderChangeStream.on('change', function(change) {
+// Note: In a real application, this would be in a separate process
+// For lab purposes, we'll demonstrate the concept
+
+// Simulate change stream handling
+function handleOrderChanges() {
+  print("=== Order Change Stream Active ===");
+  print("Watching for changes... (This is a simulation)");
+  print("In production, this would run continuously in the background");
+  print("=====================================\n");
+}
+
+handleOrderChanges();
+
+// In another session, test the change stream by making changes
+// For lab purposes, we'll create a function that processes changes
+function simulateChangeStreamHandler(change) {
   print("=== Order Change Detected ===");
   print("Operation: " + change.operationType);
-  print("Timestamp: " + change.clusterTime);
+  print("Timestamp: " + new Date());
   
   switch(change.operationType) {
     case 'insert':
       print("New order created: " + change.fullDocument._id);
       print("Customer: " + change.fullDocument.customerId);
       print("Total: $" + change.fullDocument.total);
+      
+      // Create notification
+      db.notifications.insertOne({
+        userId: change.fullDocument.customerId,
+        type: "order_created",
+        message: `Your order ${change.fullDocument._id} has been created.`,
+        orderId: change.fullDocument._id,
+        timestamp: new Date(),
+        read: false
+      });
       break;
       
     case 'update':
       print("Order updated: " + change.documentKey._id);
-      if (change.updateDescription.updatedFields.status) {
+      if (change.updateDescription && change.updateDescription.updatedFields.status) {
         print("Status changed to: " + change.updateDescription.updatedFields.status);
       }
       break;
@@ -1065,197 +845,121 @@ orderChangeStream.on('change', function(change) {
       break;
   }
   print("=================================\n");
-});
+}
+```
 
-// In another session, test the change stream
+#### 3. Test Change Stream with Order Operations
+```javascript
+// Test the change stream by creating, updating, and deleting orders
 use ecommerce
 
-// Insert a new order (should trigger change stream)
-db.orders.insertOne({
+// Insert a new order (would trigger change stream)
+print("Creating test order...");
+var testOrder = {
   _id: "order_test1",
   customerId: "cust1",
   orderDate: new Date(),
   items: [{ productId: "prod1", quantity: 1 }],
   total: 999.99,
   status: "pending"
-})
+};
+db.orders.insertOne(testOrder);
 
-// Update order status (should trigger change stream)
+// Simulate change stream processing
+simulateChangeStreamHandler({
+  operationType: "insert",
+  fullDocument: testOrder,
+  documentKey: { _id: "order_test1" }
+});
+
+// Update order status (would trigger change stream)
+print("Updating order status...");
 db.orders.updateOne(
   { _id: "order_test1" },
   { $set: { status: "processing" } }
-)
+);
 
-// Delete order (should trigger change stream)
-db.orders.deleteOne({ _id: "order_test1" })
-```
-
-#### 3. Filtered Change Streams
-```javascript
-// Watch only specific operations
-var insertOnlyStream = db.orders.watch([
-  { $match: { operationType: "insert" } }
-]);
-
-insertOnlyStream.on('change', function(change) {
-  print("New order inserted: " + change.fullDocument._id);
+// Simulate change stream processing
+simulateChangeStreamHandler({
+  operationType: "update",
+  documentKey: { _id: "order_test1" },
+  updateDescription: { updatedFields: { status: "processing" } }
 });
 
-// Watch high-value orders only
-var highValueStream = db.orders.watch([
-  { 
-    $match: { 
-      $and: [
-        { operationType: "insert" },
-        { "fullDocument.total": { $gte: 500 } }
-      ]
-    } 
-  }
-]);
+// Check notifications created
+print("Notifications created:");
+db.notifications.find().forEach(printjson);
+```
 
-highValueStream.on('change', function(change) {
-  print("High-value order detected: $" + change.fullDocument.total);
+#### 4. Filtered Change Streams
+```javascript
+// Simulate filtered change streams for specific scenarios
+
+// High-value orders filter
+function isHighValueOrder(order) {
+  return order.total >= 500;
+}
+
+// Process high-value order
+function processHighValueOrder(order) {
+  print("High-value order detected: $" + order.total);
   
-  // Create notification
+  // Create admin notification
   db.notifications.insertOne({
     userId: "admin",
     type: "high_value_order",
-    message: `High-value order received: ${change.fullDocument._id} ($${change.fullDocument.total})`,
-    orderId: change.fullDocument._id,
+    message: `High-value order received: ${order._id} ($${order.total})`,
+    orderId: order._id,
     timestamp: new Date(),
     read: false
   });
-});
-```
-
-### Part B: Advanced Change Streams and Resumption (15 minutes)
-
-#### 4. Resumable Change Streams
-```javascript
-// Function to create resumable change stream
-function createResumableChangeStream(resumeToken) {
-  var options = {
-    fullDocument: 'updateLookup'
-  };
   
-  if (resumeToken) {
-    options.resumeAfter = resumeToken;
-  }
-  
-  var changeStream = db.orders.watch([], options);
-  
-  changeStream.on('change', function(change) {
-    // Process the change
-    processOrderChange(change);
-    
-    // Store resume token for fault tolerance
-    storeResumeToken(change._id);
-  });
-  
-  return changeStream;
-}
-
-function processOrderChange(change) {
-  // Log all changes
+  // Log for analytics
   db.activity_log.insertOne({
-    operation: change.operationType,
-    collection: "orders",
-    documentId: change.documentKey._id,
-    timestamp: new Date(),
-    changeId: change._id
+    event: "high_value_order",
+    orderId: order._id,
+    amount: order.total,
+    timestamp: new Date()
   });
-  
-  print(`Processed change: ${change.operationType} on ${change.documentKey._id}`);
 }
 
-function storeResumeToken(token) {
-  // Store resume token in a collection for fault tolerance
-  db.resume_tokens.replaceOne(
-    { _id: "order_stream" },
-    { _id: "order_stream", token: token, lastUpdated: new Date() },
-    { upsert: true }
-  );
-}
+// Test with high-value order
+var highValueOrder = {
+  _id: "order_high1",
+  customerId: "cust2",
+  orderDate: new Date(),
+  items: [{ productId: "prod1", quantity: 2 }],
+  total: 1999.98,
+  status: "pending"
+};
 
-function getLastResumeToken() {
-  var doc = db.resume_tokens.findOne({ _id: "order_stream" });
-  return doc ? doc.token : null;
-}
+db.orders.insertOne(highValueOrder);
 
-// Start resumable change stream
-var lastToken = getLastResumeToken();
-var resumableStream = createResumableChangeStream(lastToken);
+if (isHighValueOrder(highValueOrder)) {
+  processHighValueOrder(highValueOrder);
+}
 ```
 
-#### 5. Real-time Order Processing System
+### Part B: Advanced Change Streams and Event-Driven Architecture (15 minutes)
+
+#### 5. Order Processing System with Event Simulation
 ```javascript
-// Complete order processing system with change streams
+// Complete order processing system simulation
 var OrderProcessor = {
   
-  // Initialize all change streams
-  init: function() {
-    this.setupNewOrderStream();
-    this.setupStatusUpdateStream();
-    this.setupInventoryUpdateStream();
-  },
-  
-  // Watch for new orders
-  setupNewOrderStream: function() {
-    var newOrderStream = db.orders.watch([
-      { $match: { operationType: "insert" } }
-    ]);
-    
-    newOrderStream.on('change', function(change) {
-      OrderProcessor.processNewOrder(change.fullDocument);
-    });
-  },
-  
-  // Watch for order status updates
-  setupStatusUpdateStream: function() {
-    var statusStream = db.orders.watch([
-      { 
-        $match: { 
-          operationType: "update",
-          "updateDescription.updatedFields.status": { $exists: true }
-        } 
-      }
-    ]);
-    
-    statusStream.on('change', function(change) {
-      var orderId = change.documentKey._id;
-      var newStatus = change.updateDescription.updatedFields.status;
-      OrderProcessor.handleStatusChange(orderId, newStatus);
-    });
-  },
-  
-  // Watch for inventory updates
-  setupInventoryUpdateStream: function() {
-    var inventoryStream = db.products.watch([
-      { 
-        $match: { 
-          operationType: "update",
-          "updateDescription.updatedFields.stock": { $exists: true }
-        } 
-      }
-    ]);
-    
-    inventoryStream.on('change', function(change) {
-      var productId = change.documentKey._id;
-      var newStock = change.updateDescription.updatedFields.stock;
-      OrderProcessor.handleInventoryChange(productId, newStock);
-    });
-  },
-  
-  // Process new order
+  // Process new orders
   processNewOrder: function(order) {
     print(`Processing new order: ${order._id}`);
     
     // Validate inventory
     var allItemsAvailable = true;
+    var unavailableItems = [];
+    
     order.items.forEach(function(item) {
       var product = db.products.findOne({ _id: item.productId });
       if (!product || product.stock < item.quantity) {
         allItemsAvailable = false;
+        unavailableItems.push(item.productId);
       }
     });
     
@@ -1266,7 +970,7 @@ var OrderProcessor = {
         { $set: { status: "processing", processedAt: new Date() } }
       );
       
-      // Create notifications
+      // Create success notification
       db.notifications.insertOne({
         userId: order.customerId,
         type: "order_confirmed",
@@ -1275,12 +979,26 @@ var OrderProcessor = {
         timestamp: new Date(),
         read: false
       });
+      
+      print(`✓ Order ${order._id} confirmed and processing`);
     } else {
       // Update order status to failed
       db.orders.updateOne(
         { _id: order._id },
-        { $set: { status: "failed", reason: "Insufficient inventory" } }
+        { $set: { status: "failed", reason: "Insufficient inventory", failedItems: unavailableItems } }
       );
+      
+      // Create failure notification
+      db.notifications.insertOne({
+        userId: order.customerId,
+        type: "order_failed",
+        message: `Your order ${order._id} could not be processed due to insufficient inventory.`,
+        orderId: order._id,
+        timestamp: new Date(),
+        read: false
+      });
+      
+      print(`✗ Order ${order._id} failed - insufficient inventory`);
     }
   },
   
@@ -1309,6 +1027,7 @@ var OrderProcessor = {
             $set: { lastOrderDate: new Date() }
           }
         );
+        print(`✓ Customer ${order.customerId} stats updated`);
       }
     }
   },
@@ -1327,29 +1046,129 @@ var OrderProcessor = {
         timestamp: new Date(),
         read: false
       });
+      
+      print(`⚠ Low inventory alert for ${productId}`);
     }
   }
 };
 
-// Initialize the order processor
-OrderProcessor.init();
+// Test the order processing system
+print("=== Testing Order Processing System ===");
 
-// Test the system
-db.orders.insertOne({
-  _id: "order_realtime1",
+// Create a new order
+var newOrder = {
+  _id: "order_system_test1",
   customerId: "cust1",
   orderDate: new Date(),
-  items: [{ productId: "prod1", quantity: 1 }],
-  total: 999.99,
+  items: [{ productId: "prod2", quantity: 2 }],  // Should have stock
+  total: 59.98,
   status: "pending"
-});
+};
+
+db.orders.insertOne(newOrder);
+OrderProcessor.processNewOrder(newOrder);
+
+// Test status change
+OrderProcessor.handleStatusChange("order_system_test1", "shipped");
+OrderProcessor.handleStatusChange("order_system_test1", "completed");
+
+// Test inventory change
+OrderProcessor.handleInventoryChange("prod2", 3);  // Should trigger low stock alert
+
+// Test order with insufficient stock
+var failedOrder = {
+  _id: "order_system_test2",
+  customerId: "cust2",
+  orderDate: new Date(),
+  items: [{ productId: "prod1", quantity: 20 }],  // More than available stock
+  total: 19999.80,
+  status: "pending"
+};
+
+db.orders.insertOne(failedOrder);
+OrderProcessor.processNewOrder(failedOrder);
 ```
 
-### Deliverables
-- Working change stream implementations for different use cases
-- Real-time notification system
-- Order processing system with event-driven architecture
-- Resumable change streams with fault tolerance
+#### 6. Resume Token Simulation and Fault Tolerance
+```javascript
+// Simulate resumable change streams with token storage
+var ChangeStreamManager = {
+  
+  // Store resume token for fault tolerance
+  storeResumeToken: function(streamId, token) {
+    db.resume_tokens.replaceOne(
+      { _id: streamId },
+      { _id: streamId, token: token, lastUpdated: new Date() },
+      { upsert: true }
+    );
+    print(`Resume token stored for ${streamId}`);
+  },
+  
+  // Get last resume token
+  getLastResumeToken: function(streamId) {
+    var doc = db.resume_tokens.findOne({ _id: streamId });
+    if (doc) {
+      print(`Resume token found for ${streamId}: ${doc.lastUpdated}`);
+      return doc.token;
+    }
+    print(`No resume token found for ${streamId}`);
+    return null;
+  },
+  
+  // Simulate processing with resume token
+  processChangeWithResume: function(streamId, change) {
+    // Process the change
+    print(`Processing change for ${streamId}: ${change.operationType}`);
+    
+    // Store resume token for fault tolerance
+    this.storeResumeToken(streamId, change._id);
+    
+    // Log processing
+    db.activity_log.insertOne({
+      operation: change.operationType,
+      collection: change.ns.coll,
+      documentId: change.documentKey._id,
+      timestamp: new Date(),
+      changeId: change._id,
+      streamId: streamId
+    });
+    
+    print(`✓ Change processed and resume token saved`);
+  }
+};
+
+// Test resume token functionality
+print("=== Testing Resume Token Functionality ===");
+
+// Simulate change stream events
+var simulatedChanges = [
+  {
+    _id: { _data: "token1" },
+    operationType: "insert",
+    ns: { db: "ecommerce", coll: "orders" },
+    documentKey: { _id: "order_resume1" }
+  },
+  {
+    _id: { _data: "token2" },
+    operationType: "update", 
+    ns: { db: "ecommerce", coll: "orders" },
+    documentKey: { _id: "order_resume1" }
+  }
+];
+
+// Process changes with resume tokens
+simulatedChanges.forEach(function(change, index) {
+  ChangeStreamManager.processChangeWithResume("order_stream", change);
+});
+
+// Check stored resume tokens
+print("\nStored resume tokens:");
+db.resume_tokens.find().forEach(printjson);
+
+// Check activity log
+print("\nActivity log:");
+db.activity_log.find({ streamId: "order_stream" }).forEach(printjson);
+```
 
 ---
 
@@ -1623,8 +1442,9 @@ using MongoDBCSharpLab.Services;
 
 class Program
 {
+    // Updated connection string for simplified setup (no authentication)
     private static readonly string ConnectionString = 
-        "mongodb://admin:password123@localhost:27017,localhost:27018,localhost:27019/?authSource=admin&replicaSet=rs0";
+        "mongodb://localhost:27017,localhost:27018,localhost:27019/?replicaSet=rs0";
     private static readonly string DatabaseName = "ecommerce_csharp";
     
     static async Task Main(string[] args)
@@ -1648,6 +1468,7 @@ class Program
         catch (Exception ex)
         {
             Console.WriteLine($"Error: {ex.Message}");
+            Console.WriteLine($"Stack trace: {ex.StackTrace}");
         }
         
         Console.WriteLine("\nPress any key to exit...");
@@ -1760,15 +1581,18 @@ using MongoDBCSharpLab.Models;
 
 namespace MongoDBCSharpLab.Services
 {
-    public class ResilientProductService : ProductService
+    public class ResilientProductService
     {
-        public ResilientProductService(MongoDBService mongoDBService) : base(mongoDBService)
+        private readonly ProductService _productService;
+        
+        public ResilientProductService(ProductService productService)
         {
+            _productService = productService;
         }
         
         public async Task<T> ExecuteWithRetryAsync<T>(Func<Task<T>> operation, int maxRetries = 3)
         {
-            Exception lastException = null!;
+            Exception? lastException = null;
             
             for (int attempt = 1; attempt <= maxRetries; attempt++)
             {
@@ -1790,17 +1614,17 @@ namespace MongoDBCSharpLab.Services
                 }
             }
             
-            throw lastException;
+            throw lastException!;
         }
         
-        private bool IsTransientError(MongoException ex)
+        private static bool IsTransientError(MongoException ex)
         {
             return ex is MongoConnectionException ||
                    ex is MongoTimeoutException ||
                    (ex is MongoWriteException writeEx && IsTransientWriteError(writeEx));
         }
         
-        private bool IsTransientWriteError(MongoWriteException ex)
+        private static bool IsTransientWriteError(MongoWriteException ex)
         {
             // Check for specific transient write error codes
             return ex.WriteError?.Code == 11000 || // Duplicate key (might be transient)
@@ -1813,8 +1637,25 @@ namespace MongoDBCSharpLab.Services
             return await ExecuteWithRetryAsync(async () =>
             {
                 Console.WriteLine($"Attempting to fetch product {id}...");
-                return await GetProductByIdAsync(id);
+                return await _productService.GetProductByIdAsync(id);
             });
+        }
+        
+        // Test resilience
+        public async Task TestResilienceAsync()
+        {
+            Console.WriteLine("=== Testing Resilient Operations ===\n");
+            
+            // This would demonstrate retry logic in case of network issues
+            try
+            {
+                var product = await GetProductByIdWithRetryAsync("nonexistent_id");
+                Console.WriteLine($"Product found: {product?.Name ?? "None"}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Operation failed after retries: {ex.Message}");
+            }
         }
     }
 }
@@ -1827,12 +1668,27 @@ dotnet build
 dotnet run
 ```
 
-### Deliverables
-- Working C# console application with MongoDB integration
-- Strongly-typed models and services
-- Complete CRUD operations implementation
-- Error handling and retry logic
-- Basic aggregation operations
+---
+
+## Lab Cleanup
+
+### Stop All Containers
+```bash
+# Stop replica set containers (Lab 1 & 2)
+docker stop mongo1 mongo2 mongo3 mongo-arbiter mongo-hidden
+docker rm mongo1 mongo2 mongo3 mongo-arbiter mongo-hidden
+
+# Stop sharding containers (Lab 3)
+docker stop config1 config2 config3
+docker stop shard1-1 shard1-2 shard1-3 shard2-1 shard2-2 shard2-3
+docker stop mongos1 mongos2
+docker rm config1 config2 config3
+docker rm shard1-1 shard1-2 shard1-3 shard2-1 shard2-2 shard2-3
+docker rm mongos1 mongos2
+
+# Clean up system
+docker system prune -f
+```
 
 ---
 
@@ -1841,13 +1697,13 @@ dotnet run
 ### What You've Accomplished
 
 #### 🔄 **Transactions (Lab 1)**
-- Configured replica set for transaction support
+- Set up replica set using simplified Docker commands
 - Implemented ACID-compliant order processing
 - Built money transfer system with rollback capabilities
 - Handled transaction errors and edge cases
 
 #### 🔧 **Replication (Lab 2)**
-- Set up advanced replica set with special members
+- Extended replica set with arbiter and hidden members
 - Tested automatic failover mechanisms
 - Configured read preferences and write concerns
 - Implemented comprehensive monitoring
@@ -1865,41 +1721,26 @@ dotnet run
 - Developed fault-tolerant stream processing
 
 #### 💻 **C# Integration (Lab 5)**
-- Set up MongoDB C# driver
+- Set up MongoDB C# driver without authentication complexity
 - Implemented strongly-typed models and services
 - Built resilient operations with retry logic
 - Created complete CRUD and aggregation examples
 
 ### Production Readiness Checklist
 
-- [ ] **Security**: Authentication and authorization configured
-- [ ] **High Availability**: Replica sets with proper failover
-- [ ] **Scalability**: Sharding strategy implemented
-- [ ] **Monitoring**: Health checks and performance monitoring
-- [ ] **Backup**: Backup and recovery procedures tested
-- [ ] **Error Handling**: Resilient error handling and retry logic
-- [ ] **Documentation**: Operation procedures documented
+- [ ] **High Availability**: Replica sets with proper failover ✓
+- [ ] **Scalability**: Sharding strategy implemented ✓
+- [ ] **Real-time Processing**: Change streams for event-driven architecture ✓
+- [ ] **Application Integration**: C# driver implementation ✓
+- [ ] **Error Handling**: Resilient error handling and retry logic ✓
+- [ ] **Monitoring**: Health checks and performance monitoring ✓
 
 ### Next Steps
 
-1. **Integrate Labs**: Combine concepts from different labs into a complete application
+1. **Add Authentication**: Implement authentication for production use
 2. **Performance Testing**: Load test your implementations
 3. **Production Deployment**: Deploy to staging/production environments
 4. **Monitoring**: Set up comprehensive monitoring and alerting
 5. **Backup Strategy**: Implement automated backup procedures
-
-### Cleanup
-
-```bash
-# Stop and remove all containers
-docker-compose -f docker-compose-replica.yml down -v
-docker-compose -f docker-compose-sharded.yml down -v
-
-# Remove network
-docker network rm mongodb-lab-network
-
-# Remove all MongoDB-related containers and volumes
-docker system prune -f
-```
 
 **Congratulations!** You've successfully completed all MongoDB Day 3 advanced labs and are now ready to build production-scale MongoDB applications.
