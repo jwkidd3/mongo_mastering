@@ -1,4 +1,4 @@
-# MongoDB Day 3 Labs: Advanced Features (Updated)
+# MongoDB Day 3 Labs: Advanced Features 
 *5 hands-on labs covering Transactions, Replication, Sharding, Change Streams, and C# API*
 
 ---
