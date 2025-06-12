@@ -144,6 +144,7 @@ db.orders.createIndex({ customerId: 1, orderDate: 1 })
 
 ```javascript
 // Complete order processing transaction
+// Complete order processing transaction
 function processOrder(customerId, items) {
   const session = db.getMongo().startSession();
   
@@ -156,11 +157,11 @@ function processOrder(customerId, items) {
     const orderId = new ObjectId();
     let totalAmount = 0;
     
+    // Use session database reference
+    const sessionDb = session.getDatabase("ecommerce");
+    
     // Validate customer exists and has sufficient balance
-    const customer = db.customers.findOne(
-      { _id: customerId },
-      { session: session }
-    );
+    const customer = sessionDb.customers.findOne({ _id: customerId });
     
     if (!customer) {
       throw new Error("Customer not found");
@@ -169,10 +170,10 @@ function processOrder(customerId, items) {
     // Process each item
     for (let item of items) {
       // Check product availability
-      const product = db.products.findOne(
-        { _id: item.productId, stock: { $gte: item.quantity } },
-        { session: session }
-      );
+      const product = sessionDb.products.findOne({
+        _id: item.productId,
+        stock: { $gte: item.quantity }
+      });
       
       if (!product) {
         throw new Error(`Insufficient stock for product ${item.productId}`);
@@ -181,10 +182,9 @@ function processOrder(customerId, items) {
       totalAmount += product.price * item.quantity;
       
       // Update product stock
-      db.products.updateOne(
+      sessionDb.products.updateOne(
         { _id: item.productId },
-        { $inc: { stock: -item.quantity } },
-        { session: session }
+        { $inc: { stock: -item.quantity } }
       );
     }
     
@@ -194,33 +194,32 @@ function processOrder(customerId, items) {
     }
     
     // Update customer balance
-    db.customers.updateOne(
+    sessionDb.customers.updateOne(
       { _id: customerId },
-      { $inc: { balance: -totalAmount } },
-      { session: session }
+      { $inc: { balance: -totalAmount } }
     );
     
     // Create order
-    db.orders.insertOne({
+    sessionDb.orders.insertOne({
       _id: orderId,
       customerId: customerId,
       items: items,
       totalAmount: totalAmount,
       status: "completed",
       orderDate: new Date()
-    }, { session: session });
+    });
     
     // Commit transaction
     session.commitTransaction();
     
-    print("✅ Order processed successfully");
+    print("Order processed successfully");
     print("Order ID: " + orderId);
     print("Total Amount: $" + totalAmount.toFixed(2));
     
     return { success: true, orderId: orderId, totalAmount: totalAmount };
     
   } catch (error) {
-    print("❌ Transaction failed: " + error.message);
+    print("Transaction failed: " + error.message);
     session.abortTransaction();
     return { success: false, error: error.message };
     
