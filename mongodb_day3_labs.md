@@ -272,23 +272,29 @@ var result3 = processOrder("cust2", [
 
 ```javascript
 // Bank transfer simulation
+// Money Transfer System - Step 7 Corrected
+// Money Transfer System - Step 7 Corrected
 function transferMoney(fromAccount, toAccount, amount) {
+  // Create fresh session
   const session = db.getMongo().startSession();
   
   try {
+    // Start transaction
     session.startTransaction({
       readConcern: { level: "snapshot" },
       writeConcern: { w: "majority" }
     });
     
+    // Use session database
+    const sessionDb = session.getDatabase("ecommerce");
+    
     // Debit from source account
-    const debitResult = db.customers.updateOne(
+    const debitResult = sessionDb.customers.updateOne(
       { 
         _id: fromAccount, 
         balance: { $gte: amount } 
       },
-      { $inc: { balance: -amount } },
-      { session: session }
+      { $inc: { balance: -amount } }
     );
     
     if (debitResult.matchedCount === 0) {
@@ -296,10 +302,9 @@ function transferMoney(fromAccount, toAccount, amount) {
     }
     
     // Credit to destination account
-    const creditResult = db.customers.updateOne(
+    const creditResult = sessionDb.customers.updateOne(
       { _id: toAccount },
-      { $inc: { balance: amount } },
-      { session: session }
+      { $inc: { balance: amount } }
     );
     
     if (creditResult.matchedCount === 0) {
@@ -307,21 +312,21 @@ function transferMoney(fromAccount, toAccount, amount) {
     }
     
     // Log transaction
-    db.transactions.insertOne({
+    sessionDb.transactions.insertOne({
       fromAccount: fromAccount,
       toAccount: toAccount,
       amount: amount,
       timestamp: new Date(),
       type: "transfer"
-    }, { session: session });
+    });
     
     session.commitTransaction();
     
-    print(`✅ Transfer completed: $${amount} from ${fromAccount} to ${toAccount}`);
+    print(`Transfer completed: $${amount} from ${fromAccount} to ${toAccount}`);
     return { success: true };
     
   } catch (error) {
-    print("❌ Transfer failed: " + error.message);
+    print("Transfer failed: " + error.message);
     session.abortTransaction();
     return { success: false, error: error.message };
     
@@ -329,6 +334,15 @@ function transferMoney(fromAccount, toAccount, amount) {
     session.endSession();
   }
 }
+
+// Create transactions collection
+db.transactions.createIndex({ timestamp: -1 });
+
+// Test transfer
+transferMoney("cust2", "cust1", 100.00);
+
+// Verify balances
+db.customers.find({}, { name: 1, balance: 1 });
 
 // Test transfers
 transferMoney("cust3", "cust1", 100.00);
