@@ -1,214 +1,60 @@
-#### 5. Order Processing System with Event Simulation
-
-**Using MongoDB Compass:**
-
-1. **Complete Event-Driven System:**
-   ```javascript
-   // Complete order processing system simulation
-   var OrderProcessor = {
-     
-     // Process new orders
-     processNewOrder: function(order) {
-       print(`Processing new order: ${order._id}`);
-       
-       // Validate inventory
-       var allItemsAvailable = true;
-       var unavailableItems = [];
-       
-       order.items.forEach(function(item) {
-         var product = db.products.findOne({ _id: item.productId });
-         if (!product || product.stock < item.quantity) {
-           allItemsAvailable = false;
-           unavailableItems.push(item.productId);
-         }
-       });
-       
-       if (allItemsAvailable) {
-         // Update order status
-         db.orders.updateOne(
-           { _id: order._id },
-           { $set: { status: "processing", processedAt: new Date() } }
-         );
-         
-         // Create success notification
-         db.notifications.insertOne({
-           userId: order.customerId,
-           type: "order_confirmed",
-           message: `Your order ${order._id} has been confirmed and is being processed.`,
-           orderId: order._id,
-           timestamp: new Date(),
-           read: false
-         });
-         
-         print(`✓ Order ${order._id} confirmed and processing`);
-       } else {
-         // Update order status to failed
-         db.orders.updateOne(
-           { _id: order._id },
-           { $set: { status: "failed", reason: "Insufficient inventory", failedItems: unavailableItems } }
-         );
-         
-         // Create failure notification
-         db.notifications.insertOne({
-           userId: order.customerId,
-           type: "order_failed",
-           message: `Your order ${order._id} could not be processed due to insufficient inventory.`,
-           orderId: order._id,
-           timestamp: new Date(),
-           read: false
-         });
-         
-         print(`✗ Order ${order._id} failed - insufficient inventory`);
-       }
-     },
-     
-     // Handle status changes
-     handleStatusChange: function(orderId, newStatus) {
-       print(`Order ${orderId} status changed to: ${newStatus}`);
-       
-       var order = db.orders.findOne({ _id: orderId });
-       if (order) {
-         // Send notification to customer
-         db.notifications.insertOne({
-           userId: order.customerId,
-           type: "status_update",
-           message: `Your order ${orderId} status has been updated to: ${newStatus}`,
-           orderId: orderId,
-           timestamp: new Date(),
-           read: false
-         });
-         
-         // If completed, update customer stats
-         if (newStatus === "completed") {
-           db.customers.updateOne(
-             { _id: order.customerId },
-             { 
-               $inc: { totalOrders: 1, totalSpent: order.total },
-               $set: { lastOrderDate: new Date() }
-             }
-           );
-           print(`✓ Customer ${order.customerId} stats updated`);
-         }
-       }
-     },
-     
-     // Handle inventory changes
-     handleInventoryChange: function(productId, newStock) {
-       print(`Product ${productId} stock updated to: ${newStock}`);
-       
-       // Check for low inventory
-       if (newStock <= 5) {
-         db.notifications.insertOne({
-           userId: "inventory_manager",
-           type: "low_inventory",
-           message: `Low inventory alert: Product ${productId} has only ${newStock} units left.`,
-           productId: productId,
-           timestamp: new Date(),
-           read: false
-         });
-         
-         print(`⚠ Low inventory alert for ${productId}`);
-       }
-     }
-   };
-   ```
-
-2. **Test the Complete System:**
-   ```javascript
-   print("=== Testing Order Processing System ===");
-
-   // Create a new order
-   var newOrder = {
-     _id: "order_system_test1",
-     customerId: "cust1",
-     orderDate: new Date(),
-     items: [{ productId: "prod2", quantity: 2 }],  // Should have stock
-     total: 59.98,
-     status: "pending"
-   };
-
-   db.orders.insertOne(newOrder);
-   OrderProcessor.processNewOrder(newOrder);
-
-   // Test status change
-   OrderProcessor.handleStatusChange("order_system_test1", "shipped");
-   OrderProcessor.handleStatusChange("order_system_test1", "completed");
-
-   // Test inventory change
-   OrderProcessor.handleInventoryChange("prod2", 3);  // Should trigger low stock alert
-
-   // Test order with insufficient stock
-   var failedOrder = {
-     _id: "order_system_test2",
-     customerId: "cust2",
-     orderDate: new Date(),
-     items: [{ productId: "prod1", quantity: 20 }],  // More than available stock
-     total: 19999.80,
-     status: "pending"
-   };
-
-   db.orders.insertOne(failedOrder);
-   OrderProcessor.processNewOrder(failedOrder);
-   ```
-
-3. **Monitor Complete Workflow in Compass:**
-   - Open multiple tabs for: `orders`, `notifications`, `customers`, `products`
-   - Watch real-time updates across all collections
-   - Use Compass's aggregation pipeline builder to create workflow analytics:
-     ```javascript
-     // Example aggregation to track order processing workflow
-     db.notifications.aggregate([
-       { $match: { type: { $in: ["order_confirmed", "order_failed", "status_update"] } } },
-       { $group: { _id: "$type", count: { $sum: 1 } } },
-       { $sort: { count: -1 } }
-     ])
-     ```# MongoDB Day 3 Labs: Advanced Features (Updated)
-*5 hands-on labs covering Transactions, Replication, Sharding, Change Streams, and C# API*
+# MongoDB Day 3 Labs: Advanced Features
+*Complete hands-on labs covering Transactions, Replication, Sharding, Change Streams, and C# API*
 
 ---
 
-## Prerequisites
+## Overview
 
-### Environment Setup
-- Docker Desktop installed and running
-- **MongoDB Compass** (primary tool for labs)
-- .NET 8 SDK (for C# lab)
-- Visual Studio Code
-- Download the **day3-data-generator.js** script for initial data setup
+Welcome to MongoDB Day 3 Labs! These labs will take you through MongoDB's most advanced features using **MongoDB Compass** as the primary interface, combined with practical Docker-based setups.
+
+### What You'll Learn
+- **ACID Transactions** for data consistency
+- **Replica Sets** for high availability  
+- **Sharding** for horizontal scaling
+- **Change Streams** for real-time applications
+- **C# Integration** for application development
+
+### Tools Required
+- **Docker Desktop** (primary platform)
+- **MongoDB Compass** (main interface)
+- **.NET 8 SDK** (for C# lab)
+- **Visual Studio Code** (recommended)
 
 ---
 
-## Lab 1: MongoDB Transactions (45 minutes)
+## Lab 1: MongoDB Transactions
+**Duration:** 45 minutes  
+**Objective:** Master ACID transactions in MongoDB
 
-### Learning Objectives
-- Understand ACID transactions in MongoDB
-- Implement multi-document transactions
-- Handle transaction errors and rollbacks
-- Practice real-world transaction scenarios
+### Part A: Replica Set Setup (10 minutes)
 
-### Part A: Setup Replica Set for Transactions (10 minutes)
-
-#### 1. Start Replica Set Nodes
+#### Step 1: Start MongoDB Containers
 ```bash
+# Create network for MongoDB containers
+docker network create mongodb-net
+
 # Start three MongoDB nodes for replica set
-docker run -d --name mongo1 -p 27017:27017 mongo:8.0 --replSet rs0 --bind_ip_all
-docker run -d --name mongo2 -p 27018:27017 mongo:8.0 --replSet rs0 --bind_ip_all
-docker run -d --name mongo3 -p 27019:27017 mongo:8.0 --replSet rs0 --bind_ip_all
+docker run -d --name mongo1 --network mongodb-net -p 27017:27017 mongo:8.0 --replSet rs0 --bind_ip_all
+docker run -d --name mongo2 --network mongodb-net -p 27018:27017 mongo:8.0 --replSet rs0 --bind_ip_all
+docker run -d --name mongo3 --network mongodb-net -p 27019:27017 mongo:8.0 --replSet rs0 --bind_ip_all
+
+# Verify containers are running
+docker ps
 ```
 
-#### 2. Initialize Replica Set
+#### Step 2: Initialize Replica Set
 ```bash
-# Wait for containers to start
-sleep 10
+# Wait for containers to fully start
+sleep 20
 
 # Initialize replica set
 docker exec -it mongo1 mongosh --eval "
 rs.initiate({
   _id: 'rs0',
   members: [
-    { _id: 0, host: '127.0.0.1:27017' },
-    { _id: 1, host: '127.0.0.1:27018' },
-    { _id: 2, host: '127.0.0.1:27019' }
+    { _id: 0, host: 'mongo1:27017' },
+    { _id: 1, host: 'mongo2:27017' },
+    { _id: 2, host: 'mongo3:27017' }
   ]
 })
 "
@@ -217,526 +63,536 @@ rs.initiate({
 docker exec -it mongo1 mongosh --eval "rs.status()"
 ```
 
-### Part B: Basic Transaction Operations (25 minutes)
+#### Step 3: Connect with MongoDB Compass
+1. Open MongoDB Compass
+2. Connection String: `mongodb://localhost:27017,localhost:27018,localhost:27019/?replicaSet=rs0`
+3. Click **"Connect"**
+4. Verify you see the replica set topology
 
-#### 3. Create E-commerce Database Structure
+### Part B: Transaction Setup and Testing (25 minutes)
 
-**Using MongoDB Compass:**
+#### Step 4: Create Sample Data
+**In MongoDB Compass:**
+1. Navigate to **Databases** → **Create Database**
+2. Database Name: `ecommerce`
+3. Collection Name: `products`
 
-1. **Connect to Replica Set:**
-   - Open MongoDB Compass
-   - Connection String: `mongodb://localhost:27017,localhost:27018,localhost:27019/?replicaSet=rs0`
-   - Click "Connect"
+**Using Compass MongoSH tab:**
+```javascript
+// Switch to ecommerce database
+use ecommerce
 
-2. **Load Initial Data:**
-   ```bash
-   # Run the data generator script via mongosh (one-time setup)
-   mongosh "mongodb://localhost:27017,localhost:27018,localhost:27019/?replicaSet=rs0" < day3-data-generator.js
-   ```
+// Create products with initial stock
+db.products.insertMany([
+  { 
+    _id: "prod1", 
+    name: "Laptop", 
+    price: 999.99, 
+    stock: 10,
+    category: "Electronics"
+  },
+  { 
+    _id: "prod2", 
+    name: "Mouse", 
+    price: 29.99, 
+    stock: 50,
+    category: "Electronics"
+  },
+  { 
+    _id: "prod3", 
+    name: "Keyboard", 
+    price: 79.99, 
+    stock: 25,
+    category: "Electronics"
+  },
+  { 
+    _id: "prod4", 
+    name: "Monitor", 
+    price: 299.99, 
+    stock: 15,
+    category: "Electronics"
+  }
+])
 
-3. **Verify Data in Compass:**
-   - Navigate to `ecommerce` database
-   - Explore the collections: `products`, `customers`, `orders`
-   - View the sample data structure and indexes
+// Create customers with account balances
+db.customers.insertMany([
+  { 
+    _id: "cust1", 
+    name: "John Doe", 
+    email: "john@example.com", 
+    balance: 1200.00
+  },
+  { 
+    _id: "cust2", 
+    name: "Jane Smith", 
+    email: "jane@example.com", 
+    balance: 800.00
+  },
+  { 
+    _id: "cust3", 
+    name: "Bob Johnson", 
+    email: "bob@example.com", 
+    balance: 1500.00
+  }
+])
 
-4. **Key Collections Created:**
-   - **Products:** 5 products with stock levels
-   - **Customers:** 4 customers with account balances  
-   - **Orders:** Collection ready for transaction testing
+// Create orders collection with index
+db.orders.createIndex({ customerId: 1, orderDate: 1 })
+```
 
-#### 4. Implement Order Processing Transaction
+#### Step 5: Implement Order Processing Transaction
 
-**Using MongoDB Compass:**
+```javascript
+// Complete order processing transaction
+function processOrder(customerId, items) {
+  const session = db.getMongo().startSession();
+  
+  try {
+    session.startTransaction({
+      readConcern: { level: "snapshot" },
+      writeConcern: { w: "majority" }
+    });
+    
+    const orderId = new ObjectId();
+    let totalAmount = 0;
+    
+    // Validate customer exists and has sufficient balance
+    const customer = db.customers.findOne(
+      { _id: customerId },
+      { session: session }
+    );
+    
+    if (!customer) {
+      throw new Error("Customer not found");
+    }
+    
+    // Process each item
+    for (let item of items) {
+      // Check product availability
+      const product = db.products.findOne(
+        { _id: item.productId, stock: { $gte: item.quantity } },
+        { session: session }
+      );
+      
+      if (!product) {
+        throw new Error(`Insufficient stock for product ${item.productId}`);
+      }
+      
+      totalAmount += product.price * item.quantity;
+      
+      // Update product stock
+      db.products.updateOne(
+        { _id: item.productId },
+        { $inc: { stock: -item.quantity } },
+        { session: session }
+      );
+    }
+    
+    // Check customer balance
+    if (customer.balance < totalAmount) {
+      throw new Error("Insufficient customer balance");
+    }
+    
+    // Update customer balance
+    db.customers.updateOne(
+      { _id: customerId },
+      { $inc: { balance: -totalAmount } },
+      { session: session }
+    );
+    
+    // Create order
+    db.orders.insertOne({
+      _id: orderId,
+      customerId: customerId,
+      items: items,
+      totalAmount: totalAmount,
+      status: "completed",
+      orderDate: new Date()
+    }, { session: session });
+    
+    // Commit transaction
+    session.commitTransaction();
+    
+    print("✅ Order processed successfully");
+    print("Order ID: " + orderId);
+    print("Total Amount: $" + totalAmount.toFixed(2));
+    
+    return { success: true, orderId: orderId, totalAmount: totalAmount };
+    
+  } catch (error) {
+    print("❌ Transaction failed: " + error.message);
+    session.abortTransaction();
+    return { success: false, error: error.message };
+    
+  } finally {
+    session.endSession();
+  }
+}
+```
 
-1. **Open MongoSH in Compass:**
-   - In Compass, navigate to the `ecommerce` database
-   - Click on the **"_MongoSH"** tab at the bottom
-   - This opens an integrated mongosh session
+#### Step 6: Test Transactions
 
-2. **Create Transaction Function:**
-   ```javascript
-   // Function to process an order with transaction
-   function processOrder(customerId, items) {
-     const session = db.getMongo().startSession();
-     
-     try {
-       session.startTransaction({
-         readConcern: { level: "snapshot" },
-         writeConcern: { w: "majority" }
-       });
-       
-       const orderId = new ObjectId();
-       let totalAmount = 0;
-       
-       // Validate customer exists and has sufficient balance
-       const customer = db.customers.findOne(
-         { _id: customerId },
-         { session: session }
-       );
-       
-       if (!customer) {
-         throw new Error("Customer not found");
-       }
-       
-       // Process each item
-       for (let item of items) {
-         // Check product availability
-         const product = db.products.findOne(
-           { _id: item.productId, stock: { $gte: item.quantity } },
-           { session: session }
-         );
-         
-         if (!product) {
-           throw new Error(`Insufficient stock for product ${item.productId}`);
-         }
-         
-         totalAmount += product.price * item.quantity;
-         
-         // Update product stock
-         db.products.updateOne(
-           { _id: item.productId },
-           { $inc: { stock: -item.quantity } },
-           { session: session }
-         );
-       }
-       
-       // Check customer balance
-       if (customer.balance < totalAmount) {
-         throw new Error("Insufficient customer balance");
-       }
-       
-       // Update customer balance
-       db.customers.updateOne(
-         { _id: customerId },
-         { $inc: { balance: -totalAmount } },
-         { session: session }
-       );
-       
-       // Create order
-       db.orders.insertOne({
-         _id: orderId,
-         customerId: customerId,
-         items: items,
-         totalAmount: totalAmount,
-         status: "completed",
-         orderDate: new Date()
-       }, { session: session });
-       
-       // Commit transaction
-       session.commitTransaction();
-       
-       print("Order processed successfully");
-       print("Order ID: " + orderId);
-       print("Total Amount: $" + totalAmount.toFixed(2));
-       
-       return { success: true, orderId: orderId, totalAmount: totalAmount };
-       
-     } catch (error) {
-       print("Transaction failed: " + error.message);
-       session.abortTransaction();
-       return { success: false, error: error.message };
-       
-     } finally {
-       session.endSession();
-     }
-   }
-   ```
+**Test Successful Transaction:**
+```javascript
+// Test successful order
+var result1 = processOrder("cust1", [
+  { productId: "prod1", quantity: 1 },
+  { productId: "prod2", quantity: 2 }
+]);
+```
 
-3. **Test Transactions:**
-   ```javascript
-   // Test successful order
-   var result1 = processOrder("cust1", [
-     { productId: "prod1", quantity: 1 },
-     { productId: "prod2", quantity: 2 }
-   ]);
+**Monitor in Compass:**
+1. Keep `products`, `customers`, and `orders` collections open in separate tabs
+2. Execute the transaction
+3. Refresh collections to see changes:
+   - Product stock decreased
+   - Customer balance decreased
+   - New order created
 
-   // Test order with insufficient stock  
-   var result2 = processOrder("cust2", [
-     { productId: "prod1", quantity: 15 }  // More than available
-   ]);
-   ```
+**Test Failed Transaction:**
+```javascript
+// Test order with insufficient stock
+var result2 = processOrder("cust2", [
+  { productId: "prod1", quantity: 15 }  // More than available
+]);
 
-4. **Monitor Results in Compass:**
-   - Refresh the collections view in Compass
-   - Check `products` collection - notice stock changes
-   - Check `customers` collection - notice balance changes
-   - Check `orders` collection - see new orders created
-   - Failed transactions should not change any data
+// Test order with insufficient balance
+var result3 = processOrder("cust2", [
+  { productId: "prod4", quantity: 10 }  // Costs $2999.90 but customer has $800
+]);
+```
 
-### Part C: Advanced Transaction Scenarios (10 minutes)
+**Verify Rollback:**
+- Check that no data changed when transactions failed
+- This demonstrates ACID atomicity
 
-#### 5. Money Transfer Transaction
+### Part C: Money Transfer System (10 minutes)
 
-**Using MongoDB Compass MongoSH:**
+#### Step 7: Implement Money Transfer
 
-1. **Create Transfer Function:**
-   ```javascript
-   // Bank transfer simulation
-   function transferMoney(fromAccount, toAccount, amount) {
-     const session = db.getMongo().startSession();
-     
-     try {
-       session.startTransaction({
-         readConcern: { level: "snapshot" },
-         writeConcern: { w: "majority" }
-       });
-       
-       // Debit from source account
-       const debitResult = db.customers.updateOne(
-         { 
-           _id: fromAccount, 
-           balance: { $gte: amount } 
-         },
-         { $inc: { balance: -amount } },
-         { session: session }
-       );
-       
-       if (debitResult.matchedCount === 0) {
-         throw new Error("Insufficient funds or account not found");
-       }
-       
-       // Credit to destination account
-       const creditResult = db.customers.updateOne(
-         { _id: toAccount },
-         { $inc: { balance: amount } },
-         { session: session }
-       );
-       
-       if (creditResult.matchedCount === 0) {
-         throw new Error("Destination account not found");
-       }
-       
-       // Log transaction
-       db.transactions.insertOne({
-         fromAccount: fromAccount,
-         toAccount: toAccount,
-         amount: amount,
-         timestamp: new Date(),
-         type: "transfer"
-       }, { session: session });
-       
-       session.commitTransaction();
-       
-       print(`Transfer completed: ${amount} from ${fromAccount} to ${toAccount}`);
-       return { success: true };
-       
-     } catch (error) {
-       print("Transfer failed: " + error.message);
-       session.abortTransaction();
-       return { success: false, error: error.message };
-       
-     } finally {
-       session.endSession();
-     }
-   }
-   ```
+```javascript
+// Bank transfer simulation
+function transferMoney(fromAccount, toAccount, amount) {
+  const session = db.getMongo().startSession();
+  
+  try {
+    session.startTransaction({
+      readConcern: { level: "snapshot" },
+      writeConcern: { w: "majority" }
+    });
+    
+    // Debit from source account
+    const debitResult = db.customers.updateOne(
+      { 
+        _id: fromAccount, 
+        balance: { $gte: amount } 
+      },
+      { $inc: { balance: -amount } },
+      { session: session }
+    );
+    
+    if (debitResult.matchedCount === 0) {
+      throw new Error("Insufficient funds or account not found");
+    }
+    
+    // Credit to destination account
+    const creditResult = db.customers.updateOne(
+      { _id: toAccount },
+      { $inc: { balance: amount } },
+      { session: session }
+    );
+    
+    if (creditResult.matchedCount === 0) {
+      throw new Error("Destination account not found");
+    }
+    
+    // Log transaction
+    db.transactions.insertOne({
+      fromAccount: fromAccount,
+      toAccount: toAccount,
+      amount: amount,
+      timestamp: new Date(),
+      type: "transfer"
+    }, { session: session });
+    
+    session.commitTransaction();
+    
+    print(`✅ Transfer completed: $${amount} from ${fromAccount} to ${toAccount}`);
+    return { success: true };
+    
+  } catch (error) {
+    print("❌ Transfer failed: " + error.message);
+    session.abortTransaction();
+    return { success: false, error: error.message };
+    
+  } finally {
+    session.endSession();
+  }
+}
 
-2. **Test Transfer:**
-   ```javascript
-   // Test transfer
-   transferMoney("cust2", "cust1", 100.00);
-   ```
+// Test transfers
+transferMoney("cust3", "cust1", 100.00);
+transferMoney("cust2", "cust1", 50.00);
 
-3. **Verify in Compass:**
-   - Go to `customers` collection
-   - Apply filter: `{}` to see all customers
-   - Notice the balance changes
-   - Check `transactions` collection for the transfer record
-   - Use Compass's real-time view to see changes as they happen
+// Test invalid transfer
+transferMoney("cust2", "cust1", 1000.00);  // Should fail - insufficient funds
+```
+
+#### Step 8: Verify Results in Compass
+1. Check `customers` collection - verify balance changes
+2. Check `transactions` collection - see transfer records
+3. Observe how invalid transfers don't affect data
+
+### Lab 1 Deliverables
+✅ **Replica set** configured and verified  
+✅ **ACID transactions** implemented with error handling  
+✅ **Visual verification** using Compass real-time monitoring  
+✅ **Understanding** of transaction isolation and consistency
 
 ---
 
-## Lab 2: Replica Sets and High Availability (45 minutes)
-
-### Learning Objectives
-- Configure and manage MongoDB replica sets
-- Understand failover and recovery mechanisms
-- Implement read preferences and write concerns
-- Monitor replica set health and performance
+## Lab 2: Replica Sets & High Availability
+**Duration:** 45 minutes  
+**Objective:** Configure replica sets and test failover scenarios
 
 ### Part A: Advanced Replica Set Configuration (20 minutes)
 
-#### 1. Add Arbiter and Hidden Member
+#### Step 1: Add Special Members
 ```bash
-# Add arbiter node (no data, voting only)
-docker run -d --name mongo-arbiter -p 27020:27017 mongo:8.0 --replSet rs0 --bind_ip_all
+# Add arbiter node (voting only, no data)
+docker run -d --name mongo-arbiter --network mongodb-net -p 27020:27017 mongo:8.0 --replSet rs0 --bind_ip_all
 
-# Add hidden member (data replication, no client reads)
-docker run -d --name mongo-hidden -p 27021:27017 mongo:8.0 --replSet rs0 --bind_ip_all
+# Add hidden member (data replication, no client reads)  
+docker run -d --name mongo-hidden --network mongodb-net -p 27021:27017 mongo:8.0 --replSet rs0 --bind_ip_all
 
 # Wait for containers to start
-sleep 5
+sleep 10
 ```
 
-#### 2. Reconfigure Replica Set with Special Members
+#### Step 2: Configure Replica Set in Compass
 
-**Using MongoDB Compass:**
+**Using Compass MongoSH:**
+```javascript
+// Add arbiter
+rs.add({
+  _id: 3,
+  host: "mongo-arbiter:27017",
+  arbiterOnly: true
+})
 
-1. **Connect to Replica Set:**
-   - Open MongoDB Compass
-   - Connection String: `mongodb://localhost:27017,localhost:27018,localhost:27019/?replicaSet=rs0`
+// Add hidden member
+rs.add({
+  _id: 4,
+  host: "mongo-hidden:27017",
+  priority: 0,
+  hidden: true,
+  votes: 0
+})
 
-2. **Use MongoSH in Compass:**
-   ```javascript
-   // Add arbiter
-   rs.add({
-     _id: 3,
-     host: "127.0.0.1:27020",
-     arbiterOnly: true
-   })
+// Check configuration
+rs.conf()
+rs.status()
+```
 
-   // Add hidden member
-   rs.add({
-     _id: 4,
-     host: "127.0.0.1:27021",
-     priority: 0,
-     hidden: true,
-     votes: 0
-   })
+#### Step 3: Configure Priorities and Tags
 
-   // Check configuration
-   rs.conf()
-   rs.status()
-   ```
+```javascript
+// Get current configuration
+var config = rs.conf();
 
-3. **Monitor in Compass:**
-   - Navigate to the `admin` database
-   - View the `system.replset` collection to see configuration
-   - Use Compass's real-time monitoring to observe replica set status
+// Set priorities (higher = preferred primary)
+config.members[0].priority = 3;  // mongo1 - primary preference
+config.members[1].priority = 2;  // mongo2 - secondary preference  
+config.members[2].priority = 1;  // mongo3 - lower priority
 
-#### 3. Configure Member Priorities and Tags
+// Add geographic tags for read preferences
+config.members[0].tags = { datacenter: "dc1", region: "east" };
+config.members[1].tags = { datacenter: "dc2", region: "west" };
+config.members[2].tags = { datacenter: "dc3", region: "east" };
+config.members[4].tags = { datacenter: "dc1", region: "east", usage: "analytics" };
 
-**Using MongoDB Compass MongoSH:**
+// Apply configuration
+rs.reconfig(config);
 
-1. **Update Replica Set Configuration:**
-   ```javascript
-   // Get current configuration
-   var config = rs.conf();
+// Verify changes
+rs.conf();
+```
 
-   // Set priorities (higher number = preferred primary)
-   config.members[0].priority = 3;  // Primary preference
-   config.members[1].priority = 2;  // Secondary preference
-   config.members[2].priority = 1;  // Lower priority
-
-   // Add tags for geographic distribution simulation
-   config.members[0].tags = { datacenter: "dc1", region: "east" };
-   config.members[1].tags = { datacenter: "dc2", region: "west" };
-   config.members[2].tags = { datacenter: "dc3", region: "east" };
-   config.members[4].tags = { datacenter: "dc1", region: "east", usage: "analytics" };
-
-   // Apply configuration
-   rs.reconfig(config);
-   ```
-
-2. **Verify Changes in Compass:**
-   - Go to `admin` database → `system.replset` collection
-   - View the configuration document
-   - Notice the priorities and tags added
-   - Use Compass's JSON view to see the complete configuration structure
+**Monitor in Compass:**
+1. Navigate to `admin` database → `system.replset` collection
+2. View the configuration document
+3. Use Compass's JSON view to see member configuration
 
 ### Part B: Failover Testing and Read Preferences (15 minutes)
 
-#### 4. Test Automatic Failover
+#### Step 4: Test Automatic Failover
 
-**Using MongoDB Compass + Command Line:**
+**Monitor Current Primary:**
+```bash
+# Check current primary
+docker exec -it mongo1 mongosh --eval "
+var primary = rs.status().members.filter(m => m.state === 1)[0];
+print('Current primary: ' + primary.name);
+"
+```
 
-1. **Monitor Current Primary:**
-   ```bash
-   # Check current primary
-   docker exec -it mongo1 mongosh --eval "
-   var primary = rs.status().members.filter(m => m.state === 1)[0];
-   print('Current primary: ' + primary.name);
-   "
-   ```
+**In MongoDB Compass:**
+1. Keep Compass connected to the replica set
+2. Note which server shows as "Primary" in the connection status
 
-2. **Monitor in Compass:**
-   - Keep Compass open to the replica set
-   - Watch the server status indicators
-   - Note which server shows as "Primary"
+**Simulate Failover:**
+```bash
+# Stop the primary node
+docker stop mongo1
 
-3. **Simulate Failover:**
-   ```bash
-   # Simulate primary failure
-   docker stop mongo1
-   
-   # Wait 30 seconds and observe in Compass
-   # You'll see the primary indicator change to another server
-   
-   # Restart the failed node
-   docker start mongo1
-   ```
+# Wait 30 seconds and observe in Compass
+# Watch the primary indicator change to another server
+```
 
-4. **Observe in Compass:**
-   - Watch the real-time status changes
-   - Notice how the original primary becomes a secondary
-   - Use Compass's performance metrics to see the election process
-   - Check the replica set topology view
+**Monitor in Compass:**
+- Watch real-time status changes in connection indicator
+- Use Performance tab to see election metrics
+- Note automatic promotion of secondary to primary
 
-#### 5. Implement Read Preferences
+**Restart Failed Node:**
+```bash
+# Restart the original primary
+docker start mongo1
+# It will rejoin as a secondary
+sleep 10
+```
 
-**Using MongoDB Compass:**
+#### Step 5: Read Preferences Configuration
 
-1. **Test Read Preferences via MongoSH:**
-   ```javascript
-   use ecommerce
+**Create Multiple Connections in Compass:**
 
-   // Primary read preference (default)
-   db.products.find().readPref("primary");
+1. **Primary Only Connection:**
+   - Connection String: `mongodb://localhost:27017,localhost:27018,localhost:27019/?replicaSet=rs0&readPreference=primary`
+   - Favorite Name: "Primary Only"
 
-   // Secondary preferred - read from secondary if available
-   db.products.find().readPref("secondaryPreferred");
+2. **Secondary Preferred Connection:**
+   - Connection String: `mongodb://localhost:27017,localhost:27018,localhost:27019/?replicaSet=rs0&readPreference=secondaryPreferred`
+   - Favorite Name: "Secondary Preferred"
 
-   // Nearest - read from member with lowest network latency
-   db.products.find().readPref("nearest");
+3. **Nearest Connection:**
+   - Connection String: `mongodb://localhost:27017,localhost:27018,localhost:27019/?replicaSet=rs0&readPreference=nearest`
+   - Favorite Name: "Nearest"
 
-   // Secondary with tags - read from specific tagged members
-   db.products.find().readPref("secondary", [
-     { "datacenter": "dc1" },
-     { "region": "east" }
-   ]);
+**Test Read Preferences via MongoSH:**
+```javascript
+use ecommerce
 
-   // Read from analytics member only
-   db.products.find().readPref("secondary", [
-     { "usage": "analytics" }
-   ]);
-   ```
+// Primary read preference (default)
+db.products.find().readPref("primary");
 
-2. **Compass Connection Strings:**
-   Create separate connections in Compass to test read preferences:
-   
-   - **Primary Only:**
-     `mongodb://localhost:27017,localhost:27018,localhost:27019/?replicaSet=rs0&readPreference=primary`
-   
-   - **Secondary Preferred:**
-     `mongodb://localhost:27017,localhost:27018,localhost:27019/?replicaSet=rs0&readPreference=secondaryPreferred`
-   
-   - **Nearest:**
-     `mongodb://localhost:27017,localhost:27018,localhost:27019/?replicaSet=rs0&readPreference=nearest`
+// Secondary preferred
+db.products.find().readPref("secondaryPreferred");
 
-3. **Monitor Read Distribution:**
-   - Use Compass performance tabs to see which servers handle queries
-   - Compare query distribution across different read preferences
-   - Note the server indicators showing read activity
+// Nearest member
+db.products.find().readPref("nearest");
 
-#### 6. Write Concerns and Read Concerns
+// Tagged reads - east region only
+db.products.find().readPref("secondary", [
+  { "region": "east" }
+]);
 
-**Using MongoDB Compass MongoSH:**
+// Analytics member only
+db.products.find().readPref("secondary", [
+  { "usage": "analytics" }
+]);
+```
 
-1. **Test Write Concerns:**
-   ```javascript
-   use ecommerce
+#### Step 6: Write and Read Concerns
 
-   // Default write concern
-   db.test_writes.insertOne({ test: "default", timestamp: new Date() });
+```javascript
+use ecommerce
 
-   // Majority write concern (wait for majority of replica set)
-   db.test_writes.insertOne(
-     { test: "majority", timestamp: new Date() },
-     { writeConcern: { w: "majority" } }
-   );
+// Test various write concerns
+db.test_writes.insertOne(
+  { test: "majority", timestamp: new Date() },
+  { writeConcern: { w: "majority" } }
+);
 
-   // Write concern with timeout
-   db.test_writes.insertOne(
-     { test: "majority_timeout", timestamp: new Date() },
-     { writeConcern: { w: "majority", wtimeout: 5000 } }
-   );
+db.test_writes.insertOne(
+  { test: "majority_timeout", timestamp: new Date() },
+  { writeConcern: { w: "majority", wtimeout: 5000 } }
+);
 
-   // Journal write concern (wait for write to journal)
-   db.test_writes.insertOne(
-     { test: "journal", timestamp: new Date() },
-     { writeConcern: { w: 1, j: true } }
-   );
-   ```
+db.test_writes.insertOne(
+  { test: "journal", timestamp: new Date() },
+  { writeConcern: { w: 1, j: true } }
+);
 
-2. **Test Read Concerns:**
-   ```javascript
-   // Read from local replica
-   db.test_writes.find().readConcern("local");
-   
-   // Read majority-committed data
-   db.test_writes.find().readConcern("majority");
-   ```
+// Test read concerns
+db.test_writes.find().readConcern("local");
+db.test_writes.find().readConcern("majority");
+```
 
-3. **Monitor in Compass:**
-   - Watch the `test_writes` collection refresh
-   - Use Compass's real-time view to see write propagation
-   - Check individual replica set members to see data consistency
-   - Observe write acknowledgment timing differences
+**Monitor in Compass:**
+- Watch write propagation across replica set members
+- Use Performance tab to see write acknowledgment timing
+- Observe consistency behavior with different concerns
 
 ### Part C: Monitoring and Maintenance (10 minutes)
 
-#### 7. Replica Set Monitoring
+#### Step 7: Comprehensive Monitoring
 
-**Using MongoDB Compass:**
+**Compass Monitoring Features:**
+1. **Performance Tab:** Operations/sec, read/write distribution, replication lag
+2. **Real-time Metrics:** Memory usage, connections, network I/O  
+3. **Topology View:** Visual cluster health representation
 
-1. **Compass Monitoring Features:**
-   - Navigate to the replica set connection
-   - Use the **Performance** tab to monitor:
-     - Operations per second
-     - Read/write distribution
-     - Replication lag
-     - Network I/O
-
-2. **MongoSH Monitoring Script:**
-   ```javascript
-   // Comprehensive monitoring function
-   function monitorReplicaSet() {
-     print("=== Replica Set Monitoring ===");
-     
-     // Basic status
-     var status = rs.status();
-     print("Replica Set: " + status.set);
-     print("Date: " + status.date);
-     
-     // Member status
-     print("\n--- Member Status ---");
-     status.members.forEach(function(member) {
-       print(`${member.name}: ${member.stateStr} (Health: ${member.health})`);
-       if (member.optimeDate) {
-         print(`  Last Optime: ${member.optimeDate}`);
-       }
-       if (member.lastHeartbeat) {
-         print(`  Last Heartbeat: ${member.lastHeartbeat}`);
-       }
-     });
-     
-     // Replication lag
-     print("\n--- Replication Lag ---");
-     var primary = status.members.filter(m => m.state === 1)[0];
-     if (primary) {
-       status.members.filter(m => m.state === 2).forEach(function(secondary) {
-         var lag = (primary.optimeDate - secondary.optimeDate) / 1000;
-         print(`${secondary.name}: ${lag.toFixed(2)} seconds behind primary`);
-       });
-     }
-     
-     // Oplog information
-     print("\n--- Oplog Information ---");
-     var oplogStats = db.oplog.rs.stats();
-     print(`Oplog Size: ${(oplogStats.size / 1024 / 1024).toFixed(2)} MB`);
-     print(`Oplog Used: ${(oplogStats.storageSize / 1024 / 1024).toFixed(2)} MB`);
-   }
-
-   // Run monitoring
-   monitorReplicaSet();
-   ```
-
-3. **Visual Monitoring in Compass:**
-   - **Real-time Metrics:** Operations, connections, memory usage
-   - **Replica Set Topology:** Visual representation of cluster health
-   - **Performance Charts:** Historical performance data
-   - **Profiler:** Query performance analysis
-
-#### 8. Maintenance Operations
+**MongoSH Monitoring Script:**
 ```javascript
-// Step down primary for maintenance (forces new election)
+// Comprehensive replica set monitoring
+function monitorReplicaSet() {
+  print("=== Replica Set Monitoring ===");
+  
+  var status = rs.status();
+  print("Replica Set: " + status.set);
+  print("Date: " + status.date);
+  
+  // Member status
+  print("\n--- Member Status ---");
+  status.members.forEach(function(member) {
+    print(`${member.name}: ${member.stateStr} (Health: ${member.health})`);
+    if (member.optimeDate) {
+      print(`  Last Optime: ${member.optimeDate}`);
+    }
+    if (member.lastHeartbeat) {
+      print(`  Last Heartbeat: ${member.lastHeartbeat}`);
+    }
+  });
+  
+  // Replication lag
+  print("\n--- Replication Lag ---");
+  var primary = status.members.filter(m => m.state === 1)[0];
+  if (primary) {
+    status.members.filter(m => m.state === 2).forEach(function(secondary) {
+      var lag = (primary.optimeDate - secondary.optimeDate) / 1000;
+      print(`${secondary.name}: ${lag.toFixed(2)} seconds behind primary`);
+    });
+  }
+  
+  // Oplog information
+  print("\n--- Oplog Information ---");
+  var oplogStats = db.oplog.rs.stats();
+  print(`Oplog Size: ${(oplogStats.size / 1024 / 1024).toFixed(2)} MB`);
+  print(`Oplog Used: ${(oplogStats.storageSize / 1024 / 1024).toFixed(2)} MB`);
+}
+
+// Run monitoring
+monitorReplicaSet();
+```
+
+#### Step 8: Maintenance Operations
+
+```javascript
+// Step down primary for maintenance
 rs.stepDown(60);  // Step down for 60 seconds
 
-// Freeze a secondary to prevent it from becoming primary
+// Freeze a secondary (prevent it from becoming primary)
 rs.freeze(300);   // Freeze for 5 minutes
-
-// Check if member is frozen
-rs.status().members.filter(m => m.name.includes("27018"))[0]
 
 // Reconfigure replica set settings
 var config = rs.conf();
@@ -746,64 +602,66 @@ config.settings.heartbeatIntervalMillis = 3000;  // 3 seconds
 rs.reconfig(config);
 ```
 
+### Lab 2 Deliverables
+✅ **Advanced replica set** with arbiter and hidden members  
+✅ **Failover testing** with visual monitoring  
+✅ **Read preferences** configured and tested  
+✅ **Comprehensive monitoring** setup and maintenance procedures
+
 ---
 
-## Lab 3: Sharding and Horizontal Scaling (45 minutes)
-
-### Learning Objectives
-- Set up a sharded MongoDB cluster
-- Choose appropriate shard keys
-- Manage chunk distribution and balancing
-- Monitor sharded cluster performance
+## Lab 3: Sharding & Horizontal Scaling
+**Duration:** 45 minutes  
+**Objective:** Build and manage a sharded MongoDB cluster
 
 ### Part A: Sharded Cluster Setup (25 minutes)
 
-#### 1. Start Config Server Replica Set
+#### Step 1: Start Config Server Replica Set
 ```bash
 # Config servers (store cluster metadata)
-docker run -d --name config1 -p 27100:27017 mongo:8.0 --configsvr --replSet configrs --bind_ip_all
-docker run -d --name config2 -p 27101:27017 mongo:8.0 --configsvr --replSet configrs --bind_ip_all
-docker run -d --name config3 -p 27102:27017 mongo:8.0 --configsvr --replSet configrs --bind_ip_all
+docker run -d --name config1 --network mongodb-net -p 27100:27017 mongo:8.0 --configsvr --replSet configrs --bind_ip_all
+docker run -d --name config2 --network mongodb-net -p 27101:27017 mongo:8.0 --configsvr --replSet configrs --bind_ip_all  
+docker run -d --name config3 --network mongodb-net -p 27102:27017 mongo:8.0 --configsvr --replSet configrs --bind_ip_all
 
-# Wait for containers to start
-sleep 10
+# Wait for startup
+sleep 15
 
 # Initialize config server replica set
 docker exec -it config1 mongosh --eval "
 rs.initiate({
   _id: 'configrs',
   members: [
-    { _id: 0, host: '127.0.0.1:27100' },
-    { _id: 1, host: '127.0.0.1:27101' },
-    { _id: 2, host: '127.0.0.1:27102' }
+    { _id: 0, host: 'config1:27017' },
+    { _id: 1, host: 'config2:27017' },
+    { _id: 2, host: 'config3:27017' }
   ]
 })
 "
 ```
 
-#### 2. Start Shard Replica Sets
+#### Step 2: Start Shard Replica Sets
 ```bash
 # Shard 1 replica set
-docker run -d --name shard1-1 -p 27201:27017 mongo:8.0 --shardsvr --replSet shard1rs --bind_ip_all
-docker run -d --name shard1-2 -p 27202:27017 mongo:8.0 --shardsvr --replSet shard1rs --bind_ip_all
-docker run -d --name shard1-3 -p 27203:27017 mongo:8.0 --shardsvr --replSet shard1rs --bind_ip_all
+docker run -d --name shard1-1 --network mongodb-net -p 27201:27017 mongo:8.0 --shardsvr --replSet shard1rs --bind_ip_all
+docker run -d --name shard1-2 --network mongodb-net -p 27202:27017 mongo:8.0 --shardsvr --replSet shard1rs --bind_ip_all
+docker run -d --name shard1-3 --network mongodb-net -p 27203:27017 mongo:8.0 --shardsvr --replSet shard1rs --bind_ip_all
 
-# Shard 2 replica set
-docker run -d --name shard2-1 -p 27301:27017 mongo:8.0 --shardsvr --replSet shard2rs --bind_ip_all
-docker run -d --name shard2-2 -p 27302:27017 mongo:8.0 --shardsvr --replSet shard2rs --bind_ip_all
-docker run -d --name shard2-3 -p 27303:27017 mongo:8.0 --shardsvr --replSet shard2rs --bind_ip_all
+# Shard 2 replica set  
+docker run -d --name shard2-1 --network mongodb-net -p 27301:27017 mongo:8.0 --shardsvr --replSet shard2rs --bind_ip_all
+docker run -d --name shard2-2 --network mongodb-net -p 27302:27017 mongo:8.0 --shardsvr --replSet shard2rs --bind_ip_all
+docker run -d --name shard2-3 --network mongodb-net -p 27303:27017 mongo:8.0 --shardsvr --replSet shard2rs --bind_ip_all
 
-# Wait for containers to start
-sleep 10
+# Wait for startup
+sleep 15
 
 # Initialize shard 1 replica set
 docker exec -it shard1-1 mongosh --eval "
 rs.initiate({
   _id: 'shard1rs',
   members: [
-    { _id: 0, host: '127.0.0.1:27201' },
-    { _id: 1, host: '127.0.0.1:27202' },
-    { _id: 2, host: '127.0.0.1:27203' }
+    { _id: 0, host: 'shard1-1:27017' },
+    { _id: 1, host: 'shard1-2:27017' },
+    { _id: 2, host: 'shard1-3:27017' }
   ]
 })
 "
@@ -813,452 +671,388 @@ docker exec -it shard2-1 mongosh --eval "
 rs.initiate({
   _id: 'shard2rs',
   members: [
-    { _id: 0, host: '127.0.0.1:27301' },
-    { _id: 1, host: '127.0.0.1:27302' },
-    { _id: 2, host: '127.0.0.1:27303' }
+    { _id: 0, host: 'shard2-1:27017' },
+    { _id: 1, host: 'shard2-2:27017' },
+    { _id: 2, host: 'shard2-3:27017' }
   ]
 })
 "
 ```
 
-#### 3. Start Query Routers (mongos)
+#### Step 3: Start Query Routers (mongos)
 ```bash
-# Query routers (mongos instances)
-docker run -d --name mongos1 -p 27017:27017 mongo:8.0 mongos --configdb configrs/127.0.0.1:27100,127.0.0.1:27101,127.0.0.1:27102 --bind_ip_all
-docker run -d --name mongos2 -p 27018:27017 mongo:8.0 mongos --configdb configrs/127.0.0.1:27100,127.0.0.1:27101,127.0.0.1:27102 --bind_ip_all
+# Query routers
+docker run -d --name mongos1 --network mongodb-net -p 27017:27017 mongo:8.0 mongos --configdb configrs/config1:27017,config2:27017,config3:27017 --bind_ip_all
+docker run -d --name mongos2 --network mongodb-net -p 27018:27017 mongo:8.0 mongos --configdb configrs/config1:27017,config2:27017,config3:27017 --bind_ip_all
 
-# Wait for mongos to start
-sleep 10
+# Wait for mongos startup
+sleep 15
 ```
 
-#### 4. Add Shards to Cluster
+#### Step 4: Configure Sharded Cluster
 
-**Using MongoDB Compass:**
+**Connect to Sharded Cluster with Compass:**
+1. Connection String: `mongodb://localhost:27017`
+2. This connects to mongos (query router)
 
-1. **Connect to mongos:**
-   - Open MongoDB Compass
-   - Connection String: `mongodb://localhost:27017`
-   - This connects to the query router (mongos)
+**Add Shards via Compass MongoSH:**
+```javascript
+// Add shards to the cluster
+sh.addShard("shard1rs/shard1-1:27017,shard1-2:27017,shard1-3:27017")
+sh.addShard("shard2rs/shard2-1:27017,shard2-2:27017,shard2-3:27017")
 
-2. **Add Shards via MongoSH in Compass:**
-   ```javascript
-   // Add shards to the cluster
-   sh.addShard("shard1rs/127.0.0.1:27201,127.0.0.1:27202,127.0.0.1:27203")
-   sh.addShard("shard2rs/127.0.0.1:27301,127.0.0.1:27302,127.0.0.1:27303")
+// Check cluster status
+sh.status()
+```
 
-   // Check cluster status
-   sh.status()
-   ```
+**Monitor in Compass:**
+1. Navigate to `config` database
+2. Explore collections: `shards`, `chunks`, `databases`
+3. View the sharding configuration
 
-3. **Monitor in Compass:**
-   - Navigate to `config` database
-   - Explore collections: `shards`, `chunks`, `databases`
-   - View the sharding configuration in real-time
+### Part B: Sharding Strategy Implementation (15 minutes)
 
-### Part B: Sharding Strategy and Implementation (15 minutes)
+#### Step 5: Enable Sharding and Create Collections
 
-#### 5. Enable Sharding on Database and Collections
+```javascript
+// Enable sharding on database
+sh.enableSharding("ecommerce")
 
-**Using MongoDB Compass:**
+use ecommerce
 
-1. **Enable Sharding via MongoSH:**
-   ```javascript
-   // Enable sharding on the ecommerce database
-   sh.enableSharding("ecommerce")
+// 1. Hashed sharding for even distribution
+sh.shardCollection("ecommerce.users", { _id: "hashed" })
 
-   use ecommerce
+// 2. Range-based sharding for query targeting
+sh.shardCollection("ecommerce.orders", { customerId: 1, orderDate: 1 })
 
-   // 1. Hashed sharding for even distribution
-   sh.shardCollection("ecommerce.users", { _id: "hashed" })
+// 3. Geographic sharding
+sh.shardCollection("ecommerce.stores", { region: 1, storeId: 1 })
 
-   // 2. Range-based sharding for query targeting
-   sh.shardCollection("ecommerce.orders", { customerId: 1, orderDate: 1 })
+// Check sharding status
+sh.status()
+```
 
-   // 3. Geographic sharding
-   sh.shardCollection("ecommerce.stores", { region: 1, storeId: 1 })
+#### Step 6: Load Test Data
 
-   // Check sharding status
-   sh.status()
-   ```
+**Generate Users Data (Hashed Sharding):**
+```javascript
+// Generate users for hashed distribution
+print("Generating users data...");
+for (let i = 1; i <= 1000; i++) {
+  db.users.insertOne({
+    _id: "user" + i,
+    name: "User " + i,
+    email: "user" + i + "@example.com",
+    registrationDate: new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28)),
+    preferences: {
+      newsletter: Math.random() > 0.5,
+      theme: Math.random() > 0.5 ? "dark" : "light"
+    }
+  });
+  
+  if (i % 200 === 0) {
+    print(`Inserted ${i} users`);
+  }
+}
+```
 
-2. **Monitor Sharding in Compass:**
-   - Navigate to `config` database
-   - View `collections` collection to see shard key configuration
-   - Check `chunks` collection to see data distribution
-   - Use Compass's visual query profiler to see query routing
+**Generate Orders Data (Range Sharding):**
+```javascript
+// Generate orders for range-based distribution
+print("Generating orders data...");
+var customers = ["user1", "user100", "user200", "user300", "user400", "user500"];
+for (let i = 1; i <= 500; i++) {
+  var customerId = customers[Math.floor(Math.random() * customers.length)];
+  var orderDate = new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28));
+  
+  db.orders.insertOne({
+    _id: "order" + i,
+    customerId: customerId,
+    orderDate: orderDate,
+    items: [
+      { productId: "prod" + (Math.floor(Math.random() * 4) + 1), quantity: Math.floor(Math.random() * 3) + 1 }
+    ],
+    total: Math.random() * 1000 + 50,
+    status: Math.random() > 0.8 ? "pending" : "completed"
+  });
+  
+  if (i % 100 === 0) {
+    print(`Inserted ${i} orders`);
+  }
+}
+```
 
-#### 6. Load Test Data and Observe Distribution
+**Generate Stores Data (Geographic Sharding):**
+```javascript
+// Generate stores for geographic distribution
+print("Generating stores data...");
+var regions = ["north", "south", "east", "west"];
+for (let i = 1; i <= 200; i++) {
+  var region = regions[Math.floor(Math.random() * regions.length)];
+  
+  db.stores.insertOne({
+    region: region,
+    storeId: "store" + i,
+    name: "Store " + i,
+    address: i + " Commerce St, " + region.charAt(0).toUpperCase() + region.slice(1) + " District",
+    salesData: {
+      monthly: Math.round((Math.random() * 100000 + 50000) * 100) / 100,
+      quarterly: Math.round((Math.random() * 300000 + 150000) * 100) / 100
+    }
+  });
+  
+  if (i % 50 === 0) {
+    print(`Inserted ${i} stores`);
+  }
+}
+```
 
-**Using Data Generator + Compass:**
+#### Step 7: Analyze Distribution
 
-1. **Load Pre-generated Data:**
-   ```bash
-   # The data generator script already created the data, now enable sharding
-   mongosh "mongodb://localhost:27017" < day3-data-generator.js
-   ```
+**Monitor Data Distribution in Compass:**
+1. Navigate to `config` database
+2. View `chunks` collection with filters:
+   - `{"ns": "ecommerce.users"}` - see user chunks
+   - `{"ns": "ecommerce.orders"}` - see order chunks
+   - `{"ns": "ecommerce.stores"}` - see store chunks
 
-2. **Monitor Data Distribution in Compass:**
-   - Connect to the sharded cluster: `mongodb://localhost:27017`
-   - Navigate to `ecommerce` database
-   - View collections: `users`, `orders`, `stores`
-   - Notice how data is distributed across shards
+**Analyze via MongoSH:**
+```javascript
+// Check chunk distribution
+use config
+print("Chunk counts by collection:");
+print("Users: " + db.chunks.find({ ns: "ecommerce.users" }).count());
+print("Orders: " + db.chunks.find({ ns: "ecommerce.orders" }).count());
+print("Stores: " + db.chunks.find({ ns: "ecommerce.stores" }).count());
 
-3. **Analyze Distribution via MongoSH:**
-   ```javascript
-   // Check chunk distribution across shards
-   db.adminCommand("flushRouterConfig")
-   sh.status()
+// Check chunks per shard
+print("\nChunks per shard:");
+db.chunks.aggregate([
+  { $group: { _id: "$shard", count: { $sum: 1 } } },
+  { $sort: { count: -1 } }
+]).forEach(printjson);
 
-   // Get detailed chunk information
-   use config
-   print("Chunk counts by collection:");
-   print("Users: " + db.chunks.find({ ns: "ecommerce.users" }).count());
-   print("Orders: " + db.chunks.find({ ns: "ecommerce.orders" }).count());
-   print("Stores: " + db.chunks.find({ ns: "ecommerce.stores" }).count());
-
-   // Check chunks per shard
-   print("\nChunks per shard:");
-   db.chunks.aggregate([
-     { $group: { _id: "$shard", count: { $sum: 1 } } },
-     { $sort: { count: -1 } }
-   ]).forEach(printjson);
-   ```
-
-4. **Visual Analysis in Compass:**
-   - Use Compass's **Performance** tab to see shard activity
-   - Navigate to `config.chunks` collection
-   - Apply filters to see chunk distribution: `{"ns": "ecommerce.users"}`
-   - Use Compass's aggregation builder to create distribution charts
-
-#### 7. Analyze Chunk Distribution
-
-**Using MongoDB Compass:**
-
-1. **Visual Chunk Analysis:**
-   - Navigate to `config` database in Compass
-   - Open `chunks` collection
-   - Apply filter: `{"ns": "ecommerce.users"}` to see user chunks
-   - Apply filter: `{"ns": "ecommerce.orders"}` to see order chunks
-   - Use Compass's document view to examine chunk boundaries
-
-2. **Balancer Monitoring:**
-   ```javascript
-   // Check balancer status via MongoSH
-   print("Balancer status:");
-   print("Enabled: " + sh.getBalancerState());
-   print("Running: " + sh.isBalancerRunning());
-   
-   // View balancer statistics
-   use config
-   db.actionlog.find({what: "balancer.round"}).sort({time: -1}).limit(5).forEach(printjson);
-   ```
-
-3. **Performance Analysis in Compass:**
-   - Use the **Performance** tab to monitor:
-     - Query distribution across shards
-     - Shard utilization
-     - Chunk migration activity
-   - Compare query patterns between different shard key strategies
+// Check balancer status
+print("\nBalancer status:");
+print("Enabled: " + sh.getBalancerState());
+print("Running: " + sh.isBalancerRunning());
+```
 
 ### Part C: Zone Sharding and Management (5 minutes)
 
-#### 8. Zone Sharding for Geographic Distribution
+#### Step 8: Zone Sharding for Geographic Distribution
 
-**Using MongoDB Compass:**
+```javascript
+// Add tags to shards for geographic zones
+sh.addShardTag("shard1rs", "US-EAST")
+sh.addShardTag("shard2rs", "US-WEST")
 
-1. **Configure Zone Sharding via MongoSH:**
-   ```javascript
-   // Add tags to shards for geographic zones
-   sh.addShardTag("shard1rs", "US-EAST")
-   sh.addShardTag("shard2rs", "US-WEST")
+// Create zone ranges for geographic data
+sh.addTagRange(
+  "ecommerce.stores",
+  { region: "north", storeId: MinKey },
+  { region: "north", storeId: MaxKey },
+  "US-EAST"
+)
 
-   // Create zone ranges for geographic data
-   sh.addTagRange(
-     "ecommerce.stores",
-     { region: "north", storeId: MinKey },
-     { region: "north", storeId: MaxKey },
-     "US-EAST"
-   )
+sh.addTagRange(
+  "ecommerce.stores",
+  { region: "east", storeId: MinKey },
+  { region: "east", storeId: MaxKey },
+  "US-EAST"
+)
 
-   sh.addTagRange(
-     "ecommerce.stores",
-     { region: "east", storeId: MinKey },
-     { region: "east", storeId: MaxKey },
-     "US-EAST"
-   )
+sh.addTagRange(
+  "ecommerce.stores",
+  { region: "south", storeId: MinKey },
+  { region: "south", storeId: MaxKey },
+  "US-WEST"
+)
 
-   sh.addTagRange(
-     "ecommerce.stores",
-     { region: "south", storeId: MinKey },
-     { region: "south", storeId: MaxKey },
-     "US-WEST"
-   )
+sh.addTagRange(
+  "ecommerce.stores",
+  { region: "west", storeId: MinKey },
+  { region: "west", storeId: MaxKey },
+  "US-WEST"
+)
 
-   sh.addTagRange(
-     "ecommerce.stores",
-     { region: "west", storeId: MinKey },
-     { region: "west", storeId: MaxKey },
-     "US-WEST"
-   )
+// Check zone configuration
+sh.status()
+```
 
-   // Check zone configuration
-   sh.status()
-   ```
+**Monitor in Compass:**
+1. Navigate to `config` database
+2. View `shards` collection to see shard tags
+3. View `tags` collection to see zone ranges
 
-2. **Monitor Zone Configuration in Compass:**
-   - Navigate to `config` database
-   - View `shards` collection to see shard tags
-   - View `tags` collection to see zone ranges
-   - Use filtering to verify geographic distribution
+#### Step 9: Manual Chunk Operations
 
-#### 9. Manual Chunk Operations
 ```javascript
 // Split chunks manually for better distribution
-sh.splitAt("ecommerce.orders", { customerId: "user500", orderDate: new Date("2024-06-01") })
+sh.splitAt("ecommerce.orders", { customerId: "user300", orderDate: new Date("2024-06-01") })
 
 // Move chunks between shards (if needed)
 sh.moveChunk(
   "ecommerce.orders",
-  { customerId: "user1", orderDate: MinKey },
+  { customerId: "user100", orderDate: MinKey },
   "shard2rs"
 )
 
-// Check balancer operations
-db.settings.find({ _id: "balancer" })
-
-// Temporarily disable balancer
-sh.stopBalancer()
-
-// Re-enable balancer
-sh.startBalancer()
+// Balancer management
+sh.stopBalancer()   // Temporarily disable
+sh.startBalancer()  // Re-enable
 ```
+
+### Lab 3 Deliverables
+✅ **Complete sharded cluster** with config servers and multiple shards  
+✅ **Different sharding strategies** implemented and tested  
+✅ **Zone sharding** configured for geographic distribution  
+✅ **Chunk distribution analysis** and balancer management
 
 ---
 
-## Lab 4: Change Streams for Real-time Applications (30 minutes)
+## Lab 4: Change Streams for Real-time Applications
+**Duration:** 30 minutes  
+**Objective:** Implement real-time applications using MongoDB change streams
 
-### Learning Objectives
-- Implement MongoDB change streams
-- Build real-time notification systems
-- Handle change stream resumption and fault tolerance
-- Create event-driven application patterns
+### Part A: Change Stream Setup (15 minutes)
 
-### Part A: Basic Change Streams (15 minutes)
+#### Step 1: Prepare Collections
 
-#### 1. Setup Change Stream Environment
+**Using existing replica set from Lab 1:**
+- Connection: `mongodb://localhost:27017,localhost:27018,localhost:27019/?replicaSet=rs0`
 
-**Using MongoDB Compass:**
-
-1. **Connect to Replica Set:**
-   - Connection String: `mongodb://localhost:27017,localhost:27018,localhost:27019/?replicaSet=rs0`
-   - Navigate to `ecommerce` database
-
-2. **Verify Collections:**
-   - Check that `notifications`, `activity_log`, and `resume_tokens` collections exist
-   - These were created by the data generator script
-   - View their indexes in Compass's index tab
-
-3. **Understanding Change Streams:**
-   - Change streams in Compass can be monitored via the Performance tab
-   - Real-time operations will show in the activity feed
-
-#### 2. Basic Change Stream Implementation
-
-**Using MongoDB Compass:**
-
-1. **Monitor Collections in Real-time:**
-   - Open the `orders` collection in Compass
-   - Keep the collection view open to see real-time changes
-   - Use Compass's real-time refresh feature
-
-2. **Simulate Change Stream Handler via MongoSH:**
-   ```javascript
-   // Note: This simulates change stream processing
-   // In production, change streams run as background processes
-   
-   function simulateChangeStreamHandler(change) {
-     print("=== Order Change Detected ===");
-     print("Operation: " + change.operationType);
-     print("Timestamp: " + new Date());
-     
-     switch(change.operationType) {
-       case 'insert':
-         print("New order created: " + change.fullDocument._id);
-         print("Customer: " + change.fullDocument.customerId);
-         print("Total: $" + change.fullDocument.total);
-         
-         // Create notification
-         db.notifications.insertOne({
-           userId: change.fullDocument.customerId,
-           type: "order_created",
-           message: `Your order ${change.fullDocument._id} has been created.`,
-           orderId: change.fullDocument._id,
-           timestamp: new Date(),
-           read: false
-         });
-         break;
-         
-       case 'update':
-         print("Order updated: " + change.documentKey._id);
-         if (change.updateDescription && change.updateDescription.updatedFields.status) {
-           print("Status changed to: " + change.updateDescription.updatedFields.status);
-         }
-         break;
-         
-       case 'delete':
-         print("Order deleted: " + change.documentKey._id);
-         break;
-     }
-     print("=================================\n");
-   }
-   ```
-
-3. **Test Change Stream Processing:**
-   ```javascript
-   // Create a test order and simulate change stream processing
-   use ecommerce
-
-   var testOrder = {
-     _id: "order_test1",
-     customerId: "cust1",
-     orderDate: new Date(),
-     items: [{ productId: "prod1", quantity: 1 }],
-     total: 999.99,
-     status: "pending"
-   };
-
-   // Insert order
-   db.orders.insertOne(testOrder);
-
-   // Simulate change stream processing
-   simulateChangeStreamHandler({
-     operationType: "insert",
-     fullDocument: testOrder,
-     documentKey: { _id: "order_test1" }
-   });
-   ```
-
-4. **Monitor in Compass:**
-   - Watch the `orders` collection refresh with new document
-   - Check `notifications` collection for auto-generated notifications
-   - Use Compass's real-time view to see the workflow
-
-#### 3. Test Change Stream with Order Operations
-
-**Using MongoDB Compass:**
-
-1. **Interactive Testing:**
-   ```javascript
-   use ecommerce
-
-   // Create test order
-   print("Creating test order...");
-   var testOrder = {
-     _id: "order_test1",
-     customerId: "cust1",
-     orderDate: new Date(),
-     items: [{ productId: "prod1", quantity: 1 }],
-     total: 999.99,
-     status: "pending"
-   };
-   db.orders.insertOne(testOrder);
-
-   // Simulate change processing
-   simulateChangeStreamHandler({
-     operationType: "insert",
-     fullDocument: testOrder,
-     documentKey: { _id: "order_test1" }
-   });
-
-   // Update order status
-   print("Updating order status...");
-   db.orders.updateOne(
-     { _id: "order_test1" },
-     { $set: { status: "processing" } }
-   );
-
-   // Simulate update processing
-   simulateChangeStreamHandler({
-     operationType: "update",
-     documentKey: { _id: "order_test1" },
-     updateDescription: { updatedFields: { status: "processing" } }
-   });
-   ```
-
-2. **Visual Monitoring in Compass:**
-   - Keep both `orders` and `notifications` collections open in separate tabs
-   - Watch real-time updates as you run the operations
-   - Use Compass's document view to see detailed changes
-   - Apply filters to see specific notification types: `{"type": "order_created"}`
-
-3. **View Generated Notifications:**
-   ```javascript
-   // Check notifications created
-   print("Notifications created:");
-   db.notifications.find().sort({timestamp: -1}).limit(5).forEach(printjson);
-   ```
-
-#### 4. Filtered Change Streams
-
-**Using MongoDB Compass:**
-
-1. **High-Value Order Processing:**
-   ```javascript
-   // High-value order filter simulation
-   function isHighValueOrder(order) {
-     return order.total >= 500;
-   }
-
-   function processHighValueOrder(order) {
-     print("High-value order detected: $" + order.total);
-     
-     // Create admin notification
-     db.notifications.insertOne({
-       userId: "admin",
-       type: "high_value_order",
-       message: `High-value order received: ${order._id} (${order.total})`,
-       orderId: order._id,
-       timestamp: new Date(),
-       read: false
-     });
-     
-     // Log for analytics
-     db.activity_log.insertOne({
-       event: "high_value_order",
-       orderId: order._id,
-       amount: order.total,
-       timestamp: new Date()
-     });
-   }
-
-   // Test with high-value order
-   var highValueOrder = {
-     _id: "order_high1",
-     customerId: "cust2",
-     orderDate: new Date(),
-     items: [{ productId: "prod1", quantity: 2 }],
-     total: 1999.98,
-     status: "pending"
-   };
-
-   db.orders.insertOne(highValueOrder);
-
-   if (isHighValueOrder(highValueOrder)) {
-     processHighValueOrder(highValueOrder);
-   }
-   ```
-
-2. **Monitor High-Value Processing in Compass:**
-   - Watch the `orders` collection for the new high-value order
-   - Check `notifications` collection with filter: `{"type": "high_value_order"}`
-   - View `activity_log` collection for analytics events
-   - Use Compass's aggregation builder to analyze high-value order patterns
-
-### Part B: Advanced Change Streams and Event-Driven Architecture (15 minutes)
-
-#### 5. Order Processing System with Event Simulation
+**Create additional collections for change streams:**
 ```javascript
-// Complete order processing system simulation
+use ecommerce
+
+// Create notifications collection
+db.notifications.createIndex({ userId: 1, timestamp: -1 })
+db.notifications.createIndex({ type: 1, read: 1 })
+
+// Create activity log collection  
+db.activity_log.createIndex({ timestamp: -1 })
+db.activity_log.createIndex({ event: 1, timestamp: -1 })
+
+// Create resume tokens collection
+db.resume_tokens.createIndex({ lastUpdated: -1 })
+```
+
+#### Step 2: Basic Change Stream Simulation
+
+**Understanding Change Streams:**
+Change streams in production run as background processes. For lab purposes, we'll simulate the processing.
+
+```javascript
+// Simulate change stream handler
+function simulateChangeStreamHandler(change) {
+  print("=== Change Detected ===");
+  print("Operation: " + change.operationType);
+  print("Collection: " + change.ns.coll);
+  print("Timestamp: " + new Date());
+  
+  switch(change.operationType) {
+    case 'insert':
+      if (change.ns.coll === "orders") {
+        print("New order created: " + change.fullDocument._id);
+        print("Customer: " + change.fullDocument.customerId);
+        print("Total: $" + change.fullDocument.totalAmount);
+        
+        // Create notification
+        db.notifications.insertOne({
+          userId: change.fullDocument.customerId,
+          type: "order_created",
+          message: `Your order ${change.fullDocument._id} has been created.`,
+          orderId: change.fullDocument._id,
+          timestamp: new Date(),
+          read: false
+        });
+      }
+      break;
+      
+    case 'update':
+      if (change.ns.coll === "orders") {
+        print("Order updated: " + change.documentKey._id);
+        if (change.updateDescription && change.updateDescription.updatedFields.status) {
+          print("Status changed to: " + change.updateDescription.updatedFields.status);
+          
+          // Create status update notification
+          var order = db.orders.findOne({ _id: change.documentKey._id });
+          db.notifications.insertOne({
+            userId: order.customerId,
+            type: "status_update",
+            message: `Your order ${change.documentKey._id} status: ${change.updateDescription.updatedFields.status}`,
+            orderId: change.documentKey._id,
+            timestamp: new Date(),
+            read: false
+          });
+        }
+      }
+      break;
+      
+    case 'delete':
+      print("Document deleted: " + change.documentKey._id);
+      break;
+  }
+  print("========================\n");
+}
+```
+
+#### Step 3: Test Change Stream Processing
+
+**Monitor in Compass:**
+1. Open `orders` and `notifications` collections in separate tabs
+2. Enable auto-refresh for real-time monitoring
+
+**Test Order Creation:**
+```javascript
+// Create a test order and simulate change stream processing
+var testOrder = {
+  _id: "order_cs_test1",
+  customerId: "cust1",
+  orderDate: new Date(),
+  items: [{ productId: "prod2", quantity: 1 }],
+  totalAmount: 29.99,
+  status: "pending"
+};
+
+// Insert order
+db.orders.insertOne(testOrder);
+
+// Simulate change stream processing
+simulateChangeStreamHandler({
+  operationType: "insert",
+  ns: { db: "ecommerce", coll: "orders" },
+  fullDocument: testOrder,
+  documentKey: { _id: "order_cs_test1" }
+});
+
+// Update order status
+db.orders.updateOne(
+  { _id: "order_cs_test1" },
+  { $set: { status: "processing" } }
+);
+
+// Simulate update processing
+simulateChangeStreamHandler({
+  operationType: "update",
+  ns: { db: "ecommerce", coll: "orders" },
+  documentKey: { _id: "order_cs_test1" },
+  updateDescription: { updatedFields: { status: "processing" } }
+});
+```
+
+**Verify in Compass:**
+- Check `notifications` collection for auto-generated notifications
+- Apply filter: `{"orderId": "order_cs_test1"}` to see related notifications
+
+### Part B: Advanced Change Stream Features (15 minutes)
+
+#### Step 4: Event-Driven Order Processing System
+
+```javascript
+// Complete order processing system with change streams
 var OrderProcessor = {
   
   // Process new orders
@@ -1294,12 +1088,12 @@ var OrderProcessor = {
         read: false
       });
       
-      print(`✓ Order ${order._id} confirmed and processing`);
+      print(`✅ Order ${order._id} confirmed and processing`);
     } else {
       // Update order status to failed
       db.orders.updateOne(
         { _id: order._id },
-        { $set: { status: "failed", reason: "Insufficient inventory", failedItems: unavailableItems } }
+        { $set: { status: "failed", reason: "Insufficient inventory" } }
       );
       
       // Create failure notification
@@ -1312,7 +1106,7 @@ var OrderProcessor = {
         read: false
       });
       
-      print(`✗ Order ${order._id} failed - insufficient inventory`);
+      print(`❌ Order ${order._id} failed - insufficient inventory`);
     }
   },
   
@@ -1321,32 +1115,20 @@ var OrderProcessor = {
     print(`Order ${orderId} status changed to: ${newStatus}`);
     
     var order = db.orders.findOne({ _id: orderId });
-    if (order) {
-      // Send notification to customer
-      db.notifications.insertOne({
-        userId: order.customerId,
-        type: "status_update",
-        message: `Your order ${orderId} status has been updated to: ${newStatus}`,
-        orderId: orderId,
-        timestamp: new Date(),
-        read: false
-      });
-      
-      // If completed, update customer stats
-      if (newStatus === "completed") {
-        db.customers.updateOne(
-          { _id: order.customerId },
-          { 
-            $inc: { totalOrders: 1, totalSpent: order.total },
-            $set: { lastOrderDate: new Date() }
-          }
-        );
-        print(`✓ Customer ${order.customerId} stats updated`);
-      }
+    if (order && newStatus === "completed") {
+      // Update customer stats
+      db.customers.updateOne(
+        { _id: order.customerId },
+        { 
+          $inc: { totalOrders: 1, totalSpent: order.totalAmount },
+          $set: { lastOrderDate: new Date() }
+        }
+      );
+      print(`✅ Customer ${order.customerId} stats updated`);
     }
   },
   
-  // Handle inventory changes
+  // Handle inventory changes  
   handleInventoryChange: function(productId, newStock) {
     print(`Product ${productId} stock updated to: ${newStock}`);
     
@@ -1361,41 +1143,45 @@ var OrderProcessor = {
         read: false
       });
       
-      print(`⚠ Low inventory alert for ${productId}`);
+      print(`⚠️ Low inventory alert for ${productId}`);
     }
   }
 };
+```
 
-// Test the order processing system
-print("=== Testing Order Processing System ===");
+#### Step 5: Test Complete Workflow
+
+```javascript
+print("=== Testing Complete Order Processing Workflow ===");
 
 // Create a new order
 var newOrder = {
-  _id: "order_system_test1",
-  customerId: "cust1",
+  _id: "order_workflow_test1",
+  customerId: "cust2",
   orderDate: new Date(),
-  items: [{ productId: "prod2", quantity: 2 }],  // Should have stock
-  total: 59.98,
+  items: [{ productId: "prod3", quantity: 2 }],  // Should have stock
+  totalAmount: 159.98,
   status: "pending"
 };
 
+// Insert and process order
 db.orders.insertOne(newOrder);
 OrderProcessor.processNewOrder(newOrder);
 
-// Test status change
-OrderProcessor.handleStatusChange("order_system_test1", "shipped");
-OrderProcessor.handleStatusChange("order_system_test1", "completed");
+// Simulate status changes
+OrderProcessor.handleStatusChange("order_workflow_test1", "shipped");
+OrderProcessor.handleStatusChange("order_workflow_test1", "completed");
 
 // Test inventory change
-OrderProcessor.handleInventoryChange("prod2", 3);  // Should trigger low stock alert
+OrderProcessor.handleInventoryChange("prod3", 3);  // Should trigger low stock alert
 
 // Test order with insufficient stock
 var failedOrder = {
-  _id: "order_system_test2",
-  customerId: "cust2",
+  _id: "order_workflow_test2",
+  customerId: "cust3",
   orderDate: new Date(),
   items: [{ productId: "prod1", quantity: 20 }],  // More than available stock
-  total: 19999.80,
+  totalAmount: 19999.80,
   status: "pending"
 };
 
@@ -1403,124 +1189,143 @@ db.orders.insertOne(failedOrder);
 OrderProcessor.processNewOrder(failedOrder);
 ```
 
-#### 6. Resume Token Simulation and Fault Tolerance
+#### Step 6: Resume Token Management
 
-**Using MongoDB Compass:**
+```javascript
+// Simulate resumable change streams with token storage
+var ChangeStreamManager = {
+  
+  // Store resume token for fault tolerance
+  storeResumeToken: function(streamId, token) {
+    db.resume_tokens.replaceOne(
+      { _id: streamId },
+      { _id: streamId, token: token, lastUpdated: new Date() },
+      { upsert: true }
+    );
+    print(`Resume token stored for ${streamId}`);
+  },
+  
+  // Get last resume token
+  getLastResumeToken: function(streamId) {
+    var doc = db.resume_tokens.findOne({ _id: streamId });
+    if (doc) {
+      print(`Resume token found for ${streamId}: ${doc.lastUpdated}`);
+      return doc.token;
+    }
+    print(`No resume token found for ${streamId}`);
+    return null;
+  },
+  
+  // Process change with resume token
+  processChangeWithResume: function(streamId, change) {
+    // Process the change
+    print(`Processing change for ${streamId}: ${change.operationType}`);
+    
+    // Store resume token for fault tolerance
+    this.storeResumeToken(streamId, change._id);
+    
+    // Log processing
+    db.activity_log.insertOne({
+      operation: change.operationType,
+      collection: change.ns.coll,
+      documentId: change.documentKey._id,
+      timestamp: new Date(),
+      changeId: change._id,
+      streamId: streamId
+    });
+    
+    print(`✅ Change processed and resume token saved`);
+  }
+};
 
-1. **Resume Token Management:**
-   ```javascript
-   // Simulate resumable change streams with token storage
-   var ChangeStreamManager = {
-     
-     // Store resume token for fault tolerance
-     storeResumeToken: function(streamId, token) {
-       db.resume_tokens.replaceOne(
-         { _id: streamId },
-         { _id: streamId, token: token, lastUpdated: new Date() },
-         { upsert: true }
-       );
-       print(`Resume token stored for ${streamId}`);
-     },
-     
-     // Get last resume token
-     getLastResumeToken: function(streamId) {
-       var doc = db.resume_tokens.findOne({ _id: streamId });
-       if (doc) {
-         print(`Resume token found for ${streamId}: ${doc.lastUpdated}`);
-         return doc.token;
-       }
-       print(`No resume token found for ${streamId}`);
-       return null;
-     },
-     
-     // Simulate processing with resume token
-     processChangeWithResume: function(streamId, change) {
-       // Process the change
-       print(`Processing change for ${streamId}: ${change.operationType}`);
-       
-       // Store resume token for fault tolerance
-       this.storeResumeToken(streamId, change._id);
-       
-       // Log processing
-       db.activity_log.insertOne({
-         operation: change.operationType,
-         collection: change.ns.coll,
-         documentId: change.documentKey._id,
-         timestamp: new Date(),
-         changeId: change._id,
-         streamId: streamId
-       });
-       
-       print(`✓ Change processed and resume token saved`);
-     }
-   };
+// Test resume token functionality
+print("=== Testing Resume Token Functionality ===");
 
-   // Test resume token functionality
-   print("=== Testing Resume Token Functionality ===");
+// Simulate change stream events
+var simulatedChanges = [
+  {
+    _id: { _data: "resumeToken1" },
+    operationType: "insert",
+    ns: { db: "ecommerce", coll: "orders" },
+    documentKey: { _id: "order_resume1" }
+  },
+  {
+    _id: { _data: "resumeToken2" },
+    operationType: "update", 
+    ns: { db: "ecommerce", coll: "orders" },
+    documentKey: { _id: "order_resume1" }
+  }
+];
 
-   // Simulate change stream events
-   var simulatedChanges = [
-     {
-       _id: { _data: "token1" },
-       operationType: "insert",
-       ns: { db: "ecommerce", coll: "orders" },
-       documentKey: { _id: "order_resume1" }
-     },
-     {
-       _id: { _data: "token2" },
-       operationType: "update", 
-       ns: { db: "ecommerce", coll: "orders" },
-       documentKey: { _id: "order_resume1" }
-     }
-   ];
+// Process changes with resume tokens
+simulatedChanges.forEach(function(change, index) {
+  ChangeStreamManager.processChangeWithResume("order_stream", change);
+});
 
-   // Process changes with resume tokens
-   simulatedChanges.forEach(function(change, index) {
-     ChangeStreamManager.processChangeWithResume("order_stream", change);
-   });
-   ```
+// Check stored resume tokens
+print("\nStored resume tokens:");
+db.resume_tokens.find().forEach(printjson);
 
-2. **Monitor Resume Tokens in Compass:**
-   ```javascript
-   // Check stored resume tokens
-   print("\nStored resume tokens:");
-   db.resume_tokens.find().forEach(printjson);
+// Check activity log
+print("\nActivity log:");
+db.activity_log.find({ streamId: "order_stream" }).forEach(printjson);
+```
 
-   // Check activity log
-   print("\nActivity log:");
-   db.activity_log.find({ streamId: "order_stream" }).forEach(printjson);
-   ```
+#### Step 7: Monitor Results in Compass
 
-3. **Visual Verification in Compass:**
-   - Navigate to `resume_tokens` collection
-   - View the stored tokens and timestamps
-   - Check `activity_log` collection for processing history
-   - Use Compass's filters to track specific stream activities
+**Real-time Monitoring:**
+1. Keep multiple collection tabs open:
+   - `orders` - see order changes
+   - `notifications` - see generated notifications  
+   - `activity_log` - see change stream processing
+   - `resume_tokens` - see fault tolerance tokens
+
+**Analysis Queries:**
+```javascript
+// Count notifications by type
+db.notifications.aggregate([
+  { $group: { _id: "$type", count: { $sum: 1 } } },
+  { $sort: { count: -1 } }
+])
+
+// Find unread notifications for a customer
+db.notifications.find({ userId: "cust2", read: false }).sort({ timestamp: -1 })
+
+// Check recent activity
+db.activity_log.find().sort({ timestamp: -1 }).limit(10)
+```
+
+### Lab 4 Deliverables
+✅ **Change stream simulation** with event processing  
+✅ **Real-time notifications** system implemented  
+✅ **Event-driven order processing** workflow  
+✅ **Resume token management** for fault tolerance
 
 ---
 
-## Lab 5: C# MongoDB API Introduction (30 minutes)
+## Lab 5: C# MongoDB API Integration
+**Duration:** 30 minutes  
+**Objective:** Integrate MongoDB with C# applications
 
-### Learning Objectives
-- Set up MongoDB C# driver
-- Implement basic CRUD operations in C#
-- Work with strongly-typed models
-- Handle async operations and error handling
+### Part A: Project Setup (10 minutes)
 
-### Part A: C# Project Setup (10 minutes)
-
-#### 1. Create New C# Console Application
+#### Step 1: Create C# Console Application
 ```bash
-# Create new console application
+# Create project directory
 mkdir MongoDBCSharpLab
 cd MongoDBCSharpLab
+
+# Create new console application
 dotnet new console
+
+# Add MongoDB driver
 dotnet add package MongoDB.Driver
 ```
 
-#### 2. Create MongoDB Models
+#### Step 2: Create Models
+
+**Create Models/Product.cs:**
 ```csharp
-// Models/Product.cs
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
@@ -1558,8 +1363,10 @@ namespace MongoDBCSharpLab.Models
         public bool IsActive { get; set; } = true;
     }
 }
+```
 
-// Models/Customer.cs
+**Create Models/Customer.cs:**
+```csharp
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
@@ -1586,6 +1393,10 @@ namespace MongoDBCSharpLab.Models
         [BsonElement("registrationDate")]
         public DateTime RegistrationDate { get; set; } = DateTime.UtcNow;
         
+        [BsonElement("balance")]
+        [BsonRepresentation(BsonType.Decimal128)]
+        public decimal Balance { get; set; }
+        
         [BsonElement("isActive")]
         public bool IsActive { get; set; } = true;
     }
@@ -1610,9 +1421,10 @@ namespace MongoDBCSharpLab.Models
 }
 ```
 
-#### 3. Create Database Service
+#### Step 3: Create Database Service
+
+**Create Services/MongoDBService.cs:**
 ```csharp
-// Services/MongoDBService.cs
 using MongoDB.Driver;
 using MongoDBCSharpLab.Models;
 
@@ -1637,11 +1449,12 @@ namespace MongoDBCSharpLab.Services
 }
 ```
 
-### Part B: CRUD Operations in C# (15 minutes)
+### Part B: CRUD Operations (15 minutes)
 
-#### 4. Implement Product Service
+#### Step 4: Implement Product Service
+
+**Create Services/ProductService.cs:**
 ```csharp
-// Services/ProductService.cs
 using MongoDB.Driver;
 using MongoDBCSharpLab.Models;
 
@@ -1761,15 +1574,16 @@ namespace MongoDBCSharpLab.Services
 }
 ```
 
-#### 5. Main Program Implementation
+#### Step 5: Main Program Implementation
+
+**Update Program.cs:**
 ```csharp
-// Program.cs
 using MongoDBCSharpLab.Models;
 using MongoDBCSharpLab.Services;
 
 class Program
 {
-    // Updated connection string for simplified setup (no authentication)
+    // Connection to replica set from Lab 1
     private static readonly string ConnectionString = 
         "mongodb://localhost:27017,localhost:27018,localhost:27019/?replicaSet=rs0";
     private static readonly string DatabaseName = "ecommerce_csharp";
@@ -1794,7 +1608,7 @@ class Program
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error: {ex.Message}");
+            Console.WriteLine($"❌ Error: {ex.Message}");
             Console.WriteLine($"Stack trace: {ex.StackTrace}");
         }
         
@@ -1835,13 +1649,22 @@ class Program
                 Stock = 100,
                 Description = "Ceramic coffee mug with heat retention",
                 Tags = new List<string> { "coffee", "ceramic", "kitchen" }
+            },
+            new Product
+            {
+                Name = "Smartphone",
+                Price = 699.99m,
+                Category = "Electronics",
+                Stock = 30,
+                Description = "Latest smartphone with advanced camera",
+                Tags = new List<string> { "mobile", "camera", "5g" }
             }
         };
         
         // INSERT
         Console.WriteLine("Creating products...");
         await productService.CreateProductsAsync(products);
-        Console.WriteLine($"Created {products.Count} products\n");
+        Console.WriteLine($"✅ Created {products.Count} products\n");
         
         // READ
         Console.WriteLine("Reading all products:");
@@ -1861,6 +1684,15 @@ class Program
         }
         Console.WriteLine();
         
+        // CATEGORY FILTER
+        Console.WriteLine("Electronics products:");
+        var electronicsProducts = await productService.GetProductsByCategoryAsync("Electronics");
+        foreach (var product in electronicsProducts)
+        {
+            Console.WriteLine($"- {product.Name}: ${product.Price}");
+        }
+        Console.WriteLine();
+        
         // UPDATE
         if (allProducts.Any())
         {
@@ -1869,7 +1701,7 @@ class Program
             await productService.UpdateProductPriceAsync(firstProduct.Id!, 99.99m);
             
             var updatedProduct = await productService.GetProductByIdAsync(firstProduct.Id!);
-            Console.WriteLine($"New price: ${updatedProduct?.Price}\n");
+            Console.WriteLine($"✅ New price: ${updatedProduct?.Price}\n");
         }
         
         // PRICE RANGE QUERY
@@ -1880,6 +1712,15 @@ class Program
             Console.WriteLine($"- {product.Name}: ${product.Price}");
         }
         Console.WriteLine();
+        
+        // STOCK UPDATE
+        if (allProducts.Any())
+        {
+            var product = allProducts.Last();
+            Console.WriteLine($"Updating stock for {product.Name}...");
+            await productService.UpdateStockAsync(product.Id!, 5);
+            Console.WriteLine("✅ Stock updated to 5\n");
+        }
     }
     
     static async Task TestAggregationOperations(ProductService productService)
@@ -1898,11 +1739,12 @@ class Program
 }
 ```
 
-### Part C: Error Handling and Best Practices (5 minutes)
+### Part C: Error Handling and Resilience (5 minutes)
 
-#### 6. Enhanced Error Handling
+#### Step 6: Enhanced Error Handling
+
+**Create Services/ResilientProductService.cs:**
 ```csharp
-// Services/ResilientProductService.cs
 using MongoDB.Driver;
 using MongoDBCSharpLab.Models;
 
@@ -1931,12 +1773,12 @@ namespace MongoDBCSharpLab.Services
                 {
                     lastException = ex;
                     var delay = TimeSpan.FromMilliseconds(Math.Pow(2, attempt) * 1000); // Exponential backoff
-                    Console.WriteLine($"Attempt {attempt} failed. Retrying in {delay.TotalSeconds} seconds...");
+                    Console.WriteLine($"⚠️ Attempt {attempt} failed. Retrying in {delay.TotalSeconds} seconds...");
                     await Task.Delay(delay);
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Non-transient error: {ex.Message}");
+                    Console.WriteLine($"❌ Non-transient error: {ex.Message}");
                     throw;
                 }
             }
@@ -1973,27 +1815,46 @@ namespace MongoDBCSharpLab.Services
         {
             Console.WriteLine("=== Testing Resilient Operations ===\n");
             
-            // This would demonstrate retry logic in case of network issues
             try
             {
-                var product = await GetProductByIdWithRetryAsync("nonexistent_id");
-                Console.WriteLine($"Product found: {product?.Name ?? "None"}");
+                // This demonstrates retry logic
+                var products = await ExecuteWithRetryAsync(async () =>
+                {
+                    Console.WriteLine("Fetching all products with retry logic...");
+                    return await _productService.GetAllProductsAsync();
+                });
+                
+                Console.WriteLine($"✅ Successfully fetched {products.Count} products");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Operation failed after retries: {ex.Message}");
+                Console.WriteLine($"❌ Operation failed after retries: {ex.Message}");
             }
         }
     }
 }
 ```
 
-#### 7. Run the Application
+#### Step 7: Run the Application
+
 ```bash
 # Build and run the application
 dotnet build
 dotnet run
 ```
+
+#### Step 8: Verify in Compass
+
+1. Connect Compass to the C# database: `mongodb://localhost:27017,localhost:27018,localhost:27019/?replicaSet=rs0`
+2. Navigate to `ecommerce_csharp` database
+3. Verify the `products` collection contains data created by C# application
+4. View the documents and their structure
+
+### Lab 5 Deliverables
+✅ **C# MongoDB integration** with strongly-typed models  
+✅ **Complete CRUD operations** implementation  
+✅ **Error handling and resilience** patterns  
+✅ **Connection to replica set** from C# application
 
 ---
 
@@ -2001,17 +1862,19 @@ dotnet run
 
 ### Stop All Containers
 ```bash
-# Stop replica set containers (Lab 1 & 2)
+# Stop replica set containers (Labs 1, 2, 4)
 docker stop mongo1 mongo2 mongo3 mongo-arbiter mongo-hidden
-docker rm mongo1 mongo2 mongo3 mongo-arbiter mongo-hidden
 
 # Stop sharding containers (Lab 3)
 docker stop config1 config2 config3
 docker stop shard1-1 shard1-2 shard1-3 shard2-1 shard2-2 shard2-3
 docker stop mongos1 mongos2
-docker rm config1 config2 config3
-docker rm shard1-1 shard1-2 shard1-3 shard2-1 shard2-2 shard2-3
-docker rm mongos1 mongos2
+
+# Remove all containers
+docker container prune -f
+
+# Remove network
+docker network rm mongodb-net
 
 # Clean up system
 docker system prune -f
@@ -2019,104 +1882,268 @@ docker system prune -f
 
 ---
 
-## Lab Summary and Integration
+## Course Summary
 
 ### What You've Accomplished
 
 #### 🔄 **Transactions (Lab 1)**
-- Set up replica set using simplified Docker commands
-- Used **MongoDB Compass** to visualize transaction effects in real-time
-- Implemented ACID-compliant order processing with visual verification
-- Built money transfer system with rollback capabilities
-- Monitored transaction success/failure across multiple collections
+- **ACID Properties**: Implemented atomicity, consistency, isolation, durability
+- **Real-world Scenarios**: Order processing and money transfers
+- **Error Handling**: Transaction rollbacks and failure scenarios
+- **Visual Verification**: Used Compass to monitor transaction effects
 
 #### 🔧 **Replication (Lab 2)**
-- Extended replica set with arbiter and hidden members via Compass interface
-- Used **Compass Performance Tab** to monitor failover events
-- Tested automatic failover with visual cluster topology changes
-- Configured read preferences with **multiple Compass connections**
-- Implemented comprehensive monitoring through Compass dashboards
+- **Advanced Replica Sets**: Configured primary, secondary, arbiter, and hidden members
+- **High Availability**: Tested automatic failover and recovery mechanisms
+- **Read Preferences**: Implemented geographic and workload-based read routing
+- **Monitoring**: Comprehensive cluster health monitoring and maintenance
 
 #### ⚡ **Sharding (Lab 3)**
-- Built complete sharded cluster architecture
-- Used **Compass Visual Query Analysis** to understand shard targeting
-- Implemented different sharding strategies with **config database exploration**
-- Configured zone sharding using **Compass collection filtering**
-- Monitored chunk distribution through **Compass aggregation builder**
+- **Horizontal Scaling**: Built complete sharded cluster with config servers
+- **Sharding Strategies**: Implemented hashed, range-based, and geographic sharding
+- **Zone Sharding**: Configured geographic data distribution
+- **Cluster Management**: Chunk distribution analysis and balancer operations
 
 #### 📡 **Change Streams (Lab 4)**
-- Created real-time notification systems with **Compass real-time view**
-- Built event-driven order processing with **multi-collection monitoring**
-- Implemented resumable change streams with **visual token verification**
-- Developed fault-tolerant stream processing using **Compass activity logs**
+- **Real-time Applications**: Built event-driven notification systems
+- **Order Processing**: Implemented complete workflow automation
+- **Fault Tolerance**: Resume token management for reliable stream processing
+- **Visual Monitoring**: Real-time change observation in Compass
 
 #### 💻 **C# Integration (Lab 5)**
-- Set up MongoDB C# driver without authentication complexity
-- Connected to replica set from C# applications
-- Implemented strongly-typed models and services
-- Built resilient operations with retry logic
-- Created complete CRUD and aggregation examples
+- **Application Development**: Connected C# applications to MongoDB replica sets
+- **Strongly-typed Models**: Implemented proper data modeling with attributes
+- **Resilient Operations**: Built retry logic and error handling patterns
+- **Production Patterns**: CRUD operations with proper async/await usage
 
-### MongoDB Compass Features Utilized
+### MongoDB Compass Mastery
 
-1. **Real-time Monitoring:**
-   - Collection auto-refresh for live data changes
-   - Performance metrics and cluster health
-   - Query execution visualization
+Throughout these labs, you've mastered MongoDB Compass as a professional tool:
 
-2. **Visual Data Exploration:**
-   - Document view for complex data structures
-   - Filtering and querying interface
-   - Index performance analysis
+#### **Visual Database Management**
+- **Real-time Monitoring**: Collection auto-refresh and live data observation
+- **Performance Analysis**: Query execution plans and index usage
+- **Cluster Topology**: Visual replica set and sharding status
+- **Schema Exploration**: Document structure analysis and validation
 
-3. **Cluster Management:**
-   - Replica set topology visualization
-   - Shard distribution monitoring
-   - Connection management with different preferences
+#### **Development Workflow**
+- **Integrated MongoSH**: Combined GUI convenience with command-line power
+- **Multiple Connections**: Different read preferences and cluster connections
+- **Query Building**: Visual query construction and testing
+- **Aggregation Pipelines**: Interactive pipeline development
 
-4. **Development Tools:**
-   - Integrated MongoSH for advanced operations
-   - Aggregation pipeline builder
-   - Schema analysis and validation
+#### **Operations and Monitoring**
+- **Health Dashboards**: Real-time cluster metrics and alerts
+- **Index Management**: Performance optimization and index analysis
+- **Data Exploration**: Filtering, sorting, and document inspection
+- **Connection Management**: Secure and organized database connections
 
-### Production Readiness Checklist
+### Production Readiness Assessment
 
-- [ ] **High Availability**: Replica sets with proper failover ✓
-- [ ] **Scalability**: Sharding strategy implemented ✓  
-- [ ] **Real-time Processing**: Change streams for event-driven architecture ✓
-- [ ] **Visual Monitoring**: Compass dashboards for operations ✓
-- [ ] **Application Integration**: C# driver implementation ✓
-- [ ] **Error Handling**: Resilient error handling and retry logic ✓
+You're now equipped with production-level MongoDB skills:
 
-### Compass vs Command Line Benefits
+#### **✅ Database Architecture**
+- Design and implement ACID-compliant transaction systems
+- Configure high-availability replica sets with automatic failover
+- Plan and deploy horizontally-scaled sharded clusters
+- Implement real-time applications with change streams
 
-**MongoDB Compass Advantages:**
-- **Visual Learning**: See data changes in real-time
-- **Intuitive Interface**: Easier for beginners to understand concepts
-- **Integrated Tools**: MongoSH + GUI in one interface
-- **Performance Insights**: Built-in monitoring and profiling
-- **Error Prevention**: Visual validation of queries and operations
+#### **✅ Operations Excellence**
+- Monitor cluster health and performance metrics
+- Handle failover scenarios and disaster recovery
+- Manage data distribution and balancing
+- Troubleshoot connectivity and performance issues
 
-**When to Use Command Line:**
-- **Automation**: Scripts and automated deployments
-- **Production Operations**: Server management and maintenance
-- **Advanced Debugging**: Low-level troubleshooting
-- **CI/CD Integration**: Automated testing and deployment
+#### **✅ Application Integration**
+- Connect applications to MongoDB clusters securely
+- Implement resilient database operations with retry logic
+- Handle errors gracefully in production environments
+- Design efficient data access patterns
 
-### Next Steps
+#### **✅ Development Best Practices**
+- Use MongoDB Compass for database development and debugging
+- Implement proper schema design for scalability
+- Create maintainable and testable database code
+- Follow MongoDB coding conventions and patterns
 
-1. **Add Authentication**: Implement authentication for production use
-2. **Performance Testing**: Load test using Compass performance monitoring
-3. **Production Deployment**: Deploy with Compass monitoring setup
-4. **Advanced Monitoring**: Configure Compass alerts and dashboards
-5. **Team Collaboration**: Share Compass connections and queries
+### Next Steps and Career Development
 
-### MongoDB Compass Best Practices Learned
+#### **Immediate Actions**
+1. **Practice**: Recreate these labs in different scenarios
+2. **Explore**: Try different sharding keys and replica set configurations
+3. **Experiment**: Build your own applications using these patterns
+4. **Document**: Create your own reference guides and cheat sheets
 
-1. **Use Multiple Connections** for different read preferences
-2. **Leverage Real-time Views** for change stream monitoring  
-3. **Utilize Performance Tabs** for cluster health monitoring
-4. **Apply Strategic Filtering** for large dataset analysis
-5. **Combine GUI + MongoSH** for comprehensive database management
+#### **Advanced Learning Paths**
 
-**Congratulations!** You've successfully completed all MongoDB Day 3 advanced labs using MongoDB Compass as the primary interface, gaining both theoretical knowledge and practical GUI-based database management skills essential for modern MongoDB development and operations.
+**MongoDB Certification**
+- **MongoDB Certified Developer Associate**: Validates application development skills
+- **MongoDB Certified DBA Associate**: Focuses on database administration
+- **MongoDB Certified Developer**: Advanced development certification
+
+**Specialized Topics**
+- **Atlas Administration**: Cloud MongoDB deployment and management
+- **Security**: Authentication, authorization, and encryption
+- **Performance Tuning**: Advanced optimization techniques
+- **Data Modeling**: Complex schema design patterns
+
+**Integration Technologies**
+- **Kubernetes**: Container orchestration for MongoDB deployments
+- **Microservices**: MongoDB in distributed architectures
+- **Analytics**: MongoDB with BI tools and data pipelines
+- **Search**: MongoDB Atlas Search and full-text search capabilities
+
+#### **Professional Development**
+
+**Industry Applications**
+- **E-commerce**: Product catalogs, order processing, inventory management
+- **IoT and Time-Series**: Sensor data, metrics, and analytics
+- **Content Management**: Document storage, versioning, and search
+- **Financial Services**: Transaction processing, audit trails, compliance
+- **Gaming**: Player data, leaderboards, real-time multiplayer
+- **Healthcare**: Patient records, medical imaging, clinical trials
+
+**Career Opportunities**
+- **Database Developer**: Application development with MongoDB
+- **Database Administrator**: MongoDB cluster management and operations
+- **DevOps Engineer**: Infrastructure automation and deployment
+- **Solutions Architect**: Enterprise MongoDB architecture design
+- **Data Engineer**: Data pipelines and analytics platforms
+
+### Advanced MongoDB Features to Explore
+
+#### **MongoDB Atlas (Cloud)**
+- Fully managed MongoDB service
+- Global cluster deployment
+- Built-in monitoring and alerting
+- Automated backups and point-in-time recovery
+- Atlas Search for full-text search capabilities
+- Atlas Data Lake for analytics
+
+#### **Security Features**
+- Field-level encryption
+- LDAP and Kerberos authentication
+- Auditing and compliance
+- Network security and VPC peering
+- Role-based access control (RBAC)
+
+#### **Performance Optimization**
+- Query optimization and profiling
+- Index strategy refinement
+- Memory and storage tuning
+- Connection pooling optimization
+- Aggregation pipeline optimization
+
+#### **Advanced Data Types**
+- GridFS for large file storage
+- Geospatial data and queries
+- Time-series collections
+- JSON Schema validation
+- Text search and indexing
+
+### Community and Resources
+
+#### **Official Resources**
+- **MongoDB Documentation**: https://docs.mongodb.com
+- **MongoDB University**: https://university.mongodb.com
+- **MongoDB Blog**: https://www.mongodb.com/blog
+- **MongoDB GitHub**: https://github.com/mongodb
+
+#### **Community Support**
+- **MongoDB Community Forums**: https://community.mongodb.com
+- **Stack Overflow**: mongodb tag for technical questions
+- **Reddit**: r/mongodb for discussions and news
+- **Local User Groups**: MongoDB meetups and conferences
+
+#### **Development Tools**
+- **MongoDB Compass**: GUI for database management
+- **MongoDB for VS Code**: IDE extension for development
+- **Studio 3T**: Third-party MongoDB GUI
+- **NoSQLBooster**: Advanced MongoDB client
+
+### Lab Environment Persistence
+
+If you want to keep your lab environment for future practice:
+
+#### **Save Container State**
+```bash
+# Create images from current containers
+docker commit mongo1 my-mongodb-lab:mongo1
+docker commit mongo2 my-mongodb-lab:mongo2
+docker commit mongo3 my-mongodb-lab:mongo3
+
+# Save to tar files
+docker save my-mongodb-lab:mongo1 > mongo1-lab.tar
+docker save my-mongodb-lab:mongo2 > mongo2-lab.tar
+docker save my-mongodb-lab:mongo3 > mongo3-lab.tar
+```
+
+#### **Export Data**
+```bash
+# Export all databases
+mongodump --host "mongodb://localhost:27017,localhost:27018,localhost:27019/?replicaSet=rs0" --out ./mongodb-labs-backup
+
+# Restore later
+mongorestore --host "mongodb://localhost:27017,localhost:27018,localhost:27019/?replicaSet=rs0" ./mongodb-labs-backup
+```
+
+#### **Document Configurations**
+Save your:
+- Docker network configurations
+- Replica set configurations
+- Sharding setup scripts
+- Compass connection strings
+- C# project templates
+
+### Final Assessment
+
+Congratulations! You have successfully completed the MongoDB Day 3 Advanced Features labs. You now possess:
+
+#### **Technical Skills**
+- ✅ ACID transaction implementation and error handling
+- ✅ High-availability replica set configuration and management
+- ✅ Horizontal scaling with sharded cluster deployment
+- ✅ Real-time application development with change streams
+- ✅ Professional application integration with C# and MongoDB
+
+#### **Operational Skills**
+- ✅ MongoDB Compass proficiency for database management
+- ✅ Performance monitoring and troubleshooting
+- ✅ Cluster health assessment and maintenance
+- ✅ Data distribution analysis and optimization
+- ✅ Production deployment best practices
+
+#### **Strategic Understanding**
+- ✅ When and how to implement each MongoDB feature
+- ✅ Trade-offs between consistency, availability, and performance
+- ✅ Scaling strategies for different application requirements
+- ✅ Integration patterns for enterprise applications
+- ✅ Monitoring and alerting for production systems
+
+### Certificate of Completion
+
+**MongoDB Advanced Features Mastery**
+
+*This certifies that you have successfully completed comprehensive hands-on training in:*
+
+- **MongoDB Transactions**: ACID compliance and data consistency
+- **Replica Sets**: High availability and disaster recovery
+- **Sharding**: Horizontal scaling and data distribution
+- **Change Streams**: Real-time application development
+- **Professional Integration**: Production-ready application development
+
+*You are now qualified to design, implement, and maintain advanced MongoDB solutions in production environments.*
+
+---
+
+## Thank You!
+
+🎉 **Congratulations on completing MongoDB Day 3 Advanced Features!**
+
+You've transformed from a MongoDB user to a MongoDB professional, capable of architecting and implementing enterprise-scale database solutions. The skills you've learned today will serve you well in building the next generation of data-driven applications.
+
+### Keep Learning, Keep Building!
+
+The MongoDB ecosystem is constantly evolving with new features, optimizations, and capabilities. Continue exploring, experimenting, and building amazing applications with MongoDB.
+
+**Happy Coding!** 🚀
