@@ -64,27 +64,27 @@
    print("Circle area with radius 5: " + calculation)
 
    // Variable assignment and manipulation
-   var dbName = "company"
-   var collectionName = "employees"
+   var dbName = "insurance_company"
+   var collectionName = "policies"
    print("Working with: " + dbName + "." + collectionName)
    ```
 
 2. **Shell Helper Methods**
    ```javascript
    // Database helpers
-   use company  // Switch to 'company' database
+   use insurance_company  // Switch to 'insurance_company' database
 
    // Collection helpers
    show collections  // List collections in current database
-   db.createCollection("employees")
+   db.createCollection("policies")
 
    // Index helpers
-   db.employees.getIndexes()
-   db.employees.totalIndexSize()
+   db.policies.getIndexes()
+   db.policies.totalIndexSize()
 
    // Status helpers
    db.stats()
-   db.employees.stats()
+   db.policies.stats()
    ```
 
 3. **Advanced Shell Commands**
@@ -125,4 +125,4 @@
    ```
 
 ## Challenge Exercise
-Write a JavaScript function in the shell that connects to three different databases, creates a collection in each, and reports the total number of collections across all databases.
+Write a JavaScript function in the shell that connects to three different insurance-related databases (insurance_company, claims_processing, agent_management), creates a collection in each, and reports the total number of collections across all databases.

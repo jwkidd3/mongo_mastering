@@ -3,9 +3,9 @@
 // Usage: mongosh < day3-data-generator.js
 
 print("=======================================================");
-print("MongoDB Day 3 Labs - Data Generator");
+print("MongoDB Day 3 Labs - Insurance Data Generator");
 print("=======================================================");
-print("This script will create all test data needed for Day 3 labs");
+print("This script will create all insurance test data needed for Day 3 labs");
 print("Labs covered: Transactions, Replication, Sharding, Change Streams");
 print("=======================================================\n");
 
@@ -13,363 +13,378 @@ print("=======================================================\n");
 // Lab 1: Transaction Data Setup
 // ===========================================
 
-print("🔄 Setting up data for Lab 1: Transactions");
-print("-------------------------------------------");
+print("🔄 Setting up data for Lab 1: Insurance Transactions");
+print("-----------------------------------------------------");
 
-// Switch to ecommerce database
-use ecommerce;
+// Switch to insurance database
+use insurance_company;
 
 // Drop existing collections to start fresh
-db.products.drop();
+db.policies.drop();
 db.customers.drop();
-db.orders.drop();
-db.transactions.drop();
+db.claims.drop();
+db.payments.drop();
 
 print("✓ Cleaned existing collections");
 
-// Create products collection with sample data
-print("Creating products collection...");
-db.products.insertMany([
-  { 
-    _id: "prod1", 
-    name: "Laptop", 
-    price: 999.99, 
-    stock: 10,
-    category: "Electronics",
-    description: "High-performance laptop for professionals",
-    tags: ["computer", "work", "portable"]
+// Create policies collection with sample data
+print("Creating policies collection...");
+db.policies.insertMany([
+  {
+    _id: "pol1",
+    policyNumber: "POL-AUTO-001",
+    name: "Premium Auto Coverage",
+    annualPremium: 1299.99,
+    activePolicies: 10,
+    category: "Auto Insurance",
+    description: "Comprehensive auto insurance with full coverage",
+    coverageTypes: ["liability", "collision", "comprehensive"]
   },
-  { 
-    _id: "prod2", 
-    name: "Mouse", 
-    price: 29.99, 
-    stock: 50,
-    category: "Electronics", 
-    description: "Wireless optical mouse",
-    tags: ["computer", "wireless", "accessory"]
+  {
+    _id: "pol2",
+    policyNumber: "POL-HOME-001",
+    name: "Homeowners Protection",
+    annualPremium: 899.99,
+    activePolicies: 50,
+    category: "Home Insurance",
+    description: "Complete homeowners insurance coverage",
+    coverageTypes: ["dwelling", "personal_property", "liability"]
   },
-  { 
-    _id: "prod3", 
-    name: "Keyboard", 
-    price: 79.99, 
-    stock: 25,
-    category: "Electronics",
-    description: "Mechanical keyboard with RGB lighting",
-    tags: ["computer", "mechanical", "rgb"]
+  {
+    _id: "pol3",
+    policyNumber: "POL-LIFE-001",
+    name: "Term Life Insurance",
+    annualPremium: 599.99,
+    activePolicies: 25,
+    category: "Life Insurance",
+    description: "Affordable term life insurance protection",
+    coverageTypes: ["death_benefit", "accidental_death"]
   },
-  { 
-    _id: "prod4", 
-    name: "Monitor", 
-    price: 299.99, 
-    stock: 15,
-    category: "Electronics",
-    description: "24-inch 4K monitor",
-    tags: ["display", "4k", "monitor"]
+  {
+    _id: "pol4",
+    policyNumber: "POL-COMM-001",
+    name: "Business Liability",
+    annualPremium: 2499.99,
+    activePolicies: 15,
+    category: "Commercial Insurance",
+    description: "General liability insurance for businesses",
+    coverageTypes: ["general_liability", "product_liability"]
   },
-  { 
-    _id: "prod5", 
-    name: "Desk Chair", 
-    price: 199.99, 
-    stock: 8,
-    category: "Furniture",
-    description: "Ergonomic office chair",
-    tags: ["office", "ergonomic", "furniture"]
+  {
+    _id: "pol5",
+    policyNumber: "POL-HEALTH-001",
+    name: "Health Insurance Plan",
+    annualPremium: 4999.99,
+    activePolicies: 8,
+    category: "Health Insurance",
+    description: "Comprehensive health insurance coverage",
+    coverageTypes: ["medical", "prescription", "dental"]
   }
 ]);
 
-print("✓ Created " + db.products.countDocuments() + " products");
+print("✓ Created " + db.policies.countDocuments() + " policies");
 
 // Create customers collection with sample data
 print("Creating customers collection...");
 db.customers.insertMany([
-  { 
-    _id: "cust1", 
-    name: "John Doe", 
-    email: "john@example.com", 
-    balance: 1200.00,
-    totalOrders: 0,
-    totalSpent: 0,
-    lastOrderDate: null,
+  {
+    _id: "cust1",
+    customerId: "CUST000001",
+    name: "John Doe",
+    email: "john@example.com",
+    premiumBalance: 1200.00,
+    totalPolicies: 0,
+    totalPremiumsPaid: 0,
+    lastPaymentDate: null,
+    riskScore: 75,
     registrationDate: new Date("2024-01-15")
   },
-  { 
-    _id: "cust2", 
-    name: "Jane Smith", 
-    email: "jane@example.com", 
-    balance: 800.00,
-    totalOrders: 0,
-    totalSpent: 0,
-    lastOrderDate: null,
+  {
+    _id: "cust2",
+    customerId: "CUST000002",
+    name: "Jane Smith",
+    email: "jane@example.com",
+    premiumBalance: 800.00,
+    totalPolicies: 0,
+    totalPremiumsPaid: 0,
+    lastPaymentDate: null,
+    riskScore: 60,
     registrationDate: new Date("2024-02-20")
   },
-  { 
-    _id: "cust3", 
-    name: "Bob Johnson", 
-    email: "bob@example.com", 
-    balance: 1500.00,
-    totalOrders: 0,
-    totalSpent: 0,
-    lastOrderDate: null,
+  {
+    _id: "cust3",
+    customerId: "CUST000003",
+    name: "Bob Johnson",
+    email: "bob@example.com",
+    premiumBalance: 1500.00,
+    totalPolicies: 0,
+    totalPremiumsPaid: 0,
+    lastPaymentDate: null,
+    riskScore: 45,
     registrationDate: new Date("2024-03-10")
   },
-  { 
-    _id: "cust4", 
-    name: "Alice Brown", 
-    email: "alice@example.com", 
-    balance: 2000.00,
-    totalOrders: 0,
-    totalSpent: 0,
-    lastOrderDate: null,
+  {
+    _id: "cust4",
+    customerId: "CUST000004",
+    name: "Alice Brown",
+    email: "alice@example.com",
+    premiumBalance: 2000.00,
+    totalPolicies: 0,
+    totalPremiumsPaid: 0,
+    lastPaymentDate: null,
+    riskScore: 30,
     registrationDate: new Date("2024-04-05")
   }
 ]);
 
 print("✓ Created " + db.customers.countDocuments() + " customers");
 
-// Create indexes for orders collection
+// Create indexes for claims collection
 print("Creating indexes...");
-db.orders.createIndex({ orderId: 1 }, { unique: true });
-db.orders.createIndex({ customerId: 1, orderDate: 1 });
-db.transactions.createIndex({ timestamp: -1 });
+db.claims.createIndex({ claimNumber: 1 }, { unique: true });
+db.claims.createIndex({ customerId: 1, claimDate: 1 });
+db.payments.createIndex({ timestamp: -1 });
 
 print("✓ Created necessary indexes");
-print("Lab 1 data setup complete!\n");
+print("Lab 1 insurance data setup complete!\n");
 
 // ===========================================
 // Lab 2: Replication Data Setup
 // ===========================================
 
-print("🔧 Setting up data for Lab 2: Replication");
-print("------------------------------------------");
+print("🔧 Setting up data for Lab 2: Insurance Replication");
+print("------------------------------------------------------");
 
-// Create test_writes collection for write concern testing
+// Create test_claims collection for write concern testing
 print("Creating test collections for replication testing...");
-db.test_writes.createIndex({ timestamp: -1 });
+db.test_claims.createIndex({ timestamp: -1 });
+db.test_policies.createIndex({ timestamp: -1 });
 
 print("✓ Created test collections");
-print("Lab 2 data setup complete!\n");
+print("Lab 2 insurance replication data setup complete!\n");
 
 // ===========================================
 // Lab 3: Sharding Data Setup  
 // ===========================================
 
-print("⚡ Setting up data for Lab 3: Sharding");
-print("--------------------------------------");
+print("⚡ Setting up data for Lab 3: Insurance Sharding");
+print("--------------------------------------------------");
 
 // Note: Sharding collections will be created during the lab
 // This section prepares additional reference data
 
-// Generate users data for hashed sharding
-print("Generating users data for hashed sharding...");
-var users = [];
+// Generate customers data for hashed sharding
+print("Generating customers data for hashed sharding...");
+var customers = [];
 for (let i = 1; i <= 1000; i++) {
-  users.push({
-    _id: "user" + i,
-    name: "User " + i,
-    email: "user" + i + "@example.com",
+  customers.push({
+    _id: "customer" + i,
+    customerId: "CUST" + String(i).padStart(6, '0'),
+    name: "Customer " + i,
+    email: "customer" + i + "@example.com",
     registrationDate: new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28)),
-    preferences: {
-      newsletter: Math.random() > 0.5,
-      theme: Math.random() > 0.5 ? "dark" : "light",
-      language: Math.random() > 0.7 ? "es" : "en"
+    insuranceProfile: {
+      riskLevel: Math.random() > 0.7 ? "high" : (Math.random() > 0.4 ? "medium" : "low"),
+      policyTypes: Math.random() > 0.6 ? ["auto", "home"] : ["auto"],
+      paymentMethod: Math.random() > 0.5 ? "monthly" : "annual"
     },
     metadata: {
       lastLogin: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000),
-      loginCount: Math.floor(Math.random() * 100),
-      accountType: Math.random() > 0.8 ? "premium" : "basic"
+      claimCount: Math.floor(Math.random() * 5),
+      customerType: Math.random() > 0.8 ? "premium" : "standard"
     }
   });
 }
 
-// Insert users in batches to avoid memory issues
+// Insert customers in batches to avoid memory issues
 var batchSize = 100;
-for (let i = 0; i < users.length; i += batchSize) {
-  var batch = users.slice(i, i + batchSize);
-  db.users.insertMany(batch);
+for (let i = 0; i < customers.length; i += batchSize) {
+  var batch = customers.slice(i, i + batchSize);
+  db.customers.insertMany(batch);
   if ((i + batchSize) % 200 === 0) {
-    print("  Inserted " + (i + batchSize) + " users...");
+    print("  Inserted " + (i + batchSize) + " customers...");
   }
 }
 
-print("✓ Generated " + db.users.countDocuments() + " users for sharding");
+print("✓ Generated " + db.customers.countDocuments() + " customers for sharding");
 
-// Generate orders data for range sharding
-print("Generating orders data for range sharding...");
-var customers = ["user1", "user100", "user200", "user300", "user400", "user500"];
-var orders = [];
+// Generate claims data for range sharding
+print("Generating claims data for range sharding...");
+var sampleCustomers = ["customer1", "customer100", "customer200", "customer300", "customer400", "customer500"];
+var claims = [];
 
 for (let i = 1; i <= 2000; i++) {
-  var customerId = customers[Math.floor(Math.random() * customers.length)];
-  var orderDate = new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28));
-  var itemCount = Math.floor(Math.random() * 3) + 1;
-  var items = [];
-  var total = 0;
-  
-  for (let j = 0; j < itemCount; j++) {
-    var productId = "prod" + (Math.floor(Math.random() * 5) + 1);
-    var quantity = Math.floor(Math.random() * 3) + 1;
-    var price = Math.random() * 500 + 50; // $50-$550
-    items.push({ productId: productId, quantity: quantity, price: price });
-    total += price * quantity;
-  }
-  
-  orders.push({
-    _id: "order" + i,
+  var customerId = sampleCustomers[Math.floor(Math.random() * sampleCustomers.length)];
+  var claimDate = new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28));
+  var claimAmount = Math.random() * 50000 + 500; // $500-$50,500
+  var deductible = [250, 500, 1000, 2500][Math.floor(Math.random() * 4)];
+
+  var claimTypes = ["Auto Accident", "Property Damage", "Theft", "Fire", "Water Damage", "Medical", "Liability"];
+  var claimType = claimTypes[Math.floor(Math.random() * claimTypes.length)];
+
+  claims.push({
+    _id: "claim" + i,
+    claimNumber: "CLM-2024-" + String(i).padStart(6, '0'),
     customerId: customerId,
-    orderDate: orderDate,
-    items: items,
-    total: Math.round(total * 100) / 100,
-    status: Math.random() > 0.8 ? "pending" : "completed",
-    shippingAddress: {
-      street: Math.floor(Math.random() * 9999) + " Main St",
+    claimDate: claimDate,
+    claimType: claimType,
+    claimAmount: Math.round(claimAmount * 100) / 100,
+    deductible: deductible,
+    status: Math.random() > 0.8 ? "pending" : "settled",
+    incidentLocation: {
+      street: Math.floor(Math.random() * 9999) + " Insurance Ave",
       city: ["New York", "Los Angeles", "Chicago", "Houston", "Phoenix"][Math.floor(Math.random() * 5)],
       state: ["NY", "CA", "IL", "TX", "AZ"][Math.floor(Math.random() * 5)],
       zipCode: String(Math.floor(Math.random() * 90000) + 10000)
-    }
+    },
+    adjusterAssigned: "ADJ" + String(Math.floor(Math.random() * 100) + 1).padStart(3, '0'),
+    fraudFlag: Math.random() > 0.95 // 5% flagged for fraud
   });
 }
 
-// Insert orders in batches
-for (let i = 0; i < orders.length; i += batchSize) {
-  var batch = orders.slice(i, i + batchSize);
-  db.orders.insertMany(batch);
+// Insert claims in batches
+for (let i = 0; i < claims.length; i += batchSize) {
+  var batch = claims.slice(i, i + batchSize);
+  db.claims.insertMany(batch);
   if ((i + batchSize) % 200 === 0) {
-    print("  Inserted " + (i + batchSize) + " orders...");
+    print("  Inserted " + (i + batchSize) + " claims...");
   }
 }
 
-print("✓ Generated " + db.orders.countDocuments() + " orders for sharding");
+print("✓ Generated " + db.claims.countDocuments() + " claims for sharding");
 
-// Generate stores data for geographic sharding
-print("Generating stores data for geographic sharding...");
+// Generate branches data for geographic sharding
+print("Generating insurance branches data for geographic sharding...");
 var regions = ["north", "south", "east", "west"];
-var stores = [];
+var branches = [];
 
 for (let i = 1; i <= 400; i++) {
   var region = regions[Math.floor(Math.random() * regions.length)];
-  stores.push({
+  branches.push({
     region: region,
-    storeId: "store" + i,
-    name: "Store " + i,
-    address: i + " Commerce St, " + region.charAt(0).toUpperCase() + region.slice(1) + " District",
+    branchId: "branch" + i,
+    branchCode: "BR-" + region.toUpperCase().substring(0, 2) + "-" + String(i).padStart(3, '0'),
+    name: "Insurance Branch " + i,
+    address: i + " Insurance Blvd, " + region.charAt(0).toUpperCase() + region.slice(1) + " District",
     manager: "Manager " + i,
-    employees: Math.floor(Math.random() * 20) + 5,
-    salesData: {
-      monthly: Math.round((Math.random() * 100000 + 50000) * 100) / 100,
-      quarterly: Math.round((Math.random() * 300000 + 150000) * 100) / 100,
-      annual: Math.round((Math.random() * 1200000 + 600000) * 100) / 100
+    agents: Math.floor(Math.random() * 15) + 5,
+    performanceData: {
+      monthlyPremiums: Math.round((Math.random() * 500000 + 100000) * 100) / 100,
+      quarterlyPremiums: Math.round((Math.random() * 1500000 + 300000) * 100) / 100,
+      annualPremiums: Math.round((Math.random() * 6000000 + 1200000) * 100) / 100
     },
-    inventory: {
-      totalItems: Math.floor(Math.random() * 1000) + 500,
-      categories: Math.floor(Math.random() * 10) + 5,
+    policyMetrics: {
+      activePolicies: Math.floor(Math.random() * 2000) + 500,
+      policyTypes: Math.floor(Math.random() * 5) + 3,
       lastUpdated: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000)
     },
     coordinates: {
       lat: Math.random() * 180 - 90,
       lng: Math.random() * 360 - 180
-    }
+    },
+    specialties: ["Auto", "Home", "Life", "Commercial"].filter(() => Math.random() > 0.4)
   });
 }
 
-db.stores.insertMany(stores);
-print("✓ Generated " + db.stores.countDocuments() + " stores for geographic sharding");
-print("Lab 3 data setup complete!\n");
+db.branches.insertMany(branches);
+print("✓ Generated " + db.branches.countDocuments() + " insurance branches for geographic sharding");
+print("Lab 3 insurance sharding data setup complete!\n");
 
 // ===========================================
 // Lab 4: Change Streams Data Setup
 // ===========================================
 
-print("📡 Setting up data for Lab 4: Change Streams");
-print("---------------------------------------------");
+print("📡 Setting up data for Lab 4: Insurance Change Streams");
+print("-----------------------------------------------------------");
 
 // Create collections for change stream testing
 print("Creating collections for change streams...");
 
 // Drop existing collections
-db.notifications.drop();
-db.activity_log.drop();
+db.policy_notifications.drop();
+db.claim_activity_log.drop();
 db.resume_tokens.drop();
 
-// Create notifications collection
-db.notifications.createIndex({ userId: 1, timestamp: -1 });
-db.notifications.createIndex({ type: 1, read: 1 });
+// Create policy notifications collection
+db.policy_notifications.createIndex({ customerId: 1, timestamp: -1 });
+db.policy_notifications.createIndex({ type: 1, read: 1 });
 
-// Create activity log collection  
-db.activity_log.createIndex({ timestamp: -1 });
-db.activity_log.createIndex({ event: 1, timestamp: -1 });
+// Create claim activity log collection
+db.claim_activity_log.createIndex({ timestamp: -1 });
+db.claim_activity_log.createIndex({ event: 1, timestamp: -1 });
 
 // Create resume tokens collection
 db.resume_tokens.createIndex({ lastUpdated: -1 });
 
 print("✓ Created change stream collections with indexes");
 
-// Insert sample notifications to demonstrate the structure
-print("Creating sample notifications...");
-db.notifications.insertMany([
+// Insert sample policy notifications to demonstrate the structure
+print("Creating sample policy notifications...");
+db.policy_notifications.insertMany([
   {
-    userId: "cust1",
-    type: "welcome",
-    message: "Welcome to our platform!",
+    customerId: "cust1",
+    type: "policy_renewal",
+    message: "Your auto insurance policy is due for renewal in 30 days",
     timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
     read: true
   },
   {
-    userId: "cust2", 
-    type: "welcome",
-    message: "Welcome to our platform!",
+    customerId: "cust2",
+    type: "claim_update",
+    message: "Your claim CLM-2024-001234 has been approved",
     timestamp: new Date(Date.now() - 12 * 60 * 60 * 1000), // 12 hours ago
     read: false
   },
   {
-    userId: "admin",
+    customerId: "admin",
     type: "system",
-    message: "System maintenance scheduled for tonight",
+    message: "System maintenance scheduled for tonight - claims processing may be delayed",
     timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000), // 6 hours ago
     read: false
   }
 ]);
 
-print("✓ Created " + db.notifications.countDocuments() + " sample notifications");
-print("Lab 4 data setup complete!\n");
+print("✓ Created " + db.policy_notifications.countDocuments() + " sample policy notifications");
+print("Lab 4 insurance change streams data setup complete!\n");
 
 // ===========================================
 // Additional Utility Data
 // ===========================================
 
-print("🛠️ Creating additional utility data");
-print("-----------------------------------");
+print("🛠️ Creating additional insurance utility data");
+print("-----------------------------------------------");
 
-// Create product categories for analytics
-print("Creating product categories reference...");
-db.product_categories.drop();
-db.product_categories.insertMany([
+// Create policy categories for analytics
+print("Creating policy categories reference...");
+db.policy_categories.drop();
+db.policy_categories.insertMany([
   {
-    _id: "Electronics",
-    description: "Electronic devices and accessories",
+    _id: "Auto",
+    description: "Vehicle insurance coverage",
     parentCategory: null,
-    subcategories: ["Computers", "Mobile", "Audio", "Gaming"]
+    subcategories: ["Liability", "Collision", "Comprehensive", "Uninsured Motorist"]
   },
   {
-    _id: "Furniture", 
-    description: "Home and office furniture",
+    _id: "Property",
+    description: "Home and property insurance",
     parentCategory: null,
-    subcategories: ["Office", "Living Room", "Bedroom", "Outdoor"]
+    subcategories: ["Homeowners", "Renters", "Condo", "Flood"]
   },
   {
-    _id: "Books",
-    description: "Books and educational materials", 
+    _id: "Life",
+    description: "Life and health insurance products",
     parentCategory: null,
-    subcategories: ["Fiction", "Non-Fiction", "Technical", "Children"]
+    subcategories: ["Term Life", "Whole Life", "Health", "Disability"]
   },
   {
-    _id: "Clothing",
-    description: "Apparel and accessories",
-    parentCategory: null, 
-    subcategories: ["Men", "Women", "Children", "Accessories"]
+    _id: "Commercial",
+    description: "Business and commercial insurance",
+    parentCategory: null,
+    subcategories: ["General Liability", "Professional Liability", "Workers Comp", "Cyber"]
   }
 ]);
 
-print("✓ Created product categories reference");
+print("✓ Created policy categories reference");
 
 // Create system configuration collection
 print("Creating system configuration...");
@@ -382,30 +397,31 @@ db.system_config.insertMany([
       transactions_enabled: true,
       change_streams_enabled: true,
       sharding_enabled: false,
-      notifications_enabled: true
+      notifications_enabled: true,
+      fraud_detection_enabled: true
     },
     limits: {
-      max_order_items: 10,
-      max_transaction_amount: 10000,
+      max_claim_amount: 100000,
+      max_policy_coverage: 1000000,
       session_timeout_minutes: 30
     },
     lastUpdated: new Date()
   },
   {
     _id: "business_rules",
-    inventory: {
-      low_stock_threshold: 5,
-      auto_reorder_enabled: true,
-      reserved_stock_duration_hours: 2
+    policies: {
+      renewal_notice_days: 30,
+      auto_renewal_enabled: true,
+      grace_period_days: 15
     },
-    orders: {
-      max_processing_time_hours: 24,
-      auto_cancel_pending_hours: 72,
-      refund_window_days: 30
+    claims: {
+      max_processing_time_days: 30,
+      auto_approve_threshold: 1000,
+      fraud_review_threshold: 10000
     },
     customers: {
-      max_balance: 5000,
-      credit_limit_default: 1000,
+      max_premium_balance: 10000,
+      risk_score_threshold: 80,
       loyalty_program_enabled: true
     },
     lastUpdated: new Date()
@@ -422,21 +438,22 @@ for (let i = 30; i >= 0; i--) {
   var date = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
   statsData.push({
     date: date,
-    orders: {
-      total: Math.floor(Math.random() * 100) + 50,
-      completed: Math.floor(Math.random() * 80) + 40,
-      cancelled: Math.floor(Math.random() * 10) + 2,
-      revenue: Math.round((Math.random() * 50000 + 20000) * 100) / 100
+    claims: {
+      total: Math.floor(Math.random() * 50) + 20,
+      approved: Math.floor(Math.random() * 40) + 15,
+      denied: Math.floor(Math.random() * 5) + 1,
+      payouts: Math.round((Math.random() * 500000 + 100000) * 100) / 100
     },
-    users: {
-      active: Math.floor(Math.random() * 500) + 200,
-      new_registrations: Math.floor(Math.random() * 20) + 5,
-      returning: Math.floor(Math.random() * 300) + 150
+    customers: {
+      active: Math.floor(Math.random() * 1000) + 500,
+      new_registrations: Math.floor(Math.random() * 30) + 10,
+      renewals: Math.floor(Math.random() * 200) + 100
     },
-    products: {
-      views: Math.floor(Math.random() * 5000) + 2000,
-      searches: Math.floor(Math.random() * 1000) + 500,
-      top_category: ["Electronics", "Furniture", "Books", "Clothing"][Math.floor(Math.random() * 4)]
+    policies: {
+      new_policies: Math.floor(Math.random() * 100) + 50,
+      renewals: Math.floor(Math.random() * 150) + 75,
+      quotes: Math.floor(Math.random() * 300) + 100,
+      top_category: ["Auto", "Property", "Life", "Commercial"][Math.floor(Math.random() * 4)]
     }
   });
 }
@@ -456,114 +473,110 @@ print("Creating data reset function...");
 db.system.js.save({
   _id: "resetLabData",
   value: function() {
-    print("Resetting all lab data to initial state...");
-    
-    // Reset product stock
-    db.products.updateMany({}, {
-      $set: {
-        "stock": {
-          "prod1": 10,
-          "prod2": 50, 
-          "prod3": 25,
-          "prod4": 15,
-          "prod5": 8
-        }
-      }
-    });
-    
+    print("Resetting all insurance lab data to initial state...");
+
+    // Reset policy counts
+    db.policies.updateOne({_id: "pol1"}, {$set: {activePolicies: 10}});
+    db.policies.updateOne({_id: "pol2"}, {$set: {activePolicies: 50}});
+    db.policies.updateOne({_id: "pol3"}, {$set: {activePolicies: 25}});
+    db.policies.updateOne({_id: "pol4"}, {$set: {activePolicies: 15}});
+    db.policies.updateOne({_id: "pol5"}, {$set: {activePolicies: 8}});
+
     // Reset customer balances
     db.customers.updateMany({}, {
-      $set: { totalOrders: 0, totalSpent: 0, lastOrderDate: null }
+      $set: { totalPolicies: 0, totalPremiumsPaid: 0, lastPaymentDate: null }
     });
-    db.customers.updateOne({_id: "cust1"}, {$set: {balance: 1200.00}});
-    db.customers.updateOne({_id: "cust2"}, {$set: {balance: 800.00}});
-    db.customers.updateOne({_id: "cust3"}, {$set: {balance: 1500.00}});
-    db.customers.updateOne({_id: "cust4"}, {$set: {balance: 2000.00}});
-    
+    db.customers.updateOne({_id: "cust1"}, {$set: {premiumBalance: 1200.00}});
+    db.customers.updateOne({_id: "cust2"}, {$set: {premiumBalance: 800.00}});
+    db.customers.updateOne({_id: "cust3"}, {$set: {premiumBalance: 1500.00}});
+    db.customers.updateOne({_id: "cust4"}, {$set: {premiumBalance: 2000.00}});
+
     // Clear test collections
-    db.orders.deleteMany({_id: /^order_test/});
-    db.transactions.deleteMany({type: "transfer"});
-    db.notifications.deleteMany({type: {$in: ["order_created", "status_update", "high_value_order"]}});
-    db.activity_log.deleteMany({});
+    db.claims.deleteMany({_id: /^claim_test/});
+    db.payments.deleteMany({type: "transfer"});
+    db.policy_notifications.deleteMany({type: {$in: ["claim_created", "status_update", "high_value_claim"]}});
+    db.claim_activity_log.deleteMany({});
     db.resume_tokens.deleteMany({});
-    
-    print("✓ Lab data reset complete!");
+
+    print("✓ Insurance lab data reset complete!");
   }
 });
 
-// Function to generate additional test orders
-print("Creating test order generator function...");
+// Function to generate additional test claims
+print("Creating test claim generator function...");
 db.system.js.save({
-  _id: "generateTestOrders",
+  _id: "generateTestClaims",
   value: function(count) {
     count = count || 10;
-    print("Generating " + count + " test orders...");
-    
+    print("Generating " + count + " test claims...");
+
     var customers = ["cust1", "cust2", "cust3", "cust4"];
-    var products = ["prod1", "prod2", "prod3", "prod4", "prod5"];
-    var orders = [];
-    
+    var policies = ["pol1", "pol2", "pol3", "pol4", "pol5"];
+    var claimTypes = ["Auto Accident", "Property Damage", "Theft", "Fire", "Medical"];
+    var claims = [];
+
     for (let i = 1; i <= count; i++) {
       var customerId = customers[Math.floor(Math.random() * customers.length)];
-      var productId = products[Math.floor(Math.random() * products.length)];
-      var quantity = Math.floor(Math.random() * 3) + 1;
-      var product = db.products.findOne({_id: productId});
-      var total = product.price * quantity;
-      
-      orders.push({
-        _id: "test_order_" + Date.now() + "_" + i,
+      var policyId = policies[Math.floor(Math.random() * policies.length)];
+      var claimType = claimTypes[Math.floor(Math.random() * claimTypes.length)];
+      var claimAmount = Math.round((Math.random() * 10000 + 500) * 100) / 100;
+
+      claims.push({
+        _id: "test_claim_" + Date.now() + "_" + i,
+        claimNumber: "CLM-TEST-" + String(i).padStart(6, '0'),
         customerId: customerId,
-        orderDate: new Date(),
-        items: [{productId: productId, quantity: quantity}],
-        total: total,
-        status: "pending"
+        policyId: policyId,
+        claimDate: new Date(),
+        claimType: claimType,
+        claimAmount: claimAmount,
+        status: "submitted"
       });
     }
-    
-    db.orders.insertMany(orders);
-    print("✓ Generated " + count + " test orders");
-    return orders.map(o => o._id);
+
+    db.claims.insertMany(claims);
+    print("✓ Generated " + count + " test claims");
+    return claims.map(c => c._id);
   }
 });
 
 // Function to simulate high load
 print("Creating load simulation function...");
 db.system.js.save({
-  _id: "simulateLoad", 
+  _id: "simulateLoad",
   value: function(duration) {
     duration = duration || 60; // seconds
-    print("Simulating load for " + duration + " seconds...");
-    
+    print("Simulating insurance system load for " + duration + " seconds...");
+
     var startTime = Date.now();
     var operations = 0;
-    
+
     while ((Date.now() - startTime) < duration * 1000) {
       // Random operations
       var operation = Math.floor(Math.random() * 4);
-      
+
       switch(operation) {
-        case 0: // Insert notification
-          db.notifications.insertOne({
-            userId: "load_test_user",
+        case 0: // Insert policy notification
+          db.policy_notifications.insertOne({
+            customerId: "load_test_customer",
             type: "load_test",
             message: "Load test notification " + operations,
             timestamp: new Date(),
             read: false
           });
           break;
-          
-        case 1: // Update product stock
-          var productId = "prod" + (Math.floor(Math.random() * 5) + 1);
-          db.products.updateOne(
-            {_id: productId},
-            {$inc: {stock: Math.floor(Math.random() * 10) - 5}}
+
+        case 1: // Update policy count
+          var policyId = "pol" + (Math.floor(Math.random() * 5) + 1);
+          db.policies.updateOne(
+            {_id: policyId},
+            {$inc: {activePolicies: Math.floor(Math.random() * 5) - 2}}
           );
           break;
-          
-        case 2: // Query orders
-          db.orders.find({status: "pending"}).limit(10).toArray();
+
+        case 2: // Query claims
+          db.claims.find({status: "submitted"}).limit(10).toArray();
           break;
-          
+
         case 3: // Update customer
           var custId = "cust" + (Math.floor(Math.random() * 4) + 1);
           db.customers.updateOne(
@@ -572,19 +585,19 @@ db.system.js.save({
           );
           break;
       }
-      
+
       operations++;
       if (operations % 100 === 0) {
         print("  Performed " + operations + " operations...");
       }
     }
-    
+
     print("✓ Load simulation complete. Total operations: " + operations);
-    
+
     // Cleanup load test data
-    db.notifications.deleteMany({type: "load_test"});
+    db.policy_notifications.deleteMany({type: "load_test"});
     db.customers.updateMany({}, {$unset: {lastActivity: 1}});
-    
+
     return operations;
   }
 });
@@ -600,43 +613,41 @@ print("===============================");
 
 // Validate data counts
 var validation = {
-  products: db.products.countDocuments(),
-  customers: db.customers.countDocuments(), 
-  users: db.users.countDocuments(),
-  orders: db.orders.countDocuments(),
-  stores: db.stores.countDocuments(),
-  notifications: db.notifications.countDocuments(),
+  policies: db.policies.countDocuments(),
+  customers: db.customers.countDocuments(),
+  claims: db.claims.countDocuments(),
+  branches: db.branches.countDocuments(),
+  policy_notifications: db.policy_notifications.countDocuments(),
   daily_stats: db.daily_stats.countDocuments(),
-  product_categories: db.product_categories.countDocuments()
+  policy_categories: db.policy_categories.countDocuments()
 };
 
-print("Data validation:");
-print("- Products: " + validation.products);
+print("Insurance data validation:");
+print("- Policies: " + validation.policies);
 print("- Customers: " + validation.customers);
-print("- Users: " + validation.users);
-print("- Orders: " + validation.orders);
-print("- Stores: " + validation.stores);
-print("- Notifications: " + validation.notifications);
+print("- Claims: " + validation.claims);
+print("- Branches: " + validation.branches);
+print("- Policy Notifications: " + validation.policy_notifications);
 print("- Daily Stats: " + validation.daily_stats);
-print("- Product Categories: " + validation.product_categories);
+print("- Policy Categories: " + validation.policy_categories);
 
 // Check indexes
 print("\nIndex validation:");
-var collections = ["products", "customers", "orders", "users", "stores", "notifications", "activity_log"];
+var collections = ["policies", "customers", "claims", "branches", "policy_notifications", "claim_activity_log"];
 collections.forEach(function(coll) {
   var indexes = db.getCollection(coll).getIndexes();
   print("- " + coll + ": " + indexes.length + " indexes");
 });
 
 print("\n=======================================================");
-print("✅ DATA GENERATION COMPLETE!");
+print("✅ INSURANCE DATA GENERATION COMPLETE!");
 print("=======================================================");
-print("All test data for MongoDB Day 3 labs has been created.");
+print("All insurance test data for MongoDB Day 3 labs has been created.");
 print("");
 print("Available utility functions:");
-print("- resetLabData(): Reset all data to initial state");
-print("- generateTestOrders(count): Generate additional test orders");
-print("- simulateLoad(seconds): Simulate database load");
+print("- resetLabData(): Reset all insurance data to initial state");
+print("- generateTestClaims(count): Generate additional test claims");
+print("- simulateLoad(seconds): Simulate insurance system load");
 print("");
 print("Usage: db.eval(resetLabData) or db.loadServerScripts(); resetLabData()");
 print("=======================================================");

@@ -6,24 +6,24 @@
 - Understand performance implications of different query patterns
 
 ## Prerequisites
-- Sample e-commerce database with collections: `products`, `orders`, `customers`, `reviews`
+- Sample insurance database with collections: `policies`, `claims`, `customers`, `agents`, `vehicles`, `properties`, `payments`
 
 ## Tasks
 
 ### Part A: Complex Queries (20 minutes)
 1. **Multi-field Text Search**
    ```javascript
-   // Find products with text search across name and description
-   db.products.find({
-     $text: { $search: "wireless bluetooth" }
+   // Find policies with text search across policy type and coverage details
+   db.policies.find({
+     $text: { $search: "auto collision comprehensive" }
    }).sort({ score: { $meta: "textScore" } })
    ```
 
 2. **Geo-spatial Queries**
    ```javascript
-   // Find stores within 10km of a location
-   db.stores.find({
-     location: {
+   // Find agents within 10km of a claim location
+   db.agents.find({
+     territory: {
        $near: {
          $geometry: { type: "Point", coordinates: [-73.9857, 40.7484] },
          $maxDistance: 10000
@@ -34,61 +34,61 @@
 
 3. **Array Operations**
    ```javascript
-   // Find products with specific tags and price range
-   db.products.find({
- tags: { $in: ['programming', 'javascript'] },
- "reviews.average": { $gte: 1 },  // Dot notation instead of $elemMatch
- price: { $gte: 4, $lte: 5000 }
- })
+   // Find policies with specific coverage types and premium range
+   db.policies.find({
+     coverageTypes: { $in: ['collision', 'comprehensive'] },
+     "riskAssessment.score": { $gte: 1 },  // Dot notation instead of $elemMatch
+     annualPremium: { $gte: 500, $lte: 5000 }
+   })
    ```
 
 
 ### Part B: Aggregation Pipeline (25 minutes)
-1. **Sales Analysis Pipeline**
+1. **Premium Collection Analysis Pipeline**
    ```javascript
-   db.orders.aggregate([
-     { $match: { status: "shipped", orderDate: { $gte: new Date("2024-01-01") } } },
-     { $unwind: "$items" },
+   db.payments.aggregate([
+     { $match: { status: "collected", paymentDate: { $gte: new Date("2024-01-01") } } },
+     { $unwind: "$premiums" },
      { $group: {
-       _id: "$items.productId",
-       totalQuantity: { $sum: "$items.quantity" },
-       totalRevenue: { $sum: { $multiply: ["$items.quantity", "$items.price"] } }
+       _id: "$premiums.policyId",
+       totalPayments: { $sum: 1 },
+       totalPremiums: { $sum: "$premiums.amount" }
      }},
      { $lookup: {
-       from: "products",
+       from: "policies",
        localField: "_id",
        foreignField: "_id",
-       as: "product"
+       as: "policy"
      }},
-     { $sort: { totalRevenue: -1 } },
+     { $sort: { totalPremiums: -1 } },
      { $limit: 10 }
    ])
    ```
 
-2. **Customer Segmentation**
+2. **Customer Risk Segmentation**
    ```javascript
    db.customers.aggregate([
      { $lookup: {
-       from: "orders",
+       from: "policies",
        localField: "_id",
        foreignField: "customerId",
-       as: "orders"
+       as: "policies"
      }},
      { $addFields: {
-       totalSpent: { $sum: "$orders.total" },
-       orderCount: { $size: "$orders" }
+       totalPremiums: { $sum: "$policies.annualPremium" },
+       policyCount: { $size: "$policies" }
      }},
      { $bucket: {
-       groupBy: "$totalSpent",
-       boundaries: [0, 100, 500, 1000, 5000],
-       default: "5000+",
+       groupBy: "$totalPremiums",
+       boundaries: [0, 1000, 2500, 5000, 10000],
+       default: "10000+",
        output: {
          count: { $sum: 1 },
-         avgOrderValue: { $avg: "$totalSpent" }
+         avgPremiumValue: { $avg: "$totalPremiums" }
        }
      }}
    ])
    ```
 
 ## Challenge Exercise
-Create a pipeline that finds the top 5 customers by total spending in each city, including their average order value and most frequently purchased product category.
+Create a pipeline that finds the top 5 customers by total premium payments in each territory, including their average policy value and most frequently claimed policy type.

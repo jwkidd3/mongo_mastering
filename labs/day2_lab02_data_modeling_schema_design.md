@@ -8,57 +8,60 @@
 ## Tasks
 
 ### Part A: Schema Design Patterns (25 minutes)
-1. **Blog Platform Schema**
-   Design collections for a blog platform with posts, comments, authors, and tags:
+1. **Insurance Claims Schema**
+   Design collections for insurance claims with embedded incident details and investigation notes:
    ```javascript
-   // Posts collection with embedded comments
+   // Claims collection with embedded investigation
    {
      _id: ObjectId("..."),
-     title: "MongoDB Best Practices",
-     content: "...",
-     author: {
+     claimNumber: "CLM-2024-001234",
+     policyId: ObjectId("..."),
+     incidentDescription: "Vehicle collision at intersection",
+     adjuster: {
        _id: ObjectId("..."),
-       name: "John Doe",
-       email: "john@example.com"
+       name: "Sarah Johnson",
+       email: "sarah.johnson@insuranceco.com",
+       licenseNumber: "ADJ-5678"
      },
-     tags: ["mongodb", "database", "nosql"],
-     comments: [
+     incidentTypes: ["collision", "property damage", "injury"],
+     investigationNotes: [
        {
          _id: ObjectId("..."),
-         author: "Jane Smith",
-         content: "Great post!",
+         investigator: "Mike Thompson",
+         note: "Photos taken, police report obtained",
          createdAt: ISODate("...")
        }
      ],
-     publishedAt: ISODate("..."),
-     views: 1250
+     filedAt: ISODate("..."),
+     estimatedAmount: 8500
    };
    ```
 
-2. **E-commerce Inventory System**
+2. **Insurance Policy System**
    ```javascript
-   // Product with variants pattern
+   // Policy with coverage options pattern
    {
      _id: ObjectId("..."),
-     name: "iPhone 15",
-     brand: "Apple",
-     category: "Electronics",
-     variants: [
+     policyNumber: "POL-AUTO-2024-5678",
+     policyType: "Auto Insurance",
+     carrier: "SafeGuard Insurance",
+     coverageOptions: [
        {
-         sku: "IP15-128-BLK",
-         color: "Black",
-         storage: "128GB",
-         price: 799,
-         inventory: {
-           quantity: 50,
-           reserved: 5,
-           available: 45
+         coverageCode: "COLL-500",
+         coverageType: "Collision",
+         deductible: 500,
+         limit: 25000,
+         premium: {
+           monthly: 85,
+           annual: 1020,
+           discountApplied: 120
          }
        }
      ],
-     specifications: {
-       display: "6.1 inch",
-       processor: "A17 Bionic"
+     policyDetails: {
+       effectiveDate: ISODate("2024-01-01"),
+       expirationDate: ISODate("2024-12-31"),
+       renewalType: "Auto-Renewal"
      }
    }
    ```
@@ -66,31 +69,31 @@
 ### Part B: Schema Validation (20 minutes)
 1. **Create Validation Rules**
    ```javascript
-   db.createCollection("users", {
+   db.createCollection("policyholders", {
      validator: {
        $jsonSchema: {
          bsonType: "object",
-         required: ["email", "username", "createdAt"],
+         required: ["email", "licenseNumber", "createdAt"],
          properties: {
            email: {
              bsonType: "string",
              pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
            },
-           username: {
+           licenseNumber: {
              bsonType: "string",
-             minLength: 3,
+             minLength: 8,
              maxLength: 20
            },
            age: {
              bsonType: "int",
-             minimum: 13,
+             minimum: 16,
              maximum: 120
            },
-           preferences: {
+           communicationPreferences: {
              bsonType: "object",
              properties: {
-               newsletter: { bsonType: "bool" },
-               notifications: { bsonType: "bool" }
+               emailNotifications: { bsonType: "bool" },
+               smsAlerts: { bsonType: "bool" }
              }
            }
          }
@@ -100,4 +103,4 @@
    ```
 
 ## Challenge Exercise
-Design a social media platform schema that supports posts, friendships, groups, and real-time messaging. Consider cardinality, query patterns, and growth scalability.
+Design an insurance fraud detection system schema that supports suspicious claims, investigation workflows, agent alerts, and case management. Consider cardinality, query patterns, and compliance requirements.

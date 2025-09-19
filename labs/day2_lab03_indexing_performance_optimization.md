@@ -11,41 +11,41 @@
 1. **Compound Indexes**
    ```javascript
    // Create compound index for common query pattern
-   db.orders.createIndex({
-     "customerId": 1,
+   db.claims.createIndex({
+     "policyId": 1,
      "status": 1,
-     "orderDate": -1
+     "filedDate": -1
    })
 
    // Analyze index usage
-   db.orders.find({
-     customerId: ObjectId("..."),
-     status: "pending"
-   }).sort({ orderDate: -1 }).explain("executionStats")
+   db.claims.find({
+     policyId: ObjectId("..."),
+     status: "under_investigation"
+   }).sort({ filedDate: -1 }).explain("executionStats")
    ```
 
 2. **Text Indexes**
    ```javascript
    // Create text index with weights
-   db.products.createIndex({
-     "name": "text",
-     "description": "text",
-     "tags": "text"
+   db.policies.createIndex({
+     "policyType": "text",
+     "coverageDescription": "text",
+     "coverageTypes": "text"
    }, {
      weights: {
-       name: 10,
-       description: 5,
-       tags: 1
+       policyType: 10,
+       coverageDescription: 5,
+       coverageTypes: 1
      },
-     name: "product_text_index"
+     name: "policy_text_index"
    })
    ```
 
 3. **Partial Indexes**
    ```javascript
-   // Index only active products
-   db.products.createIndex(
-     { "category": 1, "price": 1 },
+   // Index only active policies
+   db.policies.createIndex(
+     { "policyType": 1, "annualPremium": 1 },
      { partialFilterExpression: { "status": "active" } }
    )
    ```
@@ -54,27 +54,27 @@
 1. **Query Performance Comparison**
    ```javascript
    // Before index
-   db.orders.find({ customerId: ObjectId("...") }).explain("executionStats")
+   db.claims.find({ policyId: ObjectId("...") }).explain("executionStats")
 
    // Create index
-   db.orders.createIndex({ customerId: 1 })
+   db.claims.createIndex({ policyId: 1 })
 
    // After index
-   db.orders.find({ customerId: ObjectId("...") }).explain("executionStats")
+   db.claims.find({ policyId: ObjectId("...") }).explain("executionStats")
    ```
 
 2. **Index Intersection**
    ```javascript
    // Create separate single-field indexes
-   db.products.createIndex({ category: 1 })
-   db.products.createIndex({ price: 1 })
+   db.policies.createIndex({ policyType: 1 })
+   db.policies.createIndex({ annualPremium: 1 })
 
    // Query using both fields
-   db.products.find({
-     category: "Electronics",
-     price: { $gte: 100, $lte: 500 }
+   db.policies.find({
+     policyType: "Auto Insurance",
+     annualPremium: { $gte: 1000, $lte: 3000 }
    }).explain("executionStats")
    ```
 
 ## Challenge Exercise
-Optimize a slow-running aggregation pipeline by creating appropriate indexes. Use the profiler to identify bottlenecks and measure improvement.
+Optimize a slow-running claims processing aggregation pipeline by creating appropriate indexes. Use the profiler to identify bottlenecks and measure performance improvement for fraud detection queries.

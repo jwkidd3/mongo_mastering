@@ -11,106 +11,106 @@
 ### Part A: Basic Update Operations (20 minutes)
 1. **Single Document Updates**
    ```javascript
-   use ecommerce
+   use insurance_company
 
    // Update using $set operator
-   db.products.updateOne(
-     {name: "Wireless Mouse"},
-     {$set: {price: 24.99, lastUpdated: new Date()}}
+   db.policies.updateOne(
+     {policyNumber: "POL-AUTO-001"},
+     {$set: {premiumAmount: 949.99, lastUpdated: new Date()}}
    )
 
    // Update nested fields
-   db.products.updateOne(
-     {name: "Laptop"},
+   db.policies.updateOne(
+     {policyNumber: "POL-LIFE-001"},
      {
        $set: {
-         "specifications.ram": "32GB",
-         "specifications.graphics": "RTX 4060"
+         "coverage.deathBenefit": 750000,
+         "coverage.cashValue": "enhanced"
        }
      }
    )
 
    // Unset (remove) fields
-   db.products.updateOne(
-     {name: "Gaming Mouse"},
-     {$unset: {discontinued: "", oldPrice: ""}}
+   db.policies.updateOne(
+     {policyNumber: "POL-HOME-001"},
+     {$unset: {deprecated: "", oldPremium: ""}}
    )
 
    // Increment/decrement values
-   db.products.updateOne(
-     {name: "Wireless Mouse"},
-     {$inc: {quantity: -5, viewCount: 1}}
+   db.policies.updateOne(
+     {policyNumber: "POL-AUTO-001"},
+     {$inc: {claimCount: 1, renewalCount: 1}}
    )
    ```
 
 2. **Multiple Document Updates**
    ```javascript
    // Update all documents in category
-   db.products.updateMany(
-     {category: "Electronics"},
+   db.policies.updateMany(
+     {policyType: "Auto"},
      {
        $set: {
-         lastCategoryUpdate: new Date(),
+         lastTypeUpdate: new Date(),
          featured: false
        }
      }
    )
 
    // Conditional updates with complex criteria
-   db.products.updateMany(
+   db.policies.updateMany(
      {
-       price: {$lt: 50},
-       inStock: true
+       premiumAmount: {$lt: 1000},
+       active: true
      },
      {
-       $set: {priceCategory: "budget"},
-       $inc: {popularity: 1}
+       $set: {premiumCategory: "low-cost"},
+       $inc: {popularityScore: 1}
      }
    )
 
-   // Bulk price adjustments
-   db.products.updateMany(
-     {category: "Electronics"},
-     {$mul: {price: 0.9}}  // 10% discount
+   // Bulk premium adjustments
+   db.policies.updateMany(
+     {policyType: "Auto"},
+     {$mul: {premiumAmount: 0.95}}  // 5% discount
    )
    ```
 
 3. **Array Update Operations**
    ```javascript
    // Add elements to arrays
-   db.products.updateOne(
-     {name: "Smartphone"},
-     {$push: {tags: "5G"}}
+   db.policies.updateOne(
+     {policyNumber: "POL-VEH-001"},
+     {$push: {coverageTypes: "roadside_assistance"}}
    )
 
    // Add multiple elements
-   db.products.updateOne(
-     {name: "Smartphone"},
-     {$push: {tags: {$each: ["waterproof", "wireless-charging"]}}}
+   db.policies.updateOne(
+     {policyNumber: "POL-VEH-001"},
+     {$push: {coverageTypes: {$each: ["rental_car", "gap_coverage"]}}}
    )
 
    // Remove elements from arrays
-   db.products.updateOne(
-     {name: "Smartphone"},
-     {$pull: {tags: "old-tag"}}
+   db.policies.updateOne(
+     {policyNumber: "POL-VEH-001"},
+     {$pull: {coverageTypes: "deprecated-coverage"}}
    )
 
    // Remove multiple elements
-   db.products.updateOne(
-     {name: "Smartphone"},
-     {$pullAll: {ratings: [1, 2]}}  // Remove poor ratings
+   db.policies.updateOne(
+     {policyNumber: "POL-VEH-001"},
+     {$pullAll: {claimHistory: ["DENIED", "FRAUDULENT"]}}  // Remove denied claims
    )
 
    // Add to set (avoid duplicates)
-   db.products.updateOne(
-     {name: "Smartphone"},
-     {$addToSet: {tags: "premium"}}
+   db.policies.updateOne(
+     {policyNumber: "POL-VEH-001"},
+     {$addToSet: {coverageTypes: "comprehensive"}}
    )
 
    // Pop elements (remove first/last)
-   db.products.updateOne(
-     {name: "Smartphone"},
-     {$pop: {ratings: 1}}  // Remove last rating
+   db.policies.updateOne(
+     {policyNumber: "POL-VEH-001"},
+     {$pop: {claimHistory: 1}}  // Remove most recent claim
    )
    ```
 
@@ -118,16 +118,16 @@
 1. **Upsert Operations**
    ```javascript
    // Upsert: update if exists, insert if not
-   db.products.updateOne(
-     {sku: "NEW-SKU-001"},
+   db.policies.updateOne(
+     {policyNumber: "POL-NEW-001"},
      {
        $set: {
-         name: "New Product",
-         price: 199.99,
-         category: "New Category"
+         customerName: "New Customer",
+         premiumAmount: 1599.99,
+         policyType: "Auto"
        },
        $setOnInsert: {
-         createdAt: new Date(),
+         effectiveDate: new Date(),
          version: 1
        }
      },
@@ -135,14 +135,14 @@
    )
 
    // Conditional upsert with complex logic
-   db.inventory.updateOne(
-     {productId: "PROD-123", location: "warehouse-A"},
+   db.claims.updateOne(
+     {policyId: "POL-AUTO-001", claimType: "collision"},
      {
-       $inc: {quantity: 50},
+       $inc: {claimAmount: 500},
        $setOnInsert: {
-         productId: "PROD-123",
-         location: "warehouse-A",
-         createdAt: new Date()
+         policyId: "POL-AUTO-001",
+         claimType: "collision",
+         filedDate: new Date()
        }
      },
      {upsert: true}
@@ -152,27 +152,27 @@
 2. **Replace Operations**
    ```javascript
    // Replace entire document (except _id)
-   db.products.replaceOne(
-     {_id: "MOUSE-001"},
+   db.policies.replaceOne(
+     {_id: "POL-HOME-001"},
      {
-       name: "Completely New Mouse",
-       price: 39.99,
-       category: "Gaming",
-       specifications: {
-         dpi: "16000",
-         buttons: 8
+       policyNumber: "POL-HOME-001-RENEWED",
+       premiumAmount: 1899.99,
+       policyType: "Home",
+       coverage: {
+         dwellingLimit: 350000,
+         personalPropertyLimit: 175000
        },
-       updatedAt: new Date()
+       renewedAt: new Date()
      }
    )
 
    // Conditional replacement
-   var existingDoc = db.products.findOne({name: "Laptop"})
+   var existingDoc = db.policies.findOne({policyNumber: "POL-LIFE-001"})
    if (existingDoc) {
-     existingDoc.name = "Updated Laptop"
-     existingDoc.price = 1199.99
+     existingDoc.customerName = "Updated Customer Name"
+     existingDoc.premiumAmount = 2799.99
      existingDoc.lastModified = new Date()
-     db.products.replaceOne({_id: existingDoc._id}, existingDoc)
+     db.policies.replaceOne({_id: existingDoc._id}, existingDoc)
    }
    ```
 
@@ -180,29 +180,29 @@
    ```javascript
    // Update specific array elements
 
-   db.products.insertOne ({
-     name: "Multi-Variant Product",
-     price: 29.99,
-     category: "Clothes",
-     variants: [
-       { size: "S",  inStock: true},
-       { size: "M", inStock: false},
-       { size: "L", inStock: true}
+   db.policies.insertOne ({
+     policyNumber: "POL-MULTI-001",
+     premiumAmount: 1499.99,
+     policyType: "Auto",
+     vehicles: [
+       { vin: "1HGBH41JXMN109186", covered: true},
+       { vin: "2HGBH41JXMN109187", covered: false},
+       { vin: "3HGBH41JXMN109188", covered: true}
      ]
   })
 
-   // Update specific variant
-   db.products.updateOne(
-     {name: "Multi-Variant Product"},
-     {$set: {"variants.$[elem].inStock": true}},
-     {arrayFilters: [{"elem.size": "M"}]}
+   // Update specific vehicle
+   db.policies.updateOne(
+     {policyNumber: "POL-MULTI-001"},
+     {$set: {"vehicles.$[elem].covered": true}},
+     {arrayFilters: [{"elem.vin": "2HGBH41JXMN109187"}]}
    )
 
    // Update multiple array elements
-   db.products.updateOne(
-     {name: "Multi-Variant Product"},
-     {$inc: {"variants.$[elem].price": 5}},
-     {arrayFilters: [{"elem.price": {$lt: 35}}]}
+   db.policies.updateOne(
+     {policyNumber: "POL-MULTI-001"},
+     {$inc: {"vehicles.$[elem].deductible": 100}},
+     {arrayFilters: [{"elem.deductible": {$lt: 1000}}]}
    )
    ```
 
@@ -210,84 +210,84 @@
 1. **Safe Deletion Practices**
    ```javascript
    // Always test with find first
-   db.products.find({price: {$lt: 10}})
+   db.policies.find({premiumAmount: {$lt: 100}})
 
    // Count before deletion
-   var countToDelete = db.products.countDocuments({price: {$lt: 10}})
+   var countToDelete = db.policies.countDocuments({premiumAmount: {$lt: 100}})
    print("Will delete " + countToDelete + " documents")
 
    // Delete single document
-   db.products.deleteOne({price: {$lt: 10}})
+   db.policies.deleteOne({premiumAmount: {$lt: 100}})
 
    // Delete with specific _id for safety
-   db.products.deleteOne({_id: "MOUSE-001"})
+   db.policies.deleteOne({_id: "POL-HOME-001"})
    ```
 
 2. **Bulk Deletion Operations**
    ```javascript
    // Delete multiple documents
-   var deleteResult = db.products.deleteMany({
-     category: "Discontinued",
-     inStock: false
+   var deleteResult = db.policies.deleteMany({
+     policyType: "Discontinued",
+     active: false
    })
    print("Deleted " + deleteResult.deletedCount + " documents")
 
    // Delete with complex criteria
-   db.products.deleteMany({
+   db.policies.deleteMany({
      $and: [
-       {createdAt: {$lt: new Date("2023-01-01")}},
-       {quantity: 0},
-       {category: {$in: ["Obsolete", "Deprecated"]}}
+       {effectiveDate: {$lt: new Date("2023-01-01")}},
+       {claimCount: 0},
+       {policyType: {$in: ["Obsolete", "Deprecated"]}}
      ]
    })
 
    // Conditional deletion with verification
-   var oldProducts = db.products.find({
-     createdAt: {$lt: new Date("2020-01-01")}
+   var oldPolicies = db.policies.find({
+     effectiveDate: {$lt: new Date("2020-01-01")}
    }).count()
 
-   if (oldProducts > 0) {
-     print("Found " + oldProducts + " old products to delete")
+   if (oldPolicies > 0) {
+     print("Found " + oldPolicies + " old policies to delete")
      // Uncomment to actually delete:
-     // db.products.deleteMany({createdAt: {$lt: new Date("2020-01-01")}})
+     // db.policies.deleteMany({effectiveDate: {$lt: new Date("2020-01-01")}})
    }
    ```
 
 3. **Cleanup and Maintenance Operations**
    ```javascript
    // Remove all documents from collection (keeping collection)
-   db.temp_data.deleteMany({})
+   db.temp_claims.deleteMany({})
 
    // Drop entire collection
-   db.obsolete_collection.drop()
+   db.obsolete_policies.drop()
 
    // Bulk cleanup with reporting
-   var categories = ["Obsolete", "Discontinued", "Expired"]
-   categories.forEach(function(category) {
-     var count = db.products.countDocuments({category: category})
+   var policyTypes = ["Obsolete", "Discontinued", "Expired"]
+   policyTypes.forEach(function(policyType) {
+     var count = db.policies.countDocuments({policyType: policyType})
      if (count > 0) {
-       var result = db.products.deleteMany({category: category})
-       print("Removed " + result.deletedCount + " products from " + category)
+       var result = db.policies.deleteMany({policyType: policyType})
+       print("Removed " + result.deletedCount + " policies from " + policyType)
      }
    })
 
    // Archive before delete pattern
-   var archiveCount = db.products.find({
+   var archiveCount = db.policies.find({
      status: "archived",
      archivedDate: {$lt: new Date(Date.now() - 365*24*60*60*1000)}
    }).count()
 
    if (archiveCount > 0) {
      // First copy to archive collection
-     db.products.find({
+     db.policies.find({
        status: "archived",
        archivedDate: {$lt: new Date(Date.now() - 365*24*60*60*1000)}
      }).forEach(function(doc) {
-       db.archived_products.insertOne(doc)
+       db.archived_policies.insertOne(doc)
      })
 
      // Then delete from main collection
-     db.products.deleteMany({
+     db.policies.deleteMany({
        status: "archived",
        archivedDate: {$lt: new Date(Date.now() - 365*24*60*60*1000)}
      })
@@ -295,10 +295,10 @@
    ```
 
 ## Challenge Exercise
-Implement a complete product lifecycle management system that includes:
-- Product creation with validation
-- Inventory updates with transaction-like safety
-- Bulk price adjustments with rollback capability
-- Archive and cleanup procedures
-- Audit trail for all modifications
+Implement a complete policy lifecycle management system that includes:
+- Policy creation with validation
+- Premium updates with transaction-like safety
+- Bulk premium adjustments with rollback capability
+- Archive and cleanup procedures for expired policies
+- Audit trail for all policy modifications
 - Error handling and reporting for all operations

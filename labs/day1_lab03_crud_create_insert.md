@@ -11,36 +11,36 @@
 ### Part A: Single Document Insertion (15 minutes)
 1. **Basic insertOne() Operations**
    ```javascript
-   use ecommerce
+   use insurance_company
 
    // Simple document insertion
-   db.products.insertOne({
-     name: "Wireless Mouse",
-     price: 29.99,
-     category: "Electronics"
+   db.policies.insertOne({
+     policyNumber: "POL-AUTO-001",
+     premiumAmount: 899.99,
+     policyType: "Auto"
    })
 
    // Document with explicit _id
-   db.products.insertOne({
-     _id: "MOUSE-001",
-     name: "Gaming Mouse",
-     price: 79.99,
-     category: "Electronics",
-     brand: "TechGear"
+   db.policies.insertOne({
+     _id: "POL-HOME-001",
+     policyNumber: "POL-HOME-001",
+     premiumAmount: 1299.99,
+     policyType: "Home",
+     insuranceCarrier: "SafeGuard Insurance"
    })
 
    // Document with nested structure
-   db.products.insertOne({
-     name: "Laptop",
-     price: 999.99,
-     category: "Computers",
-     specifications: {
-       processor: "Intel i7",
-       ram: "16GB",
-       storage: "512GB SSD"
+   db.policies.insertOne({
+     policyNumber: "POL-LIFE-001",
+     premiumAmount: 2499.99,
+     policyType: "Life",
+     coverage: {
+       deathBenefit: 500000,
+       termLength: "20 years",
+       cashValue: true
      },
-     tags: ["portable", "business", "gaming"],
-     inStock: true,
+     beneficiaries: ["spouse", "children", "trust"],
+     active: true,
      createdAt: new Date()
    })
    ```
@@ -54,27 +54,27 @@
 
    // Insert with pre-generated ObjectId
    var customId = new ObjectId()
-   db.products.insertOne({
+   db.policies.insertOne({
      _id: customId,
-     category: "Computers",
-     name: "Custom ID Product",
-     price: 199.99
+     policyType: "Commercial",
+     policyNumber: "POL-COM-001",
+     premiumAmount: 4999.99
    })
 
    // Verify insertion with different data types
-   db.products.insertOne({
-     name: "Multi-Type Product",
-     category: "Electronics",
-     price: NumberDecimal("99.99"),
-     quantity: NumberInt(100),
-     weight: 2.5,
-     available: true,
-     tags: ["sample", "test"],
+   db.policies.insertOne({
+     policyNumber: "POL-MULTI-001",
+     policyType: "Auto",
+     premiumAmount: NumberDecimal("1299.99"),
+     deductible: NumberInt(500),
+     coverageLimit: 250000,
+     active: true,
+     coverageTypes: ["collision", "comprehensive"],
      metadata: {
        created: new Date(),
        version: NumberInt(1)
      },
-     binary_data: BinData(0, "SGVsbG8gV29ybGQ=")
+     encrypted_data: BinData(0, "SGVsbG8gV29ybGQ=")
    })
    ```
 
@@ -87,19 +87,22 @@
        name: "John Doe",
        email: "john@example.com",
        age: 30,
-       city: "New York"
+       city: "New York",
+       customerType: "Individual"
      },
      {
        name: "Jane Smith",
        email: "jane@example.com",
        age: 25,
-       city: "Los Angeles"
+       city: "Los Angeles",
+       customerType: "Individual"
      },
      {
-       name: "Bob Johnson",
-       email: "bob@example.com",
-       age: 35,
-       city: "Chicago"
+       name: "ABC Corporation",
+       email: "contact@abccorp.com",
+       businessType: "Manufacturing",
+       city: "Chicago",
+       customerType: "Business"
      }
    ])
 
@@ -110,18 +113,18 @@
 2. **Bulk Operations with Options**
    ```javascript
    // Ordered insertion (stops on first error)
-   db.orders.insertMany([
-     {orderId: "ORD-001", customerId: "CUST-001", total: 99.99},
-     {orderId: "ORD-002", customerId: "CUST-002", total: 149.99},
-     {orderId: "ORD-003", customerId: "CUST-001", total: 79.99}
+   db.claims.insertMany([
+     {claimNumber: "CLM-001", policyId: "POL-AUTO-001", claimAmount: 3500.00},
+     {claimNumber: "CLM-002", policyId: "POL-HOME-001", claimAmount: 8750.00},
+     {claimNumber: "CLM-003", policyId: "POL-AUTO-001", claimAmount: 1250.00}
    ], {ordered: true})
 
    // Unordered insertion (continues despite errors)
    try {
-     db.orders.insertMany([
-       {orderId: "ORD-004", customerId: "CUST-003", total: 199.99},
-       {orderId: "ORD-002", customerId: "CUST-004", total: 299.99}, // Duplicate key
-       {orderId: "ORD-005", customerId: "CUST-005", total: 89.99}
+     db.claims.insertMany([
+       {claimNumber: "CLM-004", policyId: "POL-LIFE-001", claimAmount: 15000.00},
+       {claimNumber: "CLM-002", policyId: "POL-COM-001", claimAmount: 25000.00}, // Duplicate key
+       {claimNumber: "CLM-005", policyId: "POL-HOME-001", claimAmount: 4500.00}
      ], {ordered: false})
    } catch (e) {
      print("Bulk insert completed with errors: " + e)
@@ -131,24 +134,24 @@
 3. **Large Dataset Generation**
    ```javascript
    // Generate large dataset for testing
-   var bulkProducts = []
+   var bulkPolicies = []
    for (var i = 1; i <= 1000; i++) {
-     bulkProducts.push({
-       name: "Product " + i,
-       price: Math.round(Math.random() * 1000 * 100) / 100,
-       category: ["Electronics", "Clothing", "Books", "Home"][Math.floor(Math.random() * 4)],
-       sku: "SKU-" + String(i).padStart(4, "0"),
-       inStock: Math.random() > 0.3,
-       quantity: Math.floor(Math.random() * 100),
-       createdAt: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000)
+     bulkPolicies.push({
+       policyNumber: "POL-" + String(i).padStart(6, "0"),
+       premiumAmount: Math.round(Math.random() * 5000 * 100) / 100,
+       policyType: ["Auto", "Home", "Life", "Commercial"][Math.floor(Math.random() * 4)],
+       customerId: "CUST-" + String(Math.floor(Math.random() * 500) + 1).padStart(4, "0"),
+       active: Math.random() > 0.1,
+       deductible: [250, 500, 1000, 2500][Math.floor(Math.random() * 4)],
+       effectiveDate: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000)
      })
    }
 
    // Insert in batches
    var batchSize = 100
-   for (var j = 0; j < bulkProducts.length; j += batchSize) {
-     var batch = bulkProducts.slice(j, j + batchSize)
-     db.products.insertMany(batch)
+   for (var j = 0; j < bulkPolicies.length; j += batchSize) {
+     var batch = bulkPolicies.slice(j, j + batchSize)
+     db.policies.insertMany(batch)
      print("Inserted batch: " + (j / batchSize + 1))
    }
    ```
@@ -158,27 +161,27 @@
    ```javascript
    // Duplicate key error
    try {
-     db.products.insertOne({_id: "MOUSE-001", name: "Duplicate Mouse"})
+     db.policies.insertOne({_id: "POL-HOME-001", policyNumber: "Duplicate Policy"})
    } catch (e) {
      print("Duplicate key error: " + e.message)
    }
 
    // Document too large error simulation
    var largeDoc = {
-     name: "Large Document",
-     data: "x".repeat(16777216)  // 16MB+ string
+     policyNumber: "POL-LARGE-001",
+     attachments: "x".repeat(16777216)  // 16MB+ string
    }
    try {
-     db.products.insertOne(largeDoc)
+     db.policies.insertOne(largeDoc)
    } catch (e) {
      print("Document size error: " + e.message)
    }
 
    // Validation error (if validation rules exist)
    try {
-     db.products.insertOne({
-       price: -10,  // Invalid negative price
-       name: ""     // Empty name
+     db.policies.insertOne({
+       premiumAmount: -100,  // Invalid negative premium
+       policyNumber: ""      // Empty policy number
      })
    } catch (e) {
      print("Validation error: " + e.message)
@@ -188,17 +191,17 @@
 2. **Write Concerns and Acknowledgment**
    ```javascript
    // Insert with write concern
-   db.products.insertOne(
-     {name: "Acknowledged Product", price: 99.99,category: "Electronics"},
+   db.policies.insertOne(
+     {policyNumber: "POL-ACK-001", premiumAmount: 1599.99, policyType: "Auto"},
      {writeConcern: {w: 1, j: true}}
    )
 
    // Batch insert with write concern
-   db.products.insertMany([
-     {name: "Batch Product 1", price: 19.99,category: "Electronics"},
-     {name: "Batch Product 2", price: 29.99,category: "Electronics"}
+   db.policies.insertMany([
+     {policyNumber: "POL-BATCH-001", premiumAmount: 899.99, policyType: "Home"},
+     {policyNumber: "POL-BATCH-002", premiumAmount: 1199.99, policyType: "Auto"}
    ], {writeConcern: {w: "majority"}})
    ```
 
 ## Challenge Exercise
-Create a realistic e-commerce product catalog with 5000 products across multiple categories. Include proper data types, nested documents for specifications, arrays for tags, and implement error handling for edge cases. Measure and report insertion performance.
+Create a realistic insurance policy database with 5000 policies across multiple insurance types (Auto, Home, Life, Commercial). Include proper data types, nested documents for coverage details, arrays for beneficiaries, and implement error handling for edge cases. Measure and report insertion performance.

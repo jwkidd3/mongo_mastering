@@ -1,6 +1,6 @@
 # Lab 2: Replica Sets & High Availability
 **Duration:** 45 minutes
-**Objective:** Configure replica sets and test failover scenarios
+**Objective:** Configure replica sets for insurance branch data replication and test failover scenarios
 
 ## Part A: Advanced Replica Set Configuration (20 minutes)
 
@@ -114,58 +114,77 @@ sleep 10
 
 **Test Read Preferences via MongoSH:**
 ```javascript
-use ecommerce
+use insurance_company
 
-// Primary read preference (default)
-db.products.find().readPref("primary");
+// Primary read preference (default) - critical operations
+db.policies.find().readPref("primary");
 
-// Secondary preferred
-db.products.find().readPref("secondaryPreferred");
+// Secondary preferred - for reporting and analytics
+db.claims.find().readPref("secondaryPreferred");
 
-// Nearest member
-db.products.find().readPref("nearest");
+// Nearest member - for branch operations
+db.customers.find().readPref("nearest");
 
-// Tagged reads - east region only
-db.products.find().readPref("secondary", [
+// Tagged reads - east coast branches only
+db.policies.find().readPref("secondary", [
   { "region": "east" }
 ]);
 
-// Analytics member only
-db.products.find().readPref("secondary", [
+// Analytics member only - for compliance and reporting
+db.claims.find().readPref("secondary", [
   { "usage": "analytics" }
 ]);
 ```
 
-### Step 6: Write and Read Concerns
+### Step 6: Write and Read Concerns for Insurance Operations
 
 ```javascript
-use ecommerce
+use insurance_company
 
-// Test various write concerns
-db.test_writes.insertOne(
-  { test: "majority", timestamp: new Date() },
-  { writeConcern: { w: "majority" } }
+// Critical policy updates require majority write concern
+db.policies.updateOne(
+  { _id: "policy1" },
+  { $set: { status: "Active", lastModified: new Date() } },
+  { writeConcern: { w: "majority", j: true } }
 );
 
-db.test_writes.insertOne(
-  { test: "majority_timeout", timestamp: new Date() },
-  { writeConcern: { w: "majority", wtimeout: 5000 } }
+// Claim settlements require strict durability
+db.claims.insertOne(
+  {
+    claimNumber: "CLM-2024-TEST",
+    customerId: "cust1",
+    policyId: "policy1",
+    amount: 5000.00,
+    status: "Filed",
+    incidentDate: new Date(),
+    filedDate: new Date()
+  },
+  { writeConcern: { w: "majority", wtimeout: 10000, j: true } }
 );
 
-db.test_writes.insertOne(
-  { test: "journal", timestamp: new Date() },
+// Audit trail entries with journal guarantee
+db.audit_log.insertOne(
+  {
+    operation: "claim_filed",
+    userId: "agent1",
+    timestamp: new Date(),
+    details: "New claim filed for auto accident"
+  },
   { writeConcern: { w: 1, j: true } }
 );
 
-// Test read concerns
-db.test_writes.find().readConcern("local");
-db.test_writes.find().readConcern("majority");
+// Read concerns for different use cases
+// Local read for real-time dashboard (faster, may see uncommitted data)
+db.claims.find({ status: "Under Review" }).readConcern("local");
+
+// Majority read for financial reports (consistent across majority)
+db.payments.find({ type: "Claim Settlement" }).readConcern("majority");
 ```
 
 **Monitor in Compass:**
-- Watch write propagation across replica set members
-- Use Performance tab to see write acknowledgment timing
-- Observe consistency behavior with different concerns
+- Watch insurance data write propagation across replica set members
+- Use Performance tab to see write acknowledgment timing for critical insurance operations
+- Observe consistency behavior with different concerns for policy and claim data
 
 ## Part C: Monitoring and Maintenance (10 minutes)
 
@@ -176,20 +195,25 @@ db.test_writes.find().readConcern("majority");
 2. **Real-time Metrics:** Memory usage, connections, network I/O
 3. **Topology View:** Visual cluster health representation
 
-**MongoSH Monitoring Script:**
+**MongoSH Monitoring Script for Insurance Operations:**
 ```javascript
-// Comprehensive replica set monitoring
-function monitorReplicaSet() {
-  print("=== Replica Set Monitoring ===");
+// Comprehensive replica set monitoring for insurance company
+function monitorInsuranceReplicaSet() {
+  print("=== Insurance Company Replica Set Monitoring ===");
 
   var status = rs.status();
   print("Replica Set: " + status.set);
   print("Date: " + status.date);
 
-  // Member status
-  print("\n--- Member Status ---");
+  // Member status with branch context
+  print("\n--- Branch Data Center Status ---");
   status.members.forEach(function(member) {
-    print(member.name + ": " + member.stateStr + " (Health: " + member.health + ")");
+    var role = "";
+    if (member.state === 1) role = "[PRIMARY - Main Operations]";
+    else if (member.state === 2) role = "[SECONDARY - Branch/Analytics]";
+    else if (member.state === 7) role = "[ARBITER - Voting Only]";
+
+    print(member.name + ": " + member.stateStr + " " + role + " (Health: " + member.health + ")");
     if (member.optimeDate) {
       print("  Last Optime: " + member.optimeDate);
     }
@@ -198,13 +222,14 @@ function monitorReplicaSet() {
     }
   });
 
-  // Replication lag
-  print("\n--- Replication Lag ---");
+  // Replication lag - critical for insurance data consistency
+  print("\n--- Branch Data Replication Lag ---");
   var primary = status.members.filter(function(m) { return m.state === 1; })[0];
   if (primary) {
     status.members.filter(function(m) { return m.state === 2; }).forEach(function(secondary) {
       var lag = (primary.optimeDate - secondary.optimeDate) / 1000;
-      print(secondary.name + ": " + lag.toFixed(2) + " seconds behind primary");
+      var lagStatus = lag < 5 ? "[OK]" : lag < 15 ? "[WARNING]" : "[CRITICAL]";
+      print(secondary.name + ": " + lag.toFixed(2) + " seconds behind primary " + lagStatus);
     });
   }
 
@@ -217,13 +242,21 @@ function monitorReplicaSet() {
   var firstOp = db.getSiblingDB("local").oplog.rs.find().sort({ ts: 1 }).limit(1).next();
   var lastOp = db.getSiblingDB("local").oplog.rs.find().sort({ ts: -1 }).limit(1).next();
 
-  // Fix: Access timestamp seconds directly
   var oplogWindow = (lastOp.ts.t - firstOp.ts.t) / 3600;
   print("Oplog Window: " + oplogWindow.toFixed(2) + " hours");
+
+  // Insurance-specific data monitoring
+  print("\n--- Insurance Data Volume ---");
+  use insurance_company;
+  print("Active Policies: " + db.policies.countDocuments({ status: "Active" }));
+  print("Open Claims: " + db.claims.countDocuments({ status: { $in: ["Filed", "Under Review"] } }));
+  print("Today's Payments: " + db.payments.countDocuments({
+    paymentDate: { $gte: new Date(new Date().setHours(0,0,0,0)) }
+  }));
 }
 
-// Run monitoring
-monitorReplicaSet();
+// Run insurance-focused monitoring
+monitorInsuranceReplicaSet();
 ```
 
 ### Step 8: Maintenance Operations
@@ -244,7 +277,8 @@ rs.reconfig(config);
 ```
 
 ## Lab 2 Deliverables
-✅ **Advanced replica set** with arbiter and hidden members
-✅ **Failover testing** with visual monitoring
-✅ **Read preferences** configured and tested
-✅ **Comprehensive monitoring** setup and maintenance procedures
+✅ **Advanced replica set** with arbiter and hidden members for insurance branch operations
+✅ **Failover testing** with visual monitoring to ensure insurance data availability
+✅ **Read preferences** configured for different insurance operations (real-time vs. analytics)
+✅ **Comprehensive monitoring** setup for insurance data replication and branch connectivity
+✅ **Write/read concerns** optimized for insurance compliance and data consistency requirements

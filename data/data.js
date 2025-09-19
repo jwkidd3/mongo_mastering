@@ -1,152 +1,332 @@
 // Switch to your database
-use ecommerce;
+use insurance_company;
 
-// Insert stores with geospatial data
-db.stores.insertMany([
+// Insert insurance branches with geospatial data
+db.branches.insertMany([
   {
     _id: 1,
-    name: "Store 1",
-    city: "Northfield",
+    branchCode: "BR-SF-001",
+    name: "San Francisco Downtown Branch",
+    city: "San Francisco",
+    state: "CA",
+    address: "123 Financial District Blvd, San Francisco, CA 94111",
     location: { type: "Point", coordinates: [-122.4194, 37.7749] },
-    status: "active"
+    status: "active",
+    manager: "Sarah Johnson",
+    agentCount: 15,
+    territory: "Northern California",
+    specialties: ["Auto", "Home", "Life"],
+    phone: "(415) 555-0001",
+    email: "sf.downtown@insuranceco.com"
   },
   {
     _id: 2,
-    name: "Store 2", 
-    city: "Southwood",
+    branchCode: "BR-LA-001",
+    name: "Los Angeles Central Branch",
+    city: "Los Angeles",
+    state: "CA",
+    address: "456 Insurance Plaza, Los Angeles, CA 90017",
     location: { type: "Point", coordinates: [-118.2437, 34.0522] },
-    status: "active"
+    status: "active",
+    manager: "Michael Chen",
+    agentCount: 22,
+    territory: "Southern California",
+    specialties: ["Auto", "Commercial", "Property"],
+    phone: "(213) 555-0002",
+    email: "la.central@insuranceco.com"
   },
   {
     _id: 3,
-    name: "Store 3",
-    city: "Eastville",
+    branchCode: "BR-CHI-001",
+    name: "Chicago Loop Branch",
+    city: "Chicago",
+    state: "IL",
+    address: "789 Insurance Tower, Chicago, IL 60601",
     location: { type: "Point", coordinates: [-87.6298, 41.8781] },
-    status: "active"
+    status: "active",
+    manager: "Jennifer Davis",
+    agentCount: 18,
+    territory: "Illinois",
+    specialties: ["Auto", "Home", "Commercial"],
+    phone: "(312) 555-0003",
+    email: "chicago.loop@insuranceco.com"
   },
   {
     _id: 4,
-    name: "Store 4",
-    city: "Westburg",
+    branchCode: "BR-HOU-001",
+    name: "Houston Energy Corridor Branch",
+    city: "Houston",
+    state: "TX",
+    address: "321 Energy Plaza, Houston, TX 77002",
     location: { type: "Point", coordinates: [-95.3698, 29.7604] },
-    status: "active"
+    status: "active",
+    manager: "Robert Martinez",
+    agentCount: 20,
+    territory: "Texas Gulf Coast",
+    specialties: ["Commercial", "Marine", "Energy"],
+    phone: "(713) 555-0004",
+    email: "houston.energy@insuranceco.com"
   },
   {
     _id: 5,
-    name: "Store 5",
-    city: "Newford",
+    branchCode: "BR-PHX-001",
+    name: "Phoenix Desert Ridge Branch",
+    city: "Phoenix",
+    state: "AZ",
+    address: "654 Desert Insurance Center, Phoenix, AZ 85004",
     location: { type: "Point", coordinates: [-112.0740, 33.4484] },
-    status: "active"
+    status: "active",
+    manager: "Lisa Rodriguez",
+    agentCount: 12,
+    territory: "Arizona",
+    specialties: ["Auto", "Home", "Life"],
+    phone: "(602) 555-0005",
+    email: "phoenix.desert@insuranceco.com"
   },
   {
     _id: 6,
-    name: "Store 6",
-    city: "Oldport",
+    branchCode: "BR-PHI-001",
+    name: "Philadelphia Liberty Branch",
+    city: "Philadelphia",
+    state: "PA",
+    address: "987 Liberty Insurance Building, Philadelphia, PA 19102",
     location: { type: "Point", coordinates: [-75.1652, 39.9526] },
-    status: "active"
+    status: "active",
+    manager: "David Thompson",
+    agentCount: 16,
+    territory: "Eastern Pennsylvania",
+    specialties: ["Auto", "Home", "Business"],
+    phone: "(215) 555-0006",
+    email: "philadelphia.liberty@insuranceco.com"
   },
   {
     _id: 7,
-    name: "Store 7",
-    city: "Mountdale",
+    branchCode: "BR-SD-001",
+    name: "San Diego Coastal Branch",
+    city: "San Diego",
+    state: "CA",
+    address: "147 Coastal Insurance Plaza, San Diego, CA 92101",
     location: { type: "Point", coordinates: [-117.1611, 32.7157] },
-    status: "active"
+    status: "active",
+    manager: "Amanda Wilson",
+    agentCount: 14,
+    territory: "San Diego County",
+    specialties: ["Auto", "Marine", "Property"],
+    phone: "(619) 555-0007",
+    email: "sandiego.coastal@insuranceco.com"
   },
   {
     _id: 8,
-    name: "Store 8",
-    city: "Lakeridge",
+    branchCode: "BR-DAL-001",
+    name: "Dallas Financial District Branch",
+    city: "Dallas",
+    state: "TX",
+    address: "258 Financial Plaza, Dallas, TX 75201",
     location: { type: "Point", coordinates: [-96.7970, 32.7767] },
-    status: "active"
+    status: "active",
+    manager: "Kevin Brown",
+    agentCount: 19,
+    territory: "North Texas",
+    specialties: ["Commercial", "Auto", "Life"],
+    phone: "(214) 555-0008",
+    email: "dallas.financial@insuranceco.com"
   },
   {
     _id: 9,
-    name: "Store 9",
-    city: "Oakvale",
+    branchCode: "BR-SEA-001",
+    name: "Seattle Tech District Branch",
+    city: "Seattle",
+    state: "WA",
+    address: "369 Tech Insurance Center, Seattle, WA 98101",
     location: { type: "Point", coordinates: [-122.3321, 47.6062] },
-    status: "active"
+    status: "active",
+    manager: "Rachel Green",
+    agentCount: 17,
+    territory: "Western Washington",
+    specialties: ["Tech E&O", "Cyber", "Commercial"],
+    phone: "(206) 555-0009",
+    email: "seattle.tech@insuranceco.com"
   },
   {
     _id: 10,
-    name: "Store 10",
-    city: "Pinetown",
+    branchCode: "BR-BOS-001",
+    name: "Boston Financial Branch",
+    city: "Boston",
+    state: "MA",
+    address: "741 Financial District, Boston, MA 02110",
     location: { type: "Point", coordinates: [-71.0589, 42.3601] },
-    status: "active"
+    status: "active",
+    manager: "Thomas Anderson",
+    agentCount: 13,
+    territory: "Massachusetts",
+    specialties: ["Auto", "Home", "Life"],
+    phone: "(617) 555-0010",
+    email: "boston.financial@insuranceco.com"
   },
   {
     _id: 11,
-    name: "Store 11",
-    city: "Elmfield",
+    branchCode: "BR-DEN-001",
+    name: "Denver Mountain Branch",
+    city: "Denver",
+    state: "CO",
+    address: "852 Mountain Insurance Plaza, Denver, CO 80202",
     location: { type: "Point", coordinates: [-104.9903, 39.7392] },
-    status: "active"
+    status: "active",
+    manager: "Karen Miller",
+    agentCount: 11,
+    territory: "Colorado",
+    specialties: ["Auto", "Recreational", "Property"],
+    phone: "(303) 555-0011",
+    email: "denver.mountain@insuranceco.com"
   },
   {
     _id: 12,
-    name: "Store 12",
-    city: "Cedarwood",
+    branchCode: "BR-MIA-001",
+    name: "Miami International Branch",
+    city: "Miami",
+    state: "FL",
+    address: "963 International Insurance Tower, Miami, FL 33131",
     location: { type: "Point", coordinates: [-80.1918, 25.7617] },
-    status: "active"
+    status: "active",
+    manager: "Carlos Gonzalez",
+    agentCount: 21,
+    territory: "South Florida",
+    specialties: ["Marine", "Hurricane", "International"],
+    phone: "(305) 555-0012",
+    email: "miami.international@insuranceco.com"
   },
   {
     _id: 13,
-    name: "Store 13",
-    city: "Birchville",
+    branchCode: "BR-ATL-001",
+    name: "Atlanta Peachtree Branch",
+    city: "Atlanta",
+    state: "GA",
+    address: "174 Peachtree Insurance Center, Atlanta, GA 30309",
     location: { type: "Point", coordinates: [-84.3880, 33.7490] },
-    status: "active"
+    status: "active",
+    manager: "Michelle Taylor",
+    agentCount: 16,
+    territory: "Georgia",
+    specialties: ["Auto", "Home", "Business"],
+    phone: "(404) 555-0013",
+    email: "atlanta.peachtree@insuranceco.com"
   },
   {
     _id: 14,
-    name: "Store 14",
-    city: "Willowburg",
+    branchCode: "BR-LV-001",
+    name: "Las Vegas Strip Branch",
+    city: "Las Vegas",
+    state: "NV",
+    address: "285 Strip Insurance Plaza, Las Vegas, NV 89101",
     location: { type: "Point", coordinates: [-115.1398, 36.1699] },
-    status: "active"
+    status: "active",
+    manager: "Steven Lee",
+    agentCount: 10,
+    territory: "Nevada",
+    specialties: ["Entertainment", "Hospitality", "Commercial"],
+    phone: "(702) 555-0014",
+    email: "lasvegas.strip@insuranceco.com"
   },
   {
     _id: 15,
-    name: "Store 15",
-    city: "Mapletown",
+    branchCode: "BR-MIN-001",
+    name: "Minneapolis Lake Branch",
+    city: "Minneapolis",
+    state: "MN",
+    address: "396 Lake Insurance Building, Minneapolis, MN 55401",
     location: { type: "Point", coordinates: [-93.2650, 44.9778] },
-    status: "active"
+    status: "active",
+    manager: "Barbara Johnson",
+    agentCount: 14,
+    territory: "Minnesota",
+    specialties: ["Auto", "Home", "Agricultural"],
+    phone: "(612) 555-0015",
+    email: "minneapolis.lake@insuranceco.com"
   },
   {
     _id: 16,
-    name: "Store 16",
-    city: "Hickorydale",
+    branchCode: "BR-MEM-001",
+    name: "Memphis River Branch",
+    city: "Memphis",
+    state: "TN",
+    address: "417 River Insurance Center, Memphis, TN 38103",
     location: { type: "Point", coordinates: [-90.0715, 35.2131] },
-    status: "active"
+    status: "active",
+    manager: "James Wilson",
+    agentCount: 12,
+    territory: "Tennessee",
+    specialties: ["Auto", "Transportation", "Logistics"],
+    phone: "(901) 555-0016",
+    email: "memphis.river@insuranceco.com"
   },
   {
     _id: 17,
-    name: "Store 17",
-    city: "Ashford",
+    branchCode: "BR-CHS-001",
+    name: "Charleston Harbor Branch",
+    city: "Charleston",
+    state: "SC",
+    address: "528 Harbor Insurance Plaza, Charleston, SC 29401",
     location: { type: "Point", coordinates: [-81.0912, 32.0835] },
-    status: "active"
+    status: "active",
+    manager: "Patricia Davis",
+    agentCount: 9,
+    territory: "South Carolina",
+    specialties: ["Marine", "Historic Property", "Tourism"],
+    phone: "(843) 555-0017",
+    email: "charleston.harbor@insuranceco.com"
   },
   {
     _id: 18,
-    name: "Store 18",
-    city: "Walnutport",
+    branchCode: "BR-IND-001",
+    name: "Indianapolis Motor Branch",
+    city: "Indianapolis",
+    state: "IN",
+    address: "639 Motor Insurance Center, Indianapolis, IN 46204",
     location: { type: "Point", coordinates: [-86.1581, 39.7684] },
-    status: "active"
+    status: "active",
+    manager: "Mark Thompson",
+    agentCount: 13,
+    territory: "Indiana",
+    specialties: ["Auto", "Racing", "Manufacturing"],
+    phone: "(317) 555-0018",
+    email: "indianapolis.motor@insuranceco.com"
   },
   {
     _id: 19,
-    name: "Store 19",
-    city: "Chestnutridge",
+    branchCode: "BR-DC-001",
+    name: "Washington Capitol Branch",
+    city: "Washington",
+    state: "DC",
+    address: "741 Capitol Insurance Building, Washington, DC 20001",
     location: { type: "Point", coordinates: [-77.0369, 38.9072] },
-    status: "active"
+    status: "active",
+    manager: "Laura Martinez",
+    agentCount: 15,
+    territory: "District of Columbia",
+    specialties: ["Government", "Federal", "Security"],
+    phone: "(202) 555-0019",
+    email: "washington.capitol@insuranceco.com"
   },
   {
     _id: 20,
-    name: "Store 20",
-    city: "Poplarville",
+    branchCode: "BR-SAC-001",
+    name: "Sacramento Valley Branch",
+    city: "Sacramento",
+    state: "CA",
+    address: "852 Valley Insurance Plaza, Sacramento, CA 95814",
     location: { type: "Point", coordinates: [-121.4944, 38.5816] },
-    status: "active"
+    status: "active",
+    manager: "Christopher Garcia",
+    agentCount: 11,
+    territory: "Central California",
+    specialties: ["Agricultural", "Government", "Auto"],
+    phone: "(916) 555-0020",
+    email: "sacramento.valley@insuranceco.com"
   }
 ]);
 
 // Create geospatial index
-db.stores.createIndex({ location: "2dsphere" });
+db.branches.createIndex({ location: "2dsphere" });
 
 // Verify insertion
-print("Inserted", db.stores.countDocuments(), "stores");
+print("Inserted", db.branches.countDocuments(), "insurance branches");

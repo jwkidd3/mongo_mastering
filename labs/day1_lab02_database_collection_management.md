@@ -12,7 +12,7 @@
 1. **Database Creation and Switching**
    ```javascript
    // Switch to new database (creates implicitly)
-   use ecommerce
+   use insurance_company
 
    // Verify current database
    db
@@ -24,9 +24,9 @@
    show dbs
 
    // Switch between databases
-   use inventory
-   use analytics
-   use ecommerce
+   use claims_processing
+   use agent_management
+   use insurance_company
    ```
 
 2. **Database Information and Statistics**
@@ -46,8 +46,8 @@
 3. **Database Administration**
    ```javascript
    // Create database with specific locale
-   use international
-   db.createCollection("products", {
+   use international_insurance
+   db.createCollection("policies", {
      collation: {
        locale: "en_US",
        strength: 1
@@ -55,7 +55,7 @@
    })
 
    // Database profiling setup
-   use ecommerce
+   use insurance_company
    db.setProfilingLevel(1, {slowms: 100})
 
    // Check database locks
@@ -66,33 +66,33 @@
 ### Part B: Collection Management (20 minutes)
 1. **Collection Creation with Options**
    ```javascript
-   use ecommerce
+   use insurance_company
 
    // Basic collection creation
    db.createCollection("customers")
 
    // Capped collection (fixed size)
-   db.createCollection("logs", {
+   db.createCollection("audit_logs", {
      capped: true,
      size: 1000000,  // 1MB
      max: 5000       // Max 5000 documents
    })
 
    // Collection with validation
-   db.createCollection("products", {
+   db.createCollection("policies", {
      validator: {
        $jsonSchema: {
          bsonType: "object",
-         required: ["name", "price"],
+         required: ["policyNumber", "premiumAmount"],
          properties: {
-           name: {
+           policyNumber: {
              bsonType: "string",
-             description: "Product name is required"
+             description: "Policy number is required"
            },
-           price: {
+           premiumAmount: {
              bsonType: "number",
              minimum: 0,
-             description: "Price must be a positive number"
+             description: "Premium amount must be a positive number"
            }
          }
        }
@@ -108,13 +108,13 @@
 
    // Get collection statistics
    db.customers.stats()
-   db.logs.stats()
+   db.audit_logs.stats()
 
    // Check if collection is capped
-   db.logs.isCapped()
+   db.audit_logs.isCapped()
 
    // Get collection options
-   db.runCommand({listCollections: 1, filter: {name: "products"}})
+   db.runCommand({listCollections: 1, filter: {name: "policies"}})
 
    // Index information
    db.customers.getIndexes()
@@ -124,25 +124,25 @@
 3. **Collection Modification and Maintenance**
    ```javascript
    // Rename collection
-   db.customers.renameCollection("clients")
+   db.customers.renameCollection("policyholders")
 
    // Convert to capped collection
    db.runCommand({
-     convertToCapped: "clients",
+     convertToCapped: "policyholders",
      size: 100000
    })
 
    // Modify collection validation
    db.runCommand({
-     collMod: "products",
+     collMod: "policies",
      validator: {
        $jsonSchema: {
          bsonType: "object",
-         required: ["name", "price", "category"],
+         required: ["policyNumber", "premiumAmount", "policyType"],
          properties: {
-           name: {bsonType: "string"},
-           price: {bsonType: "number", minimum: 0},
-           category: {bsonType: "string"}
+           policyNumber: {bsonType: "string"},
+           premiumAmount: {bsonType: "number", minimum: 0},
+           policyType: {bsonType: "string"}
          }
        }
      }
@@ -156,9 +156,9 @@
    use test
 
    // Good naming examples
-   db.createCollection("user_profiles")
-   db.createCollection("order_items")
-   db.createCollection("product_reviews")
+   db.createCollection("customer_profiles")
+   db.createCollection("claim_details")
+   db.createCollection("policy_reviews")
 
    // Avoid problematic names
    // db.createCollection("123invalid")  // Don't start with numbers
@@ -166,7 +166,7 @@
    // db.createCollection("$system")     // Avoid system prefixes
 
    // Test naming conventions
-   var collections = ["orders", "customers", "products", "reviews", "categories"]
+   var collections = ["claims", "customers", "policies", "agents", "vehicles"]
    collections.forEach(function(name) {
      db.createCollection(name)
      print("Created collection: " + name)
@@ -176,4 +176,4 @@
    ```
 
 ## Challenge Exercise
-Create a database structure for a university system with collections for students, courses, enrollments, and grades. Implement appropriate validation rules and demonstrate the relationship between collections using sample queries.
+Create a database structure for a multi-branch insurance company with collections for policies, claims, customers, agents, and branch_locations. Implement appropriate validation rules for insurance data (policy numbers, coverage amounts, deductibles) and demonstrate the relationship between collections using sample queries.

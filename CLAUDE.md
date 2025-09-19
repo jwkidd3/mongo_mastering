@@ -225,3 +225,67 @@ When working with this MongoDB course:
 - **Real-world Datasets**: Practical examples with substantial data generators
 
 This MongoDB Mastering course provides enterprise-level MongoDB expertise through intensive hands-on practice in a structured 3-day format.
+
+### Data Entities
+Customer & Personal Entities
+
+  - Customer:Individual - Personal insurance customers
+  - Customer:Business - Commercial insurance clients
+  - Dependent:Person - Family members covered under policies
+
+  Insurance Products & Policies
+
+  - Product:Insurance - Insurance product catalog
+  - Policy:Auto - Vehicle insurance policies
+  - Policy:Property - Home/property insurance policies
+  - Policy:Life - Life insurance policies
+  - Policy:Commercial - Business insurance policies
+
+  Claims & Incidents
+
+  - Claim - Insurance claims
+  - Incident - Detailed incident data
+
+  Assets
+
+  - Vehicle:Asset - Insured vehicles
+  - Property:Asset - Insured properties
+
+  Employees & Professionals
+
+  - Agent:Employee - Sales agents
+  - Adjuster:Employee - Claims adjusters
+  - Underwriter:Employee - Risk assessment professionals
+  - Manager:Employee - Department managers
+
+  Organizational Entities
+
+  - Company - Insurance carrier
+  - Branch:Location - Physical branch locations
+  - Department - Organizational departments
+
+  Financial Entities
+
+  - Payment - Premium payments and claim settlements
+  - Invoice - Billing documents
+  - Commission - Agent compensation
+
+  Vendors & Service Providers
+
+  - RepairShop:Vendor - Auto body shops
+  - MedicalProvider:Vendor - Healthcare providers
+  - LegalFirm:Vendor - Law firms
+
+  Compliance & Analytics
+
+  - ComplianceRecord - Regulatory compliance tracking
+  - AuditRecord - Audit documentation
+  - RegulatoryFiling - Regulatory submissions
+  - RiskAssessment - Risk scoring data
+  - FraudInvestigation - Fraud detection records
+
+  Technology & Integration
+
+  - SystemIntegration - Enterprise system connections
+  - APIEndpoint - API management
+  - MarketingCampaign - Marketing campaigns
