@@ -61,10 +61,15 @@
 
         .reveal .highlight-box {
             background: linear-gradient(120deg, #a8e6cf 0%, #dcedc1 100%);
-            padding: 1em;
+            padding: 0.8em;
             border-radius: 8px;
             border-left: 4px solid #4A8B3B;
-            margin: 1em 0;
+            margin: 0.5em 0;
+        }
+
+        .reveal .lab-slide .highlight-box {
+            padding: 0.6em;
+            margin: 0.4em 0;
         }
 
         .reveal .info-box {
@@ -87,19 +92,37 @@
             background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
             border: 3px solid #ff8a80;
             border-radius: 15px;
-            padding: 1em;
+            padding: 0.8em;
+            font-size: 0.85em;
         }
 
         .reveal .lab-slide h3 {
             color: #d32f2f !important;
             margin-top: 0;
+            margin-bottom: 0.5em;
+            font-size: 1.2em;
+        }
+
+        .reveal .lab-slide h4 {
+            margin-top: 0;
+            margin-bottom: 0.3em;
+            font-size: 1em;
+        }
+
+        .reveal .lab-slide ul {
+            margin: 0.5em 0;
+        }
+
+        .reveal .lab-slide li {
+            margin: 0.2em 0;
+            line-height: 1.3;
         }
 
         .reveal .objectives {
             background: #e3f2fd;
             border-left: 4px solid #2196f3;
-            padding: 1em;
-            margin: 1em 0;
+            padding: 0.8em;
+            margin: 0.5em 0;
         }
 
         .reveal table {
@@ -303,15 +326,6 @@
                                     <li>Natural data representation</li>
                                 </ul>
                             </div>
-                            <div class="info-box fragment">
-                                <h4>🔑 Key-Value Stores</h4>
-                                <p><strong>Redis, DynamoDB</strong></p>
-                                <ul>
-                                    <li>Simple key-value pairs</li>
-                                    <li>High performance</li>
-                                    <li>Caching and sessions</li>
-                                </ul>
-                            </div>
                         </div>
                         <div>
                             <div class="info-box fragment">
@@ -323,6 +337,25 @@
                                     <li>Time-series data</li>
                                 </ul>
                             </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>More NoSQL Database Types</h3>
+                    <div class="two-column">
+                        <div>
+                            <div class="info-box fragment">
+                                <h4>🔑 Key-Value Stores</h4>
+                                <p><strong>Redis, DynamoDB</strong></p>
+                                <ul>
+                                    <li>Simple key-value pairs</li>
+                                    <li>High performance</li>
+                                    <li>Caching and sessions</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div>
                             <div class="info-box fragment">
                                 <h4>🕸️ Graph Databases</h4>
                                 <p><strong>Neo4j, Amazon Neptune</strong></p>
@@ -439,43 +472,6 @@ Database
                     </div>
                 </section>
 
-                <section>
-                    <h3>Setup Options</h3>
-                    <div class="two-column">
-                        <div>
-                            <div class="info-box">
-                                <h4>🐳 Docker Setup (Recommended)</h4>
-                                <pre><code class="language-bash small-text">
-# Pull MongoDB image
-docker pull mongo:latest
-
-# Run MongoDB container
-docker run -d \
-  --name mongodb \
-  -p 27017:27017 \
-  -e MONGO_INITDB_ROOT_USERNAME=admin \
-  -e MONGO_INITDB_ROOT_PASSWORD=password \
-  mongo:latest
-
-# Connect to MongoDB
-docker exec -it mongodb mongosh
-                                </code></pre>
-                            </div>
-                        </div>
-                        <div>
-                            <div class="info-box">
-                                <h4>☁️ MongoDB Atlas (Cloud)</h4>
-                                <ul>
-                                    <li class="fragment">Fully managed service</li>
-                                    <li class="fragment">Free tier available (M0)</li>
-                                    <li class="fragment">Automatic scaling and backup</li>
-                                    <li class="fragment">Built-in security features</li>
-                                    <li class="fragment">Global cluster deployment</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </section>
             </section>
 
             <!-- Section 2: CRUD Operations -->
@@ -670,6 +666,28 @@ db.users.deleteMany({
                         <p><strong>⚠️ Safety Tip:</strong> Always test with <code>find()</code> before <code>delete()</code></p>
                     </div>
                 </section>
+
+                <!-- Lab 1: MongoDB Setup & Basic Operations -->
+                <section class="lab-slide">
+                    <h3>🧪 Lab 1: MongoDB Setup & Basic Operations</h3>
+
+                    <div class="objectives">
+                        <h4>Objectives</h4>
+                        <ul>
+                            <li>Set up MongoDB environment using Docker</li>
+                            <li>Practice basic CRUD operations</li>
+                            <li>Understand document structure</li>
+                        </ul>
+                    </div>
+
+                    <div class="highlight-box">
+                        <h4>Lab Activities</h4>
+                        <ul>
+                            <li><strong>Part A:</strong> Environment Setup</li>
+                            <li><strong>Part B:</strong> Library Management System</li>
+                        </ul>
+                    </div>
+                </section>
             </section>
 
             <!-- Section 3: Query Fundamentals -->
@@ -846,6 +864,29 @@ db.users.find({"scores.2": {$exists: true}})
                         </div>
                     </div>
                 </section>
+
+                <!-- Lab 2: Query Mastery Workshop -->
+                <section class="lab-slide">
+                    <h3>🧪 Lab 2: Query Mastery Workshop</h3>
+
+                    <div class="objectives">
+                        <h4>Objectives</h4>
+                        <ul>
+                            <li>Master MongoDB query operators</li>
+                            <li>Practice complex query combinations</li>
+                            <li>Work with arrays and nested documents</li>
+                        </ul>
+                    </div>
+
+                    <div class="highlight-box">
+                        <h4>Focus Areas</h4>
+                        <ul>
+                            <li>Comparison and logical operators</li>
+                            <li>Array operations and element matching</li>
+                            <li>Complex query combinations</li>
+                        </ul>
+                    </div>
+                </section>
             </section>
 
             <!-- Section 4: Advanced Querying -->
@@ -991,6 +1032,29 @@ var productNames = db.products.find({}, {name: 1}).map(function(doc) {
     return doc.name.toUpperCase()
 })
                     </code></pre>
+                </section>
+
+                <!-- Lab 3: Advanced Querying & Projections -->
+                <section class="lab-slide">
+                    <h3>🧪 Lab 3: Advanced Querying & Projections</h3>
+
+                    <div class="objectives">
+                        <h4>Objectives</h4>
+                        <ul>
+                            <li>Master projection techniques</li>
+                            <li>Practice regex queries</li>
+                            <li>Implement sorting and pagination</li>
+                        </ul>
+                    </div>
+
+                    <div class="highlight-box">
+                        <h4>E-commerce Product Database</h4>
+                        <ul>
+                            <li>Product catalog with specifications</li>
+                            <li>Search and filtering capabilities</li>
+                            <li>Performance optimization techniques</li>
+                        </ul>
+                    </div>
                 </section>
             </section>
 
@@ -1219,82 +1283,11 @@ db.createCollection("users", {
 })
                     </code></pre>
                 </section>
-            </section>
 
-            <!-- Section 6: Labs -->
-            <section>
-                <section class="section-title">
-                    <h2>6. Hands-on Labs</h2>
-                </section>
-
-                <section class="lab-slide">
-                    <h3>🧪 Lab 1: MongoDB Setup & Basic Operations</h3>
-                    
-                    <div class="objectives">
-                        <h4>Objectives</h4>
-                        <ul>
-                            <li>Set up MongoDB environment using Docker</li>
-                            <li>Practice basic CRUD operations</li>
-                            <li>Understand document structure</li>
-                        </ul>
-                    </div>
-
-                    <div class="highlight-box">
-                        <h4>Lab Activities</h4>
-                        <ul>
-                            <li><strong>Part A:</strong> Environment Setup</li>
-                            <li><strong>Part B:</strong> Library Management System</li>
-                        </ul>
-                    </div>
-                </section>
-
-                <section class="lab-slide">
-                    <h3>🧪 Lab 2: Query Mastery Workshop</h3>
-                    
-                    <div class="objectives">
-                        <h4>Objectives</h4>
-                        <ul>
-                            <li>Master MongoDB query operators</li>
-                            <li>Practice complex query combinations</li>
-                            <li>Work with arrays and nested documents</li>
-                        </ul>
-                    </div>
-
-                    <div class="highlight-box">
-                        <h4>Focus Areas</h4>
-                        <ul>
-                            <li>Comparison and logical operators</li>
-                            <li>Array operations and element matching</li>
-                            <li>Complex query combinations</li>
-                        </ul>
-                    </div>
-                </section>
-
-                <section class="lab-slide">
-                    <h3>🧪 Lab 3: Advanced Querying & Projections</h3>
-                    
-                    <div class="objectives">
-                        <h4>Objectives</h4>
-                        <ul>
-                            <li>Master projection techniques</li>
-                            <li>Practice regex queries</li>
-                            <li>Implement sorting and pagination</li>
-                        </ul>
-                    </div>
-
-                    <div class="highlight-box">
-                        <h4>E-commerce Product Database</h4>
-                        <ul>
-                            <li>Product catalog with specifications</li>
-                            <li>Search and filtering capabilities</li>
-                            <li>Performance optimization techniques</li>
-                        </ul>
-                    </div>
-                </section>
-
+                <!-- Lab 4: Data Modeling & Schema Design -->
                 <section class="lab-slide">
                     <h3>🧪 Lab 4: Data Modeling & Schema Design</h3>
-                    
+
                     <div class="objectives">
                         <h4>Objectives</h4>
                         <ul>
@@ -1313,10 +1306,17 @@ db.createCollection("users", {
                         </ul>
                     </div>
                 </section>
+            </section>
+
+            <!-- Section 6: Final Integration Lab -->
+            <section>
+                <section class="section-title">
+                    <h2>6. Final Integration Lab</h2>
+                </section>
 
                 <section class="lab-slide">
                     <h3>🧪 Lab 5: E-commerce Analytics Project</h3>
-                    
+
                     <div class="objectives">
                         <h4>Objectives</h4>
                         <ul>

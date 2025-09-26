@@ -106,6 +106,58 @@
         .reveal li {
             margin: 0.3em 0;
         }
+
+        .reveal .lab-slide {
+            background: linear-gradient(135deg, #1a252f 0%, #2c3e50 100%);
+            border: 3px solid #13DAEC;
+            border-radius: 15px;
+            padding: 0.7em;
+            color: #ffffff !important;
+            font-size: 0.8em;
+        }
+
+        .reveal .lab-slide h3 {
+            color: #13DAEC !important;
+            margin-top: 0;
+            margin-bottom: 0.4em;
+            text-shadow: 0 0 10px rgba(19, 218, 236, 0.5);
+            font-size: 1.1em;
+        }
+
+        .reveal .lab-slide h4 {
+            color: #ffffff !important;
+            margin-top: 0;
+            margin-bottom: 0.3em;
+            font-size: 0.95em;
+        }
+
+        .reveal .lab-slide ul {
+            margin: 0.4em 0;
+        }
+
+        .reveal .lab-slide li {
+            color: #ffffff !important;
+            margin: 0.15em 0;
+            line-height: 1.25;
+        }
+
+        .reveal .objectives {
+            background: rgba(19, 218, 236, 0.15);
+            border-left: 4px solid #13DAEC;
+            padding: 0.7em;
+            margin: 0.4em 0;
+            color: #ffffff !important;
+            border-radius: 5px;
+        }
+
+        .reveal .highlight-box {
+            background: rgba(39, 174, 96, 0.25);
+            padding: 0.6em;
+            border-radius: 8px;
+            border-left: 4px solid #27ae60;
+            margin: 0.4em 0;
+            color: #ffffff !important;
+        }
     </style>
 </head>
 <body>
@@ -343,6 +395,29 @@ services:
                         <p><strong>Note:</strong> Transactions require replica sets or sharded clusters</p>
                     </div>
                 </section>
+
+                <!-- Lab 1: MongoDB Transactions -->
+                <section class="lab-slide">
+                    <h3>🧪 Lab 1: MongoDB Transactions</h3>
+
+                    <div class="objectives">
+                        <h4>Objectives</h4>
+                        <ul>
+                            <li>Implement ACID transactions in MongoDB</li>
+                            <li>Practice multi-document operations</li>
+                            <li>Understand transaction performance implications</li>
+                        </ul>
+                    </div>
+
+                    <div class="highlight-box">
+                        <h4>Lab Activities</h4>
+                        <ul>
+                            <li><strong>Part A:</strong> Setup Replica Set for Transactions</li>
+                            <li><strong>Part B:</strong> E-commerce Order Processing with Transactions</li>
+                            <li><strong>Part C:</strong> Error Handling and Performance Analysis</li>
+                        </ul>
+                    </div>
+                </section>
             </section>
 
             <!-- Part 2: Replica Sets -->
@@ -570,6 +645,29 @@ rs.stepDown(60) // Step down for 60 seconds
 
 // Force reconfiguration
 rs.reconfig(config, { force: true })</code></pre>
+                    </div>
+                </section>
+
+                <!-- Lab 2: Replica Sets & High Availability -->
+                <section class="lab-slide">
+                    <h3>🧪 Lab 2: Replica Sets & High Availability</h3>
+
+                    <div class="objectives">
+                        <h4>Objectives</h4>
+                        <ul>
+                            <li>Configure MongoDB replica sets for high availability</li>
+                            <li>Practice failover scenarios and recovery</li>
+                            <li>Implement read preferences and write concerns</li>
+                        </ul>
+                    </div>
+
+                    <div class="highlight-box">
+                        <h4>Lab Activities</h4>
+                        <ul>
+                            <li><strong>Part A:</strong> Replica Set Setup and Configuration</li>
+                            <li><strong>Part B:</strong> Failover Testing and Recovery</li>
+                            <li><strong>Part C:</strong> Read/Write Concerns and Performance Tuning</li>
+                        </ul>
                     </div>
                 </section>
             </section>
@@ -811,6 +909,29 @@ sh.addTagRange("ecommerce.users",
                         </ul>
                     </div>
                 </section>
+
+                <!-- Lab 3: Sharding & Horizontal Scaling -->
+                <section class="lab-slide">
+                    <h3>🧪 Lab 3: Sharding & Horizontal Scaling</h3>
+
+                    <div class="objectives">
+                        <h4>Objectives</h4>
+                        <ul>
+                            <li>Set up a MongoDB sharded cluster</li>
+                            <li>Practice shard key selection and data distribution</li>
+                            <li>Monitor and manage sharded deployments</li>
+                        </ul>
+                    </div>
+
+                    <div class="highlight-box">
+                        <h4>Lab Activities</h4>
+                        <ul>
+                            <li><strong>Part A:</strong> Sharded Cluster Setup with Docker</li>
+                            <li><strong>Part B:</strong> Data Sharding and Balancing</li>
+                            <li><strong>Part C:</strong> Performance Testing and Optimization</li>
+                        </ul>
+                    </div>
+                </section>
             </section>
 
             <!-- Part 4: Change Streams -->
@@ -1036,6 +1157,29 @@ class OrderProcessor {
                             <li>Filter changes server-side when possible</li>
                             <li>Handle errors gracefully with retries</li>
                             <li>Monitor oplog window and size</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <!-- Lab 4: Change Streams & Real-time Applications -->
+                <section class="lab-slide">
+                    <h3>🧪 Lab 4: Change Streams & Real-time Applications</h3>
+
+                    <div class="objectives">
+                        <h4>Objectives</h4>
+                        <ul>
+                            <li>Implement MongoDB change streams for real-time data</li>
+                            <li>Build reactive applications with change notifications</li>
+                            <li>Practice resume tokens and error handling</li>
+                        </ul>
+                    </div>
+
+                    <div class="highlight-box">
+                        <h4>Lab Activities</h4>
+                        <ul>
+                            <li><strong>Part A:</strong> Basic Change Stream Implementation</li>
+                            <li><strong>Part B:</strong> Real-time Order Processing System</li>
+                            <li><strong>Part C:</strong> Resume Tokens and Production Patterns</li>
                         </ul>
                     </div>
                 </section>
@@ -1283,6 +1427,29 @@ secrets:
                                 <li>✓ Documentation updated</li>
                             </ul>
                         </div>
+                    </div>
+                </section>
+
+                <!-- Lab 5: Application Integration -->
+                <section class="lab-slide">
+                    <h3>🧪 Lab 5: Application Integration Project</h3>
+
+                    <div class="objectives">
+                        <h4>Objectives</h4>
+                        <ul>
+                            <li>Integrate MongoDB with application frameworks</li>
+                            <li>Implement production-ready connection patterns</li>
+                            <li>Practice error handling and performance optimization</li>
+                        </ul>
+                    </div>
+
+                    <div class="highlight-box">
+                        <h4>Choose Your Technology Stack</h4>
+                        <ul>
+                            <li><strong>Option A:</strong> C# .NET Core Application Integration</li>
+                            <li><strong>Option B:</strong> JavaScript/Node.js Application Integration</li>
+                            <li><strong>Option C:</strong> Python Application Integration</li>
+                        </ul>
                     </div>
                 </section>
             </section>
