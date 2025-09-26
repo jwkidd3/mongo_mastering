@@ -285,24 +285,39 @@ This document provides a comprehensive summary of all labs in the MongoDB Master
 
 ---
 
-### Lab 13: C# MongoDB API Integration
-**File**: `day3_lab05_csharp_mongodb_integration.md`
+### Lab 13: MongoDB Application Integration (Multi-Language Options)
 **Duration**: 45 minutes
 **Difficulty**: Advanced
 
-**Objectives**:
-- Integrate MongoDB with C# applications
-- Practice driver usage and best practices
-- Implement application-level features
+**Choose Your Language:**
 
-**Key Concepts Covered**:
-- MongoDB C# driver installation and setup
-- CRUD operations in C# applications
+#### **Lab 5A: C# MongoDB API Integration**
+**File**: `day3_lab05_csharp_mongodb_integration.md`
+**Prerequisites**: C# programming knowledge and .NET SDK
+
+#### **Lab 5B: JavaScript/Node.js MongoDB Integration**
+**File**: `day3_lab05b_javascript_mongodb_integration.md`
+**Prerequisites**: Basic JavaScript knowledge and Node.js
+
+#### **Lab 5C: Python MongoDB Integration**
+**File**: `day3_lab05c_python_mongodb_integration.md`
+**Prerequisites**: Basic Python knowledge and pip
+
+**Common Objectives**:
+- Integrate MongoDB with application code
+- Practice driver usage and best practices
+- Implement professional application patterns
+- Handle errors and connection management
+
+**Key Concepts Covered** (all languages):
+- MongoDB driver installation and setup
+- CRUD operations in application code
 - Connection management and pooling
 - Error handling and logging
+- Insurance business logic implementation
 
-**Prerequisites**: C# programming knowledge and MongoDB operational experience
-**Insurance Context**: Building insurance management applications
+**Prerequisites**: Programming knowledge in chosen language and MongoDB operational experience
+**Insurance Context**: Building complete insurance management applications
 **Presentation Alignment**: Day 3 Section 5 "Application Integration"
 
 ---

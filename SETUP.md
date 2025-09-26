@@ -167,17 +167,42 @@ docker exec -i mongodb mongosh < day1_data_loader.js
 
 ---
 
-## Day 3 Extra Setup (C# Lab Only)
+## Day 3 Extra Setup (Application Integration Lab)
 
-**Only needed for Day 3 Lab 5 - C# Integration:**
+**Day 3 Lab 5 offers multiple language options. Choose ONE:**
 
+### **Option A: C# (.NET) - VS Code Environment**
 1. **Install .NET SDK**:
    - **Windows/Mac**: Download from [dotnet.microsoft.com](https://dotnet.microsoft.com)
    - **Linux**: `sudo apt install dotnet-sdk-8.0`
+2. **VS Code Setup**:
+   - Install C# extension in VS Code
+   - Test: `dotnet --version`
+   - Open project with `code .`
 
-2. **Test it works**: `dotnet --version`
+### **Option B: JavaScript (Node.js) - VS Code Environment**
+1. **Install Node.js**:
+   - **Windows/Mac**: Download from [nodejs.org](https://nodejs.org)
+   - **Linux**: `sudo apt install nodejs npm`
+2. **VS Code Setup**:
+   - Install JavaScript extensions in VS Code
+   - Test: `node --version` and `npm --version`
+   - Open project with `code .`
 
-**Skip this if you don't want to do the C# lab.**
+### **Option C: Python - Jupyter Notebook Environment**
+1. **Install Python & Jupyter**:
+   - **Python**: Usually pre-installed (python.org if needed)
+   - **Jupyter**: `pip install jupyter pandas matplotlib`
+2. **Jupyter Setup**:
+   - Launch: `jupyter notebook`
+   - Create new Python 3 notebook
+   - Work in interactive cells
+
+**Development Environments:**
+- **C# & JavaScript**: VS Code with integrated terminal
+- **Python**: Jupyter Notebook with interactive cells
+
+**Pick the language and environment you prefer!**
 
 ---
 

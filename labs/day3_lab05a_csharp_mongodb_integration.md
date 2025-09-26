@@ -1,14 +1,17 @@
-# Lab 5: C# MongoDB Integration for Insurance Management
+# Lab 5A: C# MongoDB Integration for Insurance Management
 **Duration:** 30 minutes
 **Objective:** Integrate MongoDB with C# applications for insurance management system
 
 ## Part A: Project Setup (10 minutes)
 
-### Step 1: Create C# Console Application
+### Step 1: Open VS Code and Create C# Project
 ```bash
 # Create insurance management project directory
 mkdir InsuranceManagementSystem
 cd InsuranceManagementSystem
+
+# Open in VS Code
+code .
 
 # Create new console application
 dotnet new console
@@ -17,7 +20,16 @@ dotnet new console
 dotnet add package MongoDB.Driver
 ```
 
-### Step 2: Create Models
+**In VS Code:**
+1. Open integrated terminal (Ctrl+` or Cmd+`)
+2. Ensure C# extension is installed and active
+3. VS Code will automatically detect the .NET project
+
+### Step 2: Create Models in VS Code
+
+**In VS Code, create new folder and file:**
+1. Right-click in Explorer → New Folder → "Models"
+2. Right-click Models folder → New File → "Policy.cs"
 
 **Create Models/Policy.cs:**
 ```csharp
