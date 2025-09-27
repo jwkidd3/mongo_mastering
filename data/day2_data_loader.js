@@ -18,7 +18,7 @@ print("🔧 Setting up insurance_analytics database");
 print("------------------------------------------");
 
 // Switch to analytics database
-use insurance_analytics;
+db = db.getSiblingDB('insurance_analytics');
 
 // Drop existing collections to start fresh
 print("Cleaning existing collections...");

@@ -18,7 +18,7 @@ print("🔧 Setting up insurance_company database for production labs");
 print("-----------------------------------------------------------");
 
 // Switch to insurance database
-use insurance_company;
+db = db.getSiblingDB('insurance_company');
 
 // Drop existing collections to start fresh
 print("Cleaning existing collections...");

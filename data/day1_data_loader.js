@@ -18,7 +18,7 @@ print("🔧 Setting up insurance_company database");
 print("----------------------------------------");
 
 // Switch to insurance database
-use insurance_company;
+db = db.getSiblingDB('insurance_company');
 
 // Drop existing collections to start fresh
 print("Cleaning existing collections...");
@@ -42,40 +42,43 @@ print("----------------------------------------------------");
 
 // Create branches collection with geospatial data (used across all labs)
 print("Creating branches collection...");
-db.branches.insertMany([
-  {
-    _id: "BR001",
-    branchCode: "BR-NYC-001",
-    name: "New York Financial District",
-    address: {
-      street: "123 Wall Street",
-      city: "New York",
-      state: "NY",
-      zipCode: "10001"
-    },
-    location: { type: "Point", coordinates: [-73.9857, 40.7484] },
-    manager: "Sarah Johnson",
-    agentCount: 15,
-    specialties: ["Auto", "Property", "Life"],
-    isActive: true
+
+// Skip write concern configuration to prevent hanging - using cluster defaults
+
+// Insert branches one by one to avoid hanging
+db.branches.insertOne({
+  _id: "BR001",
+  branchCode: "BR-NYC-001",
+  name: "New York Financial District",
+  address: {
+    street: "123 Wall Street",
+    city: "New York",
+    state: "NY",
+    zipCode: "10001"
   },
-  {
-    _id: "BR002",
-    branchCode: "BR-CHI-001",
-    name: "Chicago Loop Branch",
-    address: {
-      street: "456 Michigan Avenue",
-      city: "Chicago",
-      state: "IL",
-      zipCode: "60601"
-    },
-    location: { type: "Point", coordinates: [-87.6298, 41.8781] },
-    manager: "Michael Chen",
-    agentCount: 12,
-    specialties: ["Auto", "Commercial", "Property"],
-    isActive: true
-  }
-]);
+  location: { type: "Point", coordinates: [-73.9857, 40.7484] },
+  manager: "Sarah Johnson",
+  agentCount: 15,
+  specialties: ["Auto", "Property", "Life"],
+  isActive: true
+});
+
+db.branches.insertOne({
+  _id: "BR002",
+  branchCode: "BR-CHI-001",
+  name: "Chicago Loop Branch",
+  address: {
+    street: "456 Michigan Avenue",
+    city: "Chicago",
+    state: "IL",
+    zipCode: "60601"
+  },
+  location: { type: "Point", coordinates: [-87.6298, 41.8781] },
+  manager: "Michael Chen",
+  agentCount: 12,
+  specialties: ["Auto", "Commercial", "Property"],
+  isActive: true
+});
 
 print("✓ Created " + db.branches.countDocuments() + " insurance branches");
 
@@ -85,7 +88,8 @@ print("------------------------------------------------");
 
 // Create policies collection with sample policies
 print("Creating insurance policies...");
-db.policies.insertMany([
+try {
+    db.policies.insertMany([
   {
     _id: ObjectId(),
     policyNumber: "POL-AUTO-001",
@@ -135,12 +139,16 @@ db.policies.insertMany([
     expirationDate: new Date("2044-03-01")
   }
 ]);
-
-print("✓ Created " + db.policies.countDocuments() + " insurance policies");
+    print("✓ Created " + db.policies.countDocuments() + " insurance policies");
+} catch (e) {
+    print("❌ Error creating policies: " + e.message);
+    quit(1);
+}
 
 // Create customers collection
 print("Creating insurance customers...");
-db.customers.insertMany([
+try {
+    db.customers.insertMany([
   {
     _id: ObjectId(),
     customerId: "CUST000001",
@@ -199,8 +207,11 @@ db.customers.insertMany([
     isActive: true
   }
 ]);
-
-print("✓ Created " + db.customers.countDocuments() + " insurance customers");
+    print("✓ Created " + db.customers.countDocuments() + " insurance customers");
+} catch (e) {
+    print("❌ Error creating customers: " + e.message);
+    quit(1);
+}
 
 // Lab 4: CRUD Read and Query Operations
 print("\n🔍 Loading data for Lab 4: CRUD Read and Query");
@@ -208,7 +219,8 @@ print("----------------------------------------------");
 
 // Add more policies for querying examples
 print("Adding additional policies for query examples...");
-db.policies.insertMany([
+try {
+    db.policies.insertMany([
   {
     _id: ObjectId(),
     policyNumber: "POL-AUTO-002",
@@ -252,10 +264,14 @@ db.policies.insertMany([
     createdAt: new Date("2023-12-01")
   }
 ]);
+} catch (e) {
+    print("⚠️  Warning: Could not add additional policies: " + e.message);
+}
 
 // Add agents for relationship queries
 print("Creating insurance agents...");
-db.agents.insertMany([
+try {
+    db.agents.insertMany([
   {
     _id: ObjectId(),
     agentId: "AGT001",
@@ -285,8 +301,10 @@ db.agents.insertMany([
     hireDate: new Date("2021-08-22")
   }
 ]);
-
-print("✓ Created " + db.agents.countDocuments() + " insurance agents");
+    print("✓ Created " + db.agents.countDocuments() + " insurance agents");
+} catch (e) {
+    print("⚠️  Warning: Could not create agents: " + e.message);
+}
 
 // Lab 5: CRUD Update and Delete Operations
 print("\n✏️ Loading data for Lab 5: CRUD Update and Delete");
@@ -294,7 +312,8 @@ print("------------------------------------------------");
 
 // Add claims for update/delete examples
 print("Creating insurance claims...");
-db.claims.insertMany([
+try {
+    db.claims.insertMany([
   {
     _id: ObjectId(),
     claimNumber: "CLM-2024-001001",
@@ -340,12 +359,15 @@ db.claims.insertMany([
     settledAt: new Date("2024-03-10")
   }
 ]);
-
-print("✓ Created " + db.claims.countDocuments() + " insurance claims");
+    print("✓ Created " + db.claims.countDocuments() + " insurance claims");
+} catch (e) {
+    print("⚠️  Warning: Could not create claims: " + e.message);
+}
 
 // Add payments for transaction examples
 print("Creating payment records...");
-db.payments.insertMany([
+try {
+    db.payments.insertMany([
   {
     _id: ObjectId(),
     paymentId: "PAY-2024-001001",
@@ -382,8 +404,10 @@ db.payments.insertMany([
     paymentDate: new Date("2024-03-10")
   }
 ]);
-
-print("✓ Created " + db.payments.countDocuments() + " payment records");
+    print("✓ Created " + db.payments.countDocuments() + " payment records");
+} catch (e) {
+    print("⚠️  Warning: Could not create payments: " + e.message);
+}
 
 // ===========================================
 // Create Indexes for Performance

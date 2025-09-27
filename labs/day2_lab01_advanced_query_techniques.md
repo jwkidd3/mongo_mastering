@@ -6,7 +6,37 @@
 - Implement geo-spatial and text search queries
 
 ## Prerequisites
-- Sample insurance database with collections: `policies`, `claims`, `customers`, `agents`, `vehicles`, `properties`, `payments`
+- MongoDB replica set running and accessible
+- **Course data loaded** (see instructions below)
+
+## 📊 Load Course Data First!
+
+**Before starting this lab, load the Day 2 course data:**
+
+```bash
+cd data
+mongosh < day2_data_loader.js
+```
+
+**Wait for this success message:**
+```
+✅ DAY 2 ANALYTICS DATA LOADING COMPLETE!
+```
+
+**Test data loaded correctly:**
+```bash
+mongosh --eval "
+use insurance_analytics;
+print('Policies: ' + db.policies.countDocuments());
+print('Customers: ' + db.customers.countDocuments());
+"
+```
+
+**Expected output:** Policies: 50+, Customers: 100+
+
+💡 **See [LOAD_DATA.md](../LOAD_DATA.md) for detailed instructions and troubleshooting**
+
+**Collections available:** `policies`, `claims`, `customers`, `agents`, `vehicles`, `properties`, `payments`
 
 ## Tasks
 

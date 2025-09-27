@@ -8,6 +8,15 @@
 
 **That's it!** Everything else is handled automatically.
 
+## Why Replica Set Setup?
+
+This course uses a **3-node replica set** from Day 1 because:
+- ✅ **Production Ready**: Learn with enterprise MongoDB configuration
+- ✅ **Transaction Support**: Day 3 labs require replica sets for transactions
+- ✅ **High Availability**: Experience real-world failover scenarios
+- ✅ **Consistent Environment**: Same setup throughout all 3 days
+- ✅ **No Data Loading Issues**: Prevents hanging operations
+
 ---
 
 ## Step-by-Step Setup (10 Minutes Total)
@@ -25,35 +34,72 @@ docker --version
 ```
 You should see something like `Docker version 24.x.x`
 
-### Step 2: Start MongoDB (2 minutes)
+### Step 2: Start MongoDB Replica Set (3 minutes)
 
-**Copy and paste this command exactly:**
+**Copy and paste these commands exactly:**
 
-**Windows (Command Prompt or PowerShell):**
-```cmd
-docker run -d --name mongodb -p 27017:27017 mongo:8.0 --replSet rs0
-```
-
-**Mac/Linux (Terminal):**
+**Create Docker network first:**
 ```bash
-docker run -d --name mongodb -p 27017:27017 mongo:8.0 --replSet rs0
+docker network create mongodb-net
 ```
 
-### Step 3: Configure MongoDB (2 minutes)
-
-**Copy and paste these commands one at a time:**
-
+**Start 3 MongoDB nodes:**
 ```bash
-docker exec -it mongodb mongosh --eval "rs.initiate({_id: 'rs0', members: [{_id: 0, host: 'localhost:27017'}]})"
+docker run -d --name mongo1 --network mongodb-net -p 27017:27017 mongo:8.0 --replSet rs0 --bind_ip_all
+docker run -d --name mongo2 --network mongodb-net -p 27018:27017 mongo:8.0 --replSet rs0 --bind_ip_all
+docker run -d --name mongo3 --network mongodb-net -p 27019:27017 mongo:8.0 --replSet rs0 --bind_ip_all
 ```
 
-Wait 10 seconds, then:
-
+**Wait 15 seconds for containers to start:**
 ```bash
-docker exec -it mongodb mongosh --eval "show dbs"
+# Wait for containers to be ready
+sleep 15
 ```
 
-You should see a list of databases.
+### Step 3: Configure Replica Set (2 minutes)
+
+**Note:** We use `docker exec` for initialization because replica set members need to communicate using Docker network names (`mongo1`, `mongo2`, `mongo3`). After setup, you'll use `mongosh` directly for all operations.
+
+**Initialize the replica set (from inside container):**
+```bash
+docker exec mongo1 mongosh --eval "
+rs.initiate({
+  _id: 'rs0',
+  members: [
+    { _id: 0, host: 'mongo1:27017', priority: 2 },
+    { _id: 1, host: 'mongo2:27017', priority: 1 },
+    { _id: 2, host: 'mongo3:27017', priority: 1 }
+  ]
+});
+"
+```
+
+**Wait for replica set to stabilize:**
+```bash
+sleep 10
+```
+
+**Set proper write concern (from host):**
+```bash
+mongosh --eval "
+db.adminCommand({
+  setDefaultRWConcern: 1,
+  defaultWriteConcern: { w: 'majority', wtimeout: 5000 }
+});
+"
+```
+
+**Test the replica set (from host):**
+```bash
+mongosh --eval "rs.status().members.forEach(m => print(m.name + ': ' + m.stateStr))"
+```
+
+You should see:
+```
+mongo1:27017: PRIMARY
+mongo2:27017: SECONDARY
+mongo3:27017: SECONDARY
+```
 
 ### Step 4: Load Course Data (1 minute)
 
@@ -61,7 +107,7 @@ You should see a list of databases.
 
 ```bash
 cd /path/to/course/files/data
-docker exec -i mongodb mongosh < day1_data_loader.js
+mongosh < day1_data_loader.js
 ```
 
 **✅ DONE!** You're ready for class.
@@ -73,7 +119,7 @@ docker exec -i mongodb mongosh < day1_data_loader.js
 **Run this command to verify everything works:**
 
 ```bash
-docker exec -it mongodb mongosh --eval "
+mongosh --eval "
 use insurance_company;
 print('Policies: ' + db.policies.countDocuments());
 print('Customers: ' + db.customers.countDocuments());
@@ -92,21 +138,33 @@ If you see numbers, you're ready! 🎉
 
 ## Class Day Commands
 
-### Every Morning - Start MongoDB
+### Every Morning - Start MongoDB Replica Set
 ```bash
-docker start mongodb
+docker start mongo1 mongo2 mongo3
 ```
 
-### Every Evening - Stop MongoDB
+### Every Evening - Stop MongoDB Replica Set
 ```bash
-docker stop mongodb
+docker stop mongo1 mongo2 mongo3
 ```
 
 ### If Something Breaks - Reset Everything
 ```bash
-docker rm -f mongodb
-docker run -d --name mongodb -p 27017:27017 mongo:8.0 --replSet rs0
-docker exec -it mongodb mongosh --eval "rs.initiate({_id: 'rs0', members: [{_id: 0, host: 'localhost:27017'}]})"
+# Remove old containers
+docker rm -f mongo1 mongo2 mongo3
+docker network rm mongodb-net
+
+# Recreate network and containers
+docker network create mongodb-net
+docker run -d --name mongo1 --network mongodb-net -p 27017:27017 mongo:8.0 --replSet rs0 --bind_ip_all
+docker run -d --name mongo2 --network mongodb-net -p 27018:27017 mongo:8.0 --replSet rs0 --bind_ip_all
+docker run -d --name mongo3 --network mongodb-net -p 27019:27017 mongo:8.0 --replSet rs0 --bind_ip_all
+
+# Wait and configure
+sleep 15
+docker exec mongo1 mongosh --eval "rs.initiate({_id: 'rs0', members: [{_id: 0, host: 'mongo1:27017', priority: 2}, {_id: 1, host: 'mongo2:27017', priority: 1}, {_id: 2, host: 'mongo3:27017', priority: 1}]})"
+sleep 10
+mongosh --eval "db.adminCommand({setDefaultRWConcern: 1, defaultWriteConcern: { w: 'majority', wtimeout: 5000 }})"
 ```
 
 Then reload your data files.
@@ -134,26 +192,29 @@ Then reload your data files.
 3. Open a new terminal/command prompt
 
 ### "Container already exists"
-**Problem**: You already have a MongoDB container
+**Problem**: You already have MongoDB containers
 **Solution**:
 ```bash
-docker rm -f mongodb
+docker rm -f mongo1 mongo2 mongo3
+docker network rm mongodb-net
 # Then run the setup commands again
 ```
 
 ### "Port already in use"
 **Problem**: Something else is using port 27017
-**Solution**: Use a different port:
+**Solution**: Use different ports:
 ```bash
-docker run -d --name mongodb -p 27018:27017 mongo:8.0 --replSet rs0
-# Then connect to port 27018 instead of 27017
+docker run -d --name mongo1 --network mongodb-net -p 27020:27017 mongo:8.0 --replSet rs0 --bind_ip_all
+docker run -d --name mongo2 --network mongodb-net -p 27021:27017 mongo:8.0 --replSet rs0 --bind_ip_all
+docker run -d --name mongo3 --network mongodb-net -p 27022:27017 mongo:8.0 --replSet rs0 --bind_ip_all
+# Then connect to port 27020 instead of 27017
 ```
 
 ### "Cannot connect to MongoDB"
-**Problem**: Container isn't running
+**Problem**: Containers aren't running
 **Solution**:
 ```bash
-docker start mongodb
+docker start mongo1 mongo2 mongo3
 # Wait 10 seconds, then try again
 ```
 
@@ -162,7 +223,7 @@ docker start mongodb
 **Solution**: Make sure you're in the right directory:
 ```bash
 ls *.js  # Should show data files
-docker exec -i mongodb mongosh < day1_data_loader.js
+mongosh < day1_data_loader.js
 ```
 
 ---
@@ -236,10 +297,10 @@ docker exec -i mongodb mongosh < day1_data_loader.js
 docker ps
 
 # Is MongoDB running?
-docker exec -it mongodb mongosh --eval "db.hello()"
+mongosh --eval "db.hello()"
 
 # Do I have data?
-docker exec -it mongodb mongosh --eval "use insurance_company; db.policies.countDocuments()"
+mongosh --eval "use insurance_company; db.policies.countDocuments()"
 ```
 
 ---

@@ -2,6 +2,28 @@
 
 This directory contains comprehensive data loading scripts for the MongoDB Mastering Course. These scripts ensure that students always have access to the correct datasets for each lab, even if they need to reload data mid-course.
 
+## Prerequisites
+
+**IMPORTANT**: These data loading scripts require a properly configured MongoDB replica set.
+
+**Before using any data loaders**, ensure you have completed the replica set setup from `SETUP.md`:
+
+```bash
+# 1. Create network and start 3 MongoDB nodes
+docker network create mongodb-net
+docker run -d --name mongo1 --network mongodb-net -p 27017:27017 mongo:8.0 --replSet rs0 --bind_ip_all
+docker run -d --name mongo2 --network mongodb-net -p 27018:27017 mongo:8.0 --replSet rs0 --bind_ip_all
+docker run -d --name mongo3 --network mongodb-net -p 27019:27017 mongo:8.0 --replSet rs0 --bind_ip_all
+
+# 2. Initialize replica set (from inside container)
+docker exec mongo1 mongosh --eval "rs.initiate({_id: 'rs0', members: [{_id: 0, host: 'mongo1:27017', priority: 2}, {_id: 1, host: 'mongo2:27017', priority: 1}, {_id: 2, host: 'mongo3:27017', priority: 1}]})"
+
+# 3. Set write concern (prevents hanging operations)
+mongosh --eval "db.adminCommand({setDefaultRWConcern: 1, defaultWriteConcern: { w: 'majority', wtimeout: 5000 }})"
+```
+
+**Why Replica Set?** Day 3 labs require transactions (which need replica sets), and this prevents data loading hangs.
+
 ## Data Loading Scripts Overview
 
 ### Individual Day Scripts
@@ -95,7 +117,7 @@ This directory contains comprehensive data loading scripts for the MongoDB Maste
 
 #### Quick Start (Recommended)
 ```bash
-# Load data for the day you're working on
+# Load data for the day you're working on (requires replica set setup)
 mongosh < day1_data_loader.js  # For Day 1 labs
 mongosh < day2_data_loader.js  # For Day 2 labs
 mongosh < day3_data_loader.js  # For Day 3 labs
@@ -120,7 +142,7 @@ mongosh < day1_data_loader.js  # Replace with appropriate day
 
 #### Course Preparation
 ```bash
-# Before course starts
+# Before course starts (ensure replica set is running)
 mongosh < master_data_reset.js
 ```
 
@@ -279,7 +301,7 @@ mongosh < dayX_data_loader.js
 
 These data loaders are integrated with the lab instructions. Each lab file includes references to the appropriate data loader and prerequisites for running the exercises successfully.
 
-**Note:** Always ensure Docker MongoDB container is running before executing any data loading scripts.
+**Note:** Always ensure the MongoDB replica set is running before executing any data loading scripts. See prerequisites section above.
 
 ---
 

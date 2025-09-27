@@ -68,8 +68,8 @@
         }
 
         .reveal .lab-slide .highlight-box {
-            padding: 0.6em;
-            margin: 0.4em 0;
+            padding: 0.4em;
+            margin: 0.3em 0;
         }
 
         .reveal .info-box {
@@ -92,8 +92,10 @@
             background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
             border: 3px solid #ff8a80;
             border-radius: 15px;
-            padding: 0.8em;
-            font-size: 0.85em;
+            padding: 0.6em;
+            font-size: 0.75em;
+            overflow-y: auto;
+            max-height: 90vh;
         }
 
         .reveal .lab-slide h3 {
@@ -105,17 +107,26 @@
 
         .reveal .lab-slide h4 {
             margin-top: 0;
-            margin-bottom: 0.3em;
-            font-size: 1em;
+            margin-bottom: 0.2em;
+            font-size: 0.95em;
         }
 
         .reveal .lab-slide ul {
-            margin: 0.5em 0;
+            margin: 0.3em 0;
         }
 
         .reveal .lab-slide li {
-            margin: 0.2em 0;
-            line-height: 1.3;
+            margin: 0.1em 0;
+            line-height: 1.2;
+        }
+
+        .reveal .lab-slide pre {
+            font-size: 0.8em;
+            margin: 0.3em 0;
+        }
+
+        .reveal .lab-slide code {
+            font-size: 0.85em;
         }
 
         .reveal .objectives {
@@ -678,6 +689,13 @@ db.users.deleteMany({
                             <li>Practice basic CRUD operations</li>
                             <li>Understand document structure</li>
                         </ul>
+                    </div>
+
+                    <div class="highlight-box">
+                        <h4>📊 Before Starting - Load Course Data</h4>
+                        <pre style="font-size: 0.75em; margin: 0.2em 0;"><code class="bash">cd data
+mongosh < day1_data_loader.js</code></pre>
+                        <p style="font-size: 0.65em; margin: 0.2em 0;">✅ Wait for "DAY 1 INSURANCE DATA LOADING COMPLETE!" message</p>
                     </div>
 
                     <div class="highlight-box">

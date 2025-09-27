@@ -111,34 +111,45 @@
             background: linear-gradient(135deg, #1a252f 0%, #2c3e50 100%);
             border: 3px solid #13DAEC;
             border-radius: 15px;
-            padding: 0.7em;
+            padding: 0.5em;
             color: #ffffff !important;
-            font-size: 0.8em;
+            font-size: 0.7em;
+            overflow-y: auto;
+            max-height: 90vh;
         }
 
         .reveal .lab-slide h3 {
             color: #13DAEC !important;
             margin-top: 0;
-            margin-bottom: 0.4em;
+            margin-bottom: 0.3em;
             text-shadow: 0 0 10px rgba(19, 218, 236, 0.5);
-            font-size: 1.1em;
+            font-size: 1.0em;
         }
 
         .reveal .lab-slide h4 {
             color: #ffffff !important;
             margin-top: 0;
-            margin-bottom: 0.3em;
-            font-size: 0.95em;
+            margin-bottom: 0.2em;
+            font-size: 0.85em;
         }
 
         .reveal .lab-slide ul {
-            margin: 0.4em 0;
+            margin: 0.2em 0;
         }
 
         .reveal .lab-slide li {
             color: #ffffff !important;
-            margin: 0.15em 0;
-            line-height: 1.25;
+            margin: 0.1em 0;
+            line-height: 1.2;
+        }
+
+        .reveal .lab-slide pre {
+            font-size: 0.75em;
+            margin: 0.2em 0;
+        }
+
+        .reveal .lab-slide code {
+            font-size: 0.8em;
         }
 
         .reveal .objectives {
@@ -152,11 +163,16 @@
 
         .reveal .highlight-box {
             background: rgba(39, 174, 96, 0.25);
-            padding: 0.6em;
+            padding: 0.4em;
             border-radius: 8px;
             border-left: 4px solid #27ae60;
-            margin: 0.4em 0;
+            margin: 0.2em 0;
             color: #ffffff !important;
+        }
+
+        .reveal .lab-slide .highlight-box {
+            padding: 0.3em;
+            margin: 0.2em 0;
         }
     </style>
 </head>
@@ -407,6 +423,13 @@ services:
                             <li>Practice multi-document operations</li>
                             <li>Understand transaction performance implications</li>
                         </ul>
+                    </div>
+
+                    <div class="highlight-box">
+                        <h4>📊 Before Starting - Load Course Data</h4>
+                        <pre style="font-size: 0.7em; margin: 0.2em 0;"><code class="bash">cd data
+mongosh < day3_data_loader.js</code></pre>
+                        <p style="font-size: 0.6em; margin: 0.2em 0;">✅ Wait for "DAY 3 PRODUCTION DATA LOADING COMPLETE!" message</p>
                     </div>
 
                     <div class="highlight-box">

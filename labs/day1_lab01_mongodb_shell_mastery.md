@@ -9,6 +9,34 @@
 ## Prerequisites
 - MongoDB Docker container running and accessible
 - Terminal/command prompt access
+- **Course data loaded** (see instructions below)
+
+## 📊 Load Course Data First!
+
+**Before starting this lab, load the Day 1 course data:**
+
+```bash
+cd data
+mongosh < day1_data_loader.js
+```
+
+**Wait for this success message:**
+```
+✅ DAY 1 INSURANCE DATA LOADING COMPLETE!
+```
+
+**Test data loaded correctly:**
+```bash
+mongosh --eval "
+use insurance_company;
+print('Branches: ' + db.branches.countDocuments());
+print('Policies: ' + db.policies.countDocuments());
+"
+```
+
+**Expected output:** Branches: 2, Policies: 6
+
+💡 **See [LOAD_DATA.md](../LOAD_DATA.md) for detailed instructions and troubleshooting**
 
 ## Tasks
 
