@@ -169,7 +169,7 @@ try {
 # Start MongoDB containers
 Write-Status "Starting MongoDB containers..."
 
-Write-Status "  Starting mongo1 (Primary)..."
+Write-Status "  Starting mongo1 Primary..."
 try {
     $mongo1 = docker run -d --name mongo1 --network mongodb-net -p 27017:27017 mongo:8.0 --replSet rs0 --bind_ip_all
     $shortMongo1 = if ($mongo1 -and $mongo1.Length -ge 12) { $mongo1.Substring(0,12) } else { $mongo1 }
@@ -179,7 +179,7 @@ try {
     exit 1
 }
 
-Write-Status "  Starting mongo2 (Secondary)..."
+Write-Status "  Starting mongo2 Secondary..."
 try {
     $mongo2 = docker run -d --name mongo2 --network mongodb-net -p 27018:27017 mongo:8.0 --replSet rs0 --bind_ip_all
     $shortMongo2 = if ($mongo2 -and $mongo2.Length -ge 12) { $mongo2.Substring(0,12) } else { $mongo2 }
@@ -189,7 +189,7 @@ try {
     exit 1
 }
 
-Write-Status "  Starting mongo3 (Secondary)..."
+Write-Status "  Starting mongo3 Secondary..."
 try {
     $mongo3 = docker run -d --name mongo3 --network mongodb-net -p 27019:27017 mongo:8.0 --replSet rs0 --bind_ip_all
     $shortMongo3 = if ($mongo3 -and $mongo3.Length -ge 12) { $mongo3.Substring(0,12) } else { $mongo3 }
