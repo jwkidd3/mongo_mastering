@@ -278,7 +278,7 @@ Push-Location $dataPath
 
 Write-Status "Loading Day 1 data..."
 try {
-    $day1Result = mongosh --quiet < day1_data_loader.js
+    $day1Result = Get-Content day1_data_loader.js | mongosh --quiet
     if ($LASTEXITCODE -ne 0) {
         throw "Day 1 data loading failed"
     }
@@ -293,7 +293,7 @@ try {
 
 Write-Status "Loading Day 2 data..."
 try {
-    $day2Result = mongosh --quiet < day2_data_loader.js
+    $day2Result = Get-Content day2_data_loader.js | mongosh --quiet
     if ($LASTEXITCODE -ne 0) {
         throw "Day 2 data loading failed"
     }
@@ -308,7 +308,7 @@ try {
 
 Write-Status "Loading Day 3 data..."
 try {
-    $day3Result = mongosh --quiet < day3_data_loader.js
+    $day3Result = Get-Content day3_data_loader.js | mongosh --quiet
     if ($LASTEXITCODE -ne 0) {
         throw "Day 3 data loading failed"
     }
@@ -343,7 +343,7 @@ Write-Host ""
 
 # Run the comprehensive lab validation and capture results
 try {
-    $labResults = mongosh --quiet < lab_validation_comprehensive.js 2>&1
+    $labResults = Get-Content lab_validation_comprehensive.js | mongosh --quiet 2>&1
 
     # Extract key metrics from results
     $passedTests = ""
