@@ -83,34 +83,6 @@ mongosh --eval "db.adminCommand({setDefaultRWConcern: 1, defaultWriteConcern: { 
 
 ---
 
-### Master Reset Script
-
-#### 🔄 `master_data_reset.js` - Complete Course Reset
-**Usage:** `mongosh < master_data_reset.js`
-
-**Purpose:** Complete cleanup and reload of all course data. Use for fresh course starts or complete data restoration.
-
-**Features:**
-- Cleans all databases completely
-- Reloads essential data for all three days
-- Creates utility functions for ongoing management
-- Validates all data loading
-
----
-
-### Legacy Data Generators
-
-#### 📁 Original Data Generators (Legacy)
-- `data.js` - Basic branch locations (legacy)
-- `datagen_2_1.js` - Insurance analytics data (comprehensive)
-- `datagen_2_2.js` - Advanced insurance operations data
-- `mongodb_day3_data_generator.js` - Production test data
-- `spatial.js` - Geospatial query examples
-
-**Note:** The new day-specific loaders (`day1_data_loader.js`, etc.) are recommended over the legacy generators as they provide more targeted datasets for specific lab requirements.
-
----
-
 ## Usage Instructions
 
 ### For Students

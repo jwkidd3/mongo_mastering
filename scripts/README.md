@@ -39,7 +39,28 @@ mongosh < day1_data_loader.js
 .\test.ps1
 ```
 
-### 4. Clean Up When Done
+### 4. Verify Connection (Optional)
+
+Test basic MongoDB connection:
+```bash
+mongosh < test_connection.js
+```
+
+### 5. Run Comprehensive Lab Tests
+
+**Option A: Complete Lab Validation (Recommended)**
+Validates every operation from all 12 labs:
+```bash
+mongosh < lab_validation_comprehensive.js
+```
+
+**Option B: General Operations Test**
+Tests general MongoDB operations:
+```bash
+mongosh < test_all_labs.js
+```
+
+### 6. Clean Up When Done
 
 **macOS/Linux:**
 ```bash
@@ -183,7 +204,7 @@ If the automated scripts don't work, follow the manual instructions in `SETUP.md
 ## Directory Structure
 
 ```
-setup/
+scripts/
 ├── README.md           # This file
 ├── SETUP.md           # Manual setup instructions
 ├── setup.sh           # Automated setup script

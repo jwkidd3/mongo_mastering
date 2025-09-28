@@ -64,7 +64,7 @@ teardown.cmd
 ### 📂 Directory Overview
 ```
 mongo_mastering/
-├── setup/                  # Automated setup & teardown scripts
+├── scripts/                  # Automated setup & teardown scripts
 │   ├── setup.sh           # One-command environment setup
 │   ├── teardown.sh        # Complete cleanup
 │   ├── test.sh            # Connection testing
@@ -203,7 +203,7 @@ mongosh --eval "db.hello()"  # Test connection
 ```
 
 ### Getting Help
-1. **Check setup/README.md** for setup issues
+1. **Check scripts/README.md** for setup issues
 2. **Check data/README.md** for data loading issues
 3. **Run test.sh** to diagnose problems
 4. **Try fresh setup** with teardown.sh + setup.sh
@@ -211,7 +211,7 @@ mongosh --eval "db.hello()"  # Test connection
 ## Advanced Usage
 
 ### Custom Configuration
-- Edit `setup/setup.sh` for custom ports
+- Edit `scripts/setup.sh` for custom ports
 - Modify data loaders for custom datasets
 - Add new labs following existing patterns
 

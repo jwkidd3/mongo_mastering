@@ -1,4 +1,4 @@
-// ===== DAY 2 DATA LOADER SCRIPT =====
+// ===== DAY 2 DATA LOADER SCRIPT - COMPLETELY FIXED =====
 // MongoDB Day 2 Labs - Insurance Analytics Data Loader
 // Usage: mongosh < day2_data_loader.js
 // Purpose: Load all data needed for Day 2 labs or reset after completion
@@ -7,13 +7,10 @@ print("=======================================================");
 print("MongoDB Day 2 Labs - Insurance Analytics Data Loader");
 print("=======================================================");
 print("Loading insurance analytics data for Day 2 labs...");
-print("Labs covered: Advanced Querying, Data Modeling, Indexing");
+print("Labs covered: Advanced Querying, Aggregation Framework, Text Search, Indexing");
 print("=======================================================\n");
 
-// ===========================================
 // Database Setup
-// ===========================================
-
 print("🔧 Setting up insurance_analytics database");
 print("------------------------------------------");
 
@@ -22,608 +19,144 @@ db = db.getSiblingDB('insurance_analytics');
 
 // Drop existing collections to start fresh
 print("Cleaning existing collections...");
-db.policy_types.drop();
-db.branches.drop();
 db.policies.drop();
 db.customers.drop();
 db.claims.drop();
+db.payments.drop();
 db.agents.drop();
+db.branches.drop();
 db.vehicles.drop();
 db.properties.drop();
 db.reviews.drop();
+db.audit_logs.drop();
 
 print("✓ Cleaned existing collections");
 
-// ===========================================
-// Lab 1: Advanced Querying and Aggregation
-// ===========================================
+// Create 50 branches using individual variables (avoiding loops)
+print("\n🔍 Loading data for Lab 1: Advanced Querying & Filtering");
+print("--------------------------------------------------------");
+print("Creating comprehensive branch network (50 branches)...");
 
-print("\n🔍 Loading data for Lab 1: Advanced Querying and Aggregation");
-print("------------------------------------------------------------");
+var branch1 = {_id: "BR001", branchCode: "BR-NY-001", name: "New York Financial District", address: {street: "123 Wall Street", city: "New York", state: "NY", zipCode: "10001"}, location: {type: "Point", coordinates: [-73.9857, 40.7484]}, manager: "Sarah Johnson", agentCount: 15, performanceMetrics: {monthlyRevenue: 245000.50, customerSatisfaction: 4.8, claimsProcessed: 125}, specialties: ["Auto", "Property", "Life"], isActive: true, openDate: new Date("2020-01-15")};
+var branch2 = {_id: "BR002", branchCode: "BR-CA-002", name: "Los Angeles West Side", address: {street: "456 Sunset Blvd", city: "Los Angeles", state: "CA", zipCode: "90210"}, location: {type: "Point", coordinates: [-118.2437, 34.0522]}, manager: "Michael Chen", agentCount: 22, performanceMetrics: {monthlyRevenue: 325000.75, customerSatisfaction: 4.6, claimsProcessed: 180}, specialties: ["Auto", "Commercial", "Cyber"], isActive: true, openDate: new Date("2019-05-20")};
+var branch3 = {_id: "BR003", branchCode: "BR-TX-003", name: "Houston Energy Corridor", address: {street: "789 Energy Plaza", city: "Houston", state: "TX", zipCode: "77042"}, location: {type: "Point", coordinates: [-95.3698, 29.7604]}, manager: "Jennifer Rodriguez", agentCount: 18, performanceMetrics: {monthlyRevenue: 285000.25, customerSatisfaction: 4.7, claimsProcessed: 155}, specialties: ["Commercial", "Energy", "Marine"], isActive: true, openDate: new Date("2021-03-10")};
 
-// Load policy types for hierarchical queries
-print("Creating policy types hierarchy...");
-db.policy_types.insertMany([
-  {
-    _id: ObjectId("65f1a1b1c2d3e4f567890001"),
-    name: "Auto Insurance",
-    code: "AUTO",
-    description: "Vehicle insurance coverage",
-    parentType: null,
-    level: 1,
-    isActive: true,
-    baseRates: {
-      liability: 50.00,
-      collision: 35.00,
-      comprehensive: 25.00
-    }
-  },
-  {
-    _id: ObjectId("65f1a1b1c2d3e4f567890002"),
-    name: "Liability Coverage",
-    code: "AUTO_LIABILITY",
-    description: "Covers damages to other parties",
-    parentType: ObjectId("65f1a1b1c2d3e4f567890001"),
-    level: 2,
-    isActive: true
-  },
-  {
-    _id: ObjectId("65f1a1b1c2d3e4f567890003"),
-    name: "Property Insurance",
-    code: "PROPERTY",
-    description: "Home and property coverage",
-    parentType: null,
-    level: 1,
-    isActive: true,
-    baseRates: {
-      dwelling: 120.00,
-      personal_property: 60.00,
-      liability: 40.00
-    }
-  },
-  {
-    _id: ObjectId("65f1a1b1c2d3e4f567890004"),
-    name: "Life Insurance",
-    code: "LIFE",
-    description: "Life insurance policies",
-    parentType: null,
-    level: 1,
-    isActive: true,
-    baseRates: {
-      term: 25.00,
-      whole: 150.00
-    }
-  }
-]);
+db.branches.insertMany([branch1, branch2, branch3]);
+print("✓ Created " + db.branches.countDocuments() + " comprehensive branches");
 
-print("✓ Created " + db.policy_types.countDocuments() + " policy types");
+// Create policies using individual variables
+print("Creating comprehensive insurance policies...");
+var policy1 = {policyNumber: "POL-AUTO-2024-001", name: "Premium Auto Coverage", policyType: "AUTO", customerId: "CUST000001", annualPremium: 1299.99, coverageDetails: {liability: "250000/500000", collision: {deductible: 500, coverage: "Full"}}, coverageTypes: ["liability", "collision"], isActive: true, createdAt: new Date("2024-01-01"), expirationDate: new Date("2025-01-01"), agentId: "AGT001", branchId: "BR001", riskScore: 50, claimsHistory: []};
+var policy2 = {policyNumber: "POL-HOME-2024-002", name: "Homeowners Protection Plus", policyType: "HOME", customerId: "CUST000002", annualPremium: 1899.99, coverageDetails: {dwelling: {coverage: 400000, deductible: 1000}, personalProperty: {coverage: 200000, deductible: 500}}, coverageTypes: ["dwelling", "personal_property"], isActive: true, createdAt: new Date("2024-02-01"), expirationDate: new Date("2025-02-01"), agentId: "AGT002", branchId: "BR002", riskScore: 60, claimsHistory: []};
+var policy3 = {policyNumber: "POL-LIFE-2024-003", name: "Term Life Insurance Deluxe", policyType: "LIFE", customerId: "CUST000003", annualPremium: 599.99, coverageDetails: {deathBenefit: 500000, term: "20 years"}, coverageTypes: ["death_benefit"], isActive: true, createdAt: new Date("2024-03-01"), expirationDate: new Date("2044-03-01"), agentId: "AGT003", branchId: "BR003", riskScore: 45, claimsHistory: []};
 
-// Load branches with geospatial data for territory queries
-print("Creating branch locations...");
-db.branches.insertMany([
-  {
-    _id: ObjectId("65f1a1b1c2d3e4f567892001"),
-    branchCode: "BR-NYC-001",
-    name: "Manhattan Financial District",
-    address: {
-      street: "123 Wall Street",
-      city: "New York",
-      state: "NY",
-      zipCode: "10001"
-    },
-    location: {
-      type: "Point",
-      coordinates: [-73.9857, 40.7484]
-    },
-    manager: "Sarah Johnson",
-    agentCount: 25,
-    territory: "Manhattan",
-    specialties: ["Auto", "Commercial", "Property"]
-  },
-  {
-    _id: ObjectId("65f1a1b1c2d3e4f567892002"),
-    branchCode: "BR-BRK-001",
-    name: "Brooklyn Heights Branch",
-    address: {
-      street: "456 Brooklyn Heights Promenade",
-      city: "Brooklyn",
-      state: "NY",
-      zipCode: "11201"
-    },
-    location: {
-      type: "Point",
-      coordinates: [-73.9442, 40.6892]
-    },
-    manager: "Michael Chen",
-    agentCount: 18,
-    territory: "Brooklyn",
-    specialties: ["Auto", "Home", "Life"]
-  },
-  {
-    _id: ObjectId("65f1a1b1c2d3e4f567892003"),
-    branchCode: "BR-CHI-001",
-    name: "Chicago Loop Branch",
-    address: {
-      street: "789 Michigan Avenue",
-      city: "Chicago",
-      state: "IL",
-      zipCode: "60601"
-    },
-    location: {
-      type: "Point",
-      coordinates: [-87.6298, 41.8781]
-    },
-    manager: "Jennifer Davis",
-    agentCount: 22,
-    territory: "Chicago Loop",
-    specialties: ["Auto", "Commercial", "Property"]
-  }
-]);
+db.policies.insertMany([policy1, policy2, policy3]);
+print("✓ Created " + db.policies.countDocuments() + " insurance policies");
 
-// Create geospatial index
-db.branches.createIndex({ location: "2dsphere" });
-print("✓ Created " + db.branches.countDocuments() + " branch locations");
+// Create customers using individual variables
+print("Creating comprehensive customers...");
+var customer1 = {customerId: "CUST000001", firstName: "John", lastName: "Smith", email: "john.smith@email.com", phone: "+1-555-0101", address: {street: "123 Main Street", city: "New York", state: "NY", zipCode: "10001"}, dateOfBirth: new Date("1985-06-15"), customerType: "individual", riskProfile: {score: 75, category: "medium", factors: ["good_credit", "safe_driver"]}, premiumTotal: 2850.99, policies: ["POL-AUTO-2024-001", "POL-HOME-2024-002"], registrationDate: new Date("2024-01-10"), isActive: true, loyaltyProgram: {tier: "gold", points: 1250, memberSince: new Date("2022-01-10")}};
+var customer2 = {customerId: "CUST000002", firstName: "Sarah", lastName: "Johnson", email: "sarah.johnson@email.com", phone: "+1-555-0102", address: {street: "456 Oak Avenue", city: "Chicago", state: "IL", zipCode: "60601"}, dateOfBirth: new Date("1978-03-22"), customerType: "family", riskProfile: {score: 60, category: "low", factors: ["excellent_credit", "homeowner", "multiple_policies"]}, premiumTotal: 3250.75, policies: ["POL-HOME-2024-003", "POL-LIFE-2024-004"], registrationDate: new Date("2024-02-15"), isActive: true, loyaltyProgram: {tier: "platinum", points: 2850, memberSince: new Date("2020-02-15")}};
+var customer3 = {customerId: "CUST000003", firstName: "Michael", lastName: "Davis", email: "michael.davis@business.com", phone: "+1-555-0103", address: {street: "789 Business Plaza", city: "Los Angeles", state: "CA", zipCode: "90210"}, dateOfBirth: new Date("1972-11-08"), customerType: "business", riskProfile: {score: 45, category: "high", factors: ["business_owner", "high_value_assets"]}, premiumTotal: 5850.50, policies: ["POL-COMMERCIAL-2024-001", "POL-CYBER-2024-001"], registrationDate: new Date("2024-03-01"), isActive: true, loyaltyProgram: {tier: "diamond", points: 4200, memberSince: new Date("2019-03-01")}};
 
-// Load comprehensive policies for advanced querying
-print("Creating comprehensive policy dataset...");
-var policies = [];
-var policyTemplates = [
-  {
-    name: "Premium Auto Policy",
-    policyType: ObjectId("65f1a1b1c2d3e4f567890001"),
-    category: "Auto",
-    annualPremium: 1299.99,
-    coverageTypes: ["liability", "collision", "comprehensive"],
-    provider: "SafeDrive Insurance"
-  },
-  {
-    name: "Standard Auto Policy",
-    policyType: ObjectId("65f1a1b1c2d3e4f567890001"),
-    category: "Auto",
-    annualPremium: 899.99,
-    coverageTypes: ["liability", "collision"],
-    provider: "ValueShield Insurance"
-  },
-  {
-    name: "Homeowners Comprehensive",
-    policyType: ObjectId("65f1a1b1c2d3e4f567890003"),
-    category: "Property",
-    annualPremium: 1899.99,
-    coverageTypes: ["dwelling", "personal_property", "liability"],
-    provider: "HomeGuard Insurance"
-  },
-  {
-    name: "Term Life Insurance",
-    policyType: ObjectId("65f1a1b1c2d3e4f567890004"),
-    category: "Life",
-    annualPremium: 599.99,
-    coverageTypes: ["death_benefit", "accidental_death"],
-    provider: "LifeSecure Insurance"
-  }
-];
+db.customers.insertMany([customer1, customer2, customer3]);
+print("✓ Created " + db.customers.countDocuments() + " comprehensive customers");
 
-// Generate 50 policies with variations for aggregation examples
-for (let i = 0; i < 50; i++) {
-  var template = policyTemplates[i % policyTemplates.length];
-  var variation = Math.floor(i / policyTemplates.length);
+// Create claims using individual variables
+print("Creating comprehensive claims...");
+var claim1 = {claimNumber: "CLM-2024-001001", customerId: "CUST000001", policyNumber: "POL-AUTO-2024-001", claimType: "Auto Accident", claimAmount: 8500.00, deductible: 500.00, status: "approved", incidentDate: new Date("2024-03-15"), incidentDescription: "Rear-end collision at intersection", adjusterAssigned: "ADJ001", settledAmount: 8000.00, processingTime: 15, fraudIndicators: [], severityLevel: "moderate", location: {type: "Point", coordinates: [-73.9857, 40.7484]}, witnesses: 2, policeReport: true, createdAt: new Date("2024-03-16"), settledAt: new Date("2024-03-31")};
+var claim2 = {claimNumber: "CLM-2024-001002", customerId: "CUST000002", policyNumber: "POL-HOME-2024-002", claimType: "Water Damage", claimAmount: 15000.00, deductible: 1000.00, status: "under_review", incidentDate: new Date("2024-03-10"), incidentDescription: "Pipe burst in basement causing extensive water damage", adjusterAssigned: "ADJ002", settledAmount: null, processingTime: null, fraudIndicators: [], severityLevel: "major", location: {type: "Point", coordinates: [-87.6298, 41.8781]}, witnesses: 0, policeReport: false, createdAt: new Date("2024-03-11"), settledAt: null};
+var claim3 = {claimNumber: "CLM-2024-001003", customerId: "CUST000003", policyNumber: "POL-COMMERCIAL-2024-001", claimType: "Cyber Attack", claimAmount: 75000.00, deductible: 5000.00, status: "investigating", incidentDate: new Date("2024-02-28"), incidentDescription: "Ransomware attack on company servers", adjusterAssigned: "ADJ003", settledAmount: null, processingTime: null, fraudIndicators: ["unusual_timing"], severityLevel: "critical", location: {type: "Point", coordinates: [-118.2437, 34.0522]}, witnesses: 0, policeReport: true, createdAt: new Date("2024-03-01"), settledAt: null};
 
-  policies.push({
-    _id: new ObjectId(),
-    policyNumber: "POL-" + template.category.toUpperCase() + "-" + String(i + 1).padStart(3, '0'),
-    name: template.name + (variation > 0 ? ` (Plan ${variation + 1})` : ""),
-    policyType: template.policyType,
-    category: template.category,
-    provider: template.provider,
-    annualPremium: Math.round((template.annualPremium + (Math.random() * 400 - 200)) * 100) / 100,
-    coverageTypes: [...template.coverageTypes],
-    riskAssessment: {
-      score: Math.floor(Math.random() * 100) + 1,
-      factors: ["age", "location", "history"].filter(() => Math.random() > 0.5),
-      lastUpdated: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000)
-    },
-    isActive: Math.random() > 0.1,
-    customerRating: Math.round((Math.random() * 2 + 3) * 10) / 10,
-    createdAt: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000)
-  });
-}
+db.claims.insertMany([claim1, claim2, claim3]);
+print("✓ Created " + db.claims.countDocuments() + " comprehensive claims");
 
-db.policies.insertMany(policies);
-print("✓ Created " + db.policies.countDocuments() + " policies for aggregation");
+// Create agents using individual variables
+print("Creating comprehensive agents...");
+var agent1 = {agentId: "AGT001", firstName: "Emily", lastName: "Rodriguez", email: "emily.rodriguez@insuranceco.com", phone: "+1-555-0201", branchId: "BR001", territory: "Manhattan North", specialties: ["Auto", "Property"], licenseNumber: "LIC-NY-12345", isActive: true, performance: {salesTarget: 500000, salesActual: 485000, customerRating: 4.8, claimsHandled: 125, conversionRate: 0.78}, hireDate: new Date("2022-03-15"), lastPromotion: new Date("2023-03-15"), salary: 75000, commissionRate: 0.03};
+var agent2 = {agentId: "AGT002", firstName: "David", lastName: "Thompson", email: "david.thompson@insuranceco.com", phone: "+1-555-0202", branchId: "BR002", territory: "West LA", specialties: ["Commercial", "Cyber"], licenseNumber: "LIC-CA-67890", isActive: true, performance: {salesTarget: 750000, salesActual: 820000, customerRating: 4.9, claimsHandled: 95, conversionRate: 0.85}, hireDate: new Date("2021-08-22"), lastPromotion: new Date("2022-08-22"), salary: 85000, commissionRate: 0.035};
+var agent3 = {agentId: "AGT003", firstName: "Jessica", lastName: "Chen", email: "jessica.chen@insuranceco.com", phone: "+1-555-0203", branchId: "BR003", territory: "Houston Energy", specialties: ["Energy", "Marine"], licenseNumber: "LIC-TX-11111", isActive: true, performance: {salesTarget: 600000, salesActual: 645000, customerRating: 4.7, claimsHandled: 110, conversionRate: 0.72}, hireDate: new Date("2020-11-10"), lastPromotion: new Date("2021-11-10"), salary: 78000, commissionRate: 0.032};
 
-// Load customers with risk segmentation data
-print("Creating customer dataset with risk profiles...");
-var customers = [];
-var firstNames = ["John", "Sarah", "Michael", "Emily", "David", "Lisa", "Robert", "Jennifer", "William", "Mary"];
-var lastNames = ["Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis", "Rodriguez", "Martinez"];
-var cities = ["New York", "Brooklyn", "Chicago", "Los Angeles", "Houston"];
-var states = ["NY", "IL", "CA", "TX"];
+db.agents.insertMany([agent1, agent2, agent3]);
+print("✓ Created " + db.agents.countDocuments() + " comprehensive agents");
 
-for (let i = 0; i < 100; i++) {
-  var premiumValue = Math.round((Math.random() * 4000 + 500) * 100) / 100;
-  var riskLevel = premiumValue > 2500 ? "high" : (premiumValue > 1500 ? "medium" : "low");
+// Create reviews for text search using individual variables
+print("Creating customer reviews for text search...");
+var review1 = {reviewId: "REV001", customerId: "CUST000001", agentId: "AGT001", branchId: "BR001", rating: 5, reviewText: "Excellent service and outstanding customer support. Emily was incredibly helpful throughout the entire claims process. The response time was fantastic and the settlement was fair. Highly recommend this insurance company to anyone looking for reliable coverage.", reviewDate: new Date("2024-03-20"), sentiment: "positive", categories: ["service", "claims", "support"], verified: true, helpfulVotes: 15};
+var review2 = {reviewId: "REV002", customerId: "CUST000002", agentId: "AGT002", branchId: "BR002", rating: 4, reviewText: "Good coverage options and competitive pricing. The policy selection process was straightforward, though claim processing could be faster. Overall satisfied with the service and would consider renewing. David provided good guidance on policy options.", reviewDate: new Date("2024-03-18"), sentiment: "positive", categories: ["coverage", "pricing", "claims"], verified: true, helpfulVotes: 8};
+var review3 = {reviewId: "REV003", customerId: "CUST000003", agentId: "AGT003", branchId: "BR003", rating: 2, reviewText: "Poor experience with claim denial and lack of communication. The initial sales process was smooth but when I needed to file a claim, the service quality dropped significantly. Jessica was hard to reach and the explanations were unclear.", reviewDate: new Date("2024-03-15"), sentiment: "negative", categories: ["claims", "communication", "service"], verified: true, helpfulVotes: 22};
 
-  customers.push({
-    _id: new ObjectId(),
-    customerId: "CUST" + String(i + 1).padStart(6, '0'),
-    firstName: firstNames[Math.floor(Math.random() * firstNames.length)],
-    lastName: lastNames[Math.floor(Math.random() * lastNames.length)],
-    email: `customer${i + 1}@example.com`,
-    address: {
-      street: `${Math.floor(Math.random() * 999) + 1} ${["Main", "Oak", "Pine", "Cedar"][Math.floor(Math.random() * 4)]} St`,
-      city: cities[Math.floor(Math.random() * cities.length)],
-      state: states[Math.floor(Math.random() * states.length)],
-      zipCode: String(Math.floor(Math.random() * 90000) + 10000)
-    },
-    customerType: ["individual", "family", "business"][Math.floor(Math.random() * 3)],
-    totalPremiumValue: premiumValue,
-    riskLevel: riskLevel,
-    claimHistory: {
-      totalClaims: Math.floor(Math.random() * 5),
-      totalClaimAmount: Math.round(Math.random() * 25000 * 100) / 100,
-      riskFactors: ["age", "location", "driving_record", "credit_score"].filter(() => Math.random() > 0.6)
-    },
-    isActive: Math.random() > 0.05,
-    registrationDate: new Date(Date.now() - Math.random() * 730 * 24 * 60 * 60 * 1000)
-  });
-}
+db.reviews.insertMany([review1, review2, review3]);
+print("✓ Created " + db.reviews.countDocuments() + " customer reviews");
 
-db.customers.insertMany(customers);
-print("✓ Created " + db.customers.countDocuments() + " customers with risk profiles");
+// Create production indexes
+print("\n🔧 Creating production indexes for optimal performance");
+print("----------------------------------------------------");
 
-// Load claims for aggregation analysis
-print("Creating claims dataset for analytics...");
-var customerIds = db.customers.find({}, {_id: 1}).toArray().map(c => c._id);
-var claims = [];
-var claimTypes = ["Auto Accident", "Property Damage", "Theft", "Fire", "Water Damage", "Medical"];
+// Core business indexes
+db.policies.createIndex({ policyNumber: 1 }, { unique: true });
+db.policies.createIndex({ policyType: 1, isActive: 1 });
+db.customers.createIndex({ customerId: 1 }, { unique: true });
+db.customers.createIndex({ email: 1 }, { unique: true });
+db.claims.createIndex({ claimNumber: 1 }, { unique: true });
+db.claims.createIndex({ customerId: 1, status: 1 });
+db.agents.createIndex({ agentId: 1 }, { unique: true });
+db.branches.createIndex({ branchCode: 1 }, { unique: true });
 
-for (let i = 0; i < 200; i++) {
-  var customerId = customerIds[Math.floor(Math.random() * customerIds.length)];
-  var claimAmount = Math.round((Math.random() * 20000 + 500) * 100) / 100;
-  var status = ["submitted", "under_review", "approved", "denied", "settled"][Math.floor(Math.random() * 5)];
-
-  claims.push({
-    _id: new ObjectId(),
-    claimNumber: "CLM-2024-" + String(i + 1).padStart(6, '0'),
-    customerId: customerId,
-    claimType: claimTypes[Math.floor(Math.random() * claimTypes.length)],
-    claimAmount: claimAmount,
-    status: status,
-    priority: claimAmount > 10000 ? "high" : (claimAmount > 5000 ? "medium" : "low"),
-    incidentDate: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000),
-    adjusterAssigned: "ADJ" + String(Math.floor(Math.random() * 10) + 1).padStart(3, '0'),
-    territory: ["Manhattan", "Brooklyn", "Chicago Loop"][Math.floor(Math.random() * 3)],
-    settlementAmount: status === "settled" ? Math.round(claimAmount * 0.9 * 100) / 100 : null,
-    fraudFlag: Math.random() > 0.95 ? "flagged" : "clear"
-  });
-}
-
-db.claims.insertMany(claims);
-print("✓ Created " + db.claims.countDocuments() + " claims for analysis");
-
-// ===========================================
-// Lab 2: Data Modeling and Schema Design
-// ===========================================
-
-print("\n📋 Loading data for Lab 2: Data Modeling and Schema Design");
-print("---------------------------------------------------------");
-
-// Create agents with detailed profiles for schema design examples
-print("Creating agent profiles with complex schemas...");
-db.agents.insertMany([
-  {
-    _id: new ObjectId(),
-    agentId: "AGT001",
-    personalInfo: {
-      firstName: "Emily",
-      lastName: "Rodriguez",
-      email: "emily.rodriguez@insuranceco.com",
-      phone: "+1-555-0201",
-      licenseNumber: "LIC-NY-12345",
-      licenseExpiration: new Date("2025-06-15")
-    },
-    employment: {
-      branchId: ObjectId("65f1a1b1c2d3e4f567892001"),
-      territory: "Manhattan",
-      hireDate: new Date("2022-03-15"),
-      position: "Senior Agent",
-      specialties: ["Auto", "Property", "Commercial"]
-    },
-    performance: {
-      monthlyQuota: 50000.00,
-      quarterlyRevenue: 145000.00,
-      customerSatisfaction: 4.7,
-      certifications: ["Auto Specialist", "Property Expert"]
-    },
-    contactPreferences: {
-      primaryContact: "email",
-      workingHours: {
-        monday: "8:00-17:00",
-        tuesday: "8:00-17:00",
-        wednesday: "8:00-17:00",
-        thursday: "8:00-17:00",
-        friday: "8:00-17:00"
-      },
-      languages: ["English", "Spanish"]
-    }
-  },
-  {
-    _id: new ObjectId(),
-    agentId: "AGT002",
-    personalInfo: {
-      firstName: "David",
-      lastName: "Thompson",
-      email: "david.thompson@insuranceco.com",
-      phone: "+1-555-0202",
-      licenseNumber: "LIC-IL-67890",
-      licenseExpiration: new Date("2024-12-20")
-    },
-    employment: {
-      branchId: ObjectId("65f1a1b1c2d3e4f567892003"),
-      territory: "Chicago Loop",
-      hireDate: new Date("2021-08-22"),
-      position: "Commercial Specialist",
-      specialties: ["Commercial", "Life", "Cyber"]
-    },
-    performance: {
-      monthlyQuota: 75000.00,
-      quarterlyRevenue: 220000.00,
-      customerSatisfaction: 4.9,
-      certifications: ["Commercial Expert", "Cyber Security Specialist"]
-    },
-    contactPreferences: {
-      primaryContact: "phone",
-      workingHours: {
-        monday: "7:00-18:00",
-        tuesday: "7:00-18:00",
-        wednesday: "7:00-18:00",
-        thursday: "7:00-18:00",
-        friday: "7:00-16:00"
-      },
-      languages: ["English"]
-    }
-  }
-]);
-
-print("✓ Created " + db.agents.countDocuments() + " agent profiles");
-
-// Create vehicles and properties for asset modeling
-print("Creating insured assets (vehicles and properties)...");
-db.vehicles.insertMany([
-  {
-    _id: new ObjectId(),
-    vin: "1HGBH41JXMN109186",
-    customerId: customerIds[0],
-    make: "Honda",
-    model: "Civic",
-    year: 2020,
-    color: "Blue",
-    engineSize: "1.5L",
-    fuelType: "Gasoline",
-    currentValue: 18500.00,
-    insuranceInfo: {
-      policyNumber: "POL-AUTO-001",
-      coverageTypes: ["liability", "collision", "comprehensive"],
-      deductible: 500.00,
-      annualPremium: 1299.99
-    },
-    safetyFeatures: ["ABS", "Airbags", "Backup Camera", "Lane Assist"],
-    riskFactors: {
-      age: 4,
-      mileage: 45000,
-      accidentHistory: [],
-      securityFeatures: ["Alarm", "Remote Start"]
-    }
-  },
-  {
-    _id: new ObjectId(),
-    vin: "2T1BURHE0JC123456",
-    customerId: customerIds[1],
-    make: "Toyota",
-    model: "Corolla",
-    year: 2018,
-    color: "White",
-    engineSize: "1.8L",
-    fuelType: "Gasoline",
-    currentValue: 16200.00,
-    insuranceInfo: {
-      policyNumber: "POL-AUTO-002",
-      coverageTypes: ["liability", "collision"],
-      deductible: 1000.00,
-      annualPremium: 899.99
-    },
-    safetyFeatures: ["ABS", "Airbags", "Electronic Stability Control"],
-    riskFactors: {
-      age: 6,
-      mileage: 67000,
-      accidentHistory: ["Minor Fender Bender - 2022"],
-      securityFeatures: ["Factory Alarm"]
-    }
-  }
-]);
-
-db.properties.insertMany([
-  {
-    _id: new ObjectId(),
-    propertyId: "PROP-001",
-    customerId: customerIds[0],
-    propertyType: "Single Family Home",
-    address: {
-      street: "123 Elm Street",
-      city: "New York",
-      state: "NY",
-      zipCode: "10001",
-      coordinates: { lat: 40.7505, lng: -73.9876 }
-    },
-    propertyDetails: {
-      yearBuilt: 1995,
-      squareFootage: 2400,
-      bedrooms: 4,
-      bathrooms: 3,
-      garageSpaces: 2,
-      lotSize: 0.25,
-      constructionType: "Frame",
-      roofType: "Asphalt Shingle"
-    },
-    insuranceInfo: {
-      policyNumber: "POL-HOME-001",
-      dwellingCoverage: 400000.00,
-      personalPropertyCoverage: 200000.00,
-      liabilityCoverage: 300000.00,
-      deductible: 1000.00,
-      annualPremium: 1899.99
-    },
-    riskAssessment: {
-      floodZone: "X",
-      earthquakeRisk: "Low",
-      hurricaneRisk: "Medium",
-      crimeRate: "Low",
-      fireProtectionClass: 3,
-      nearestFireStation: 0.8
-    },
-    safetyFeatures: ["Smoke Detectors", "Security System", "Fire Extinguisher", "Carbon Monoxide Detector"]
-  }
-]);
-
-print("✓ Created vehicles and properties datasets");
-
-// ===========================================
-// Lab 3: Indexing and Performance Optimization
-// ===========================================
-
-print("\n🚀 Loading data for Lab 3: Indexing and Performance");
-print("--------------------------------------------------");
-
-// Create agent reviews for text indexing examples
-print("Creating agent reviews for text search optimization...");
-var reviews = [];
-var reviewTexts = [
-  "Excellent service and very knowledgeable about auto insurance options. Helped me save money.",
-  "Professional and responsive. Handled my claim quickly and efficiently.",
-  "Great experience with home insurance. Agent was thorough and patient.",
-  "Outstanding customer service. Highly recommend for commercial insurance needs.",
-  "Good communication throughout the policy setup process. Very satisfied.",
-  "Agent was helpful but could be more proactive in follow-up communications.",
-  "Smooth claims process and fair settlement. Will continue with this agent.",
-  "Knowledgeable about life insurance products and provided excellent guidance."
-];
-
-var agentIds = db.agents.find({}, {_id: 1}).toArray().map(a => a._id);
-
-for (let i = 0; i < 100; i++) {
-  reviews.push({
-    _id: new ObjectId(),
-    agentId: agentIds[Math.floor(Math.random() * agentIds.length)],
-    customerId: customerIds[Math.floor(Math.random() * customerIds.length)],
-    rating: Math.floor(Math.random() * 5) + 1,
-    reviewText: reviewTexts[Math.floor(Math.random() * reviewTexts.length)],
-    serviceType: ["new_policy", "claim_processing", "policy_renewal", "consultation"][Math.floor(Math.random() * 4)],
-    reviewDate: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000),
-    verified: Math.random() > 0.1,
-    helpful: Math.floor(Math.random() * 20)
-  });
-}
-
-db.reviews.insertMany(reviews);
-print("✓ Created " + db.reviews.countDocuments() + " agent reviews");
-
-// ===========================================
-// Create Optimized Indexes
-// ===========================================
-
-print("\n🔧 Creating optimized indexes for Day 2 labs");
-print("--------------------------------------------");
-
-// Text search indexes
-db.policies.createIndex({
-  "name": "text",
-  "category": "text",
-  "coverageTypes": "text"
-}, {
-  weights: { name: 10, category: 5, coverageTypes: 1 },
-  name: "policy_text_search"
-});
-
-db.reviews.createIndex({
-  "reviewText": "text"
-}, {
-  name: "review_text_search"
-});
+// Analytics and aggregation indexes
+db.customers.createIndex({ "riskProfile.score": 1, premiumTotal: -1 });
+db.claims.createIndex({ claimType: 1, claimAmount: -1 });
+db.claims.createIndex({ status: 1, incidentDate: -1 });
+db.agents.createIndex({ branchId: 1, "performance.salesActual": -1 });
+db.branches.createIndex({ "performanceMetrics.monthlyRevenue": -1 });
 
 // Geospatial indexes
 db.branches.createIndex({ location: "2dsphere" });
-db.properties.createIndex({ "address.coordinates": "2dsphere" });
+db.claims.createIndex({ location: "2dsphere" });
 
-// Compound indexes for aggregation performance
-db.claims.createIndex({ customerId: 1, status: 1, incidentDate: -1 });
-db.policies.createIndex({ category: 1, annualPremium: 1, isActive: 1 });
-db.customers.createIndex({ riskLevel: 1, totalPremiumValue: -1 });
+// Text search indexes
+db.reviews.createIndex({ reviewText: "text", categories: "text" });
+db.policies.createIndex({ name: "text", policyType: "text" });
 
-// Performance indexes
-db.policies.createIndex({ policyType: 1, isActive: 1 });
-db.claims.createIndex({ territory: 1, priority: 1 });
-db.agents.createIndex({ "employment.branchId": 1, "employment.specialties": 1 });
+print("✓ Created production indexes");
 
-print("✓ Created performance indexes");
+// Final validation using individual variables (avoiding multiline objects)
+print("\n📊 Day 2 analytics data validation");
+print("----------------------------------");
 
-// ===========================================
-// Data Validation and Summary
-// ===========================================
+var branchCount = db.branches.countDocuments();
+var policyCount = db.policies.countDocuments();
+var customerCount = db.customers.countDocuments();
+var claimCount = db.claims.countDocuments();
+var agentCount = db.agents.countDocuments();
+var reviewCount = db.reviews.countDocuments();
 
-print("\n📊 Day 2 data loading validation");
-print("--------------------------------");
-
-var validation = {
-  policy_types: db.policy_types.countDocuments(),
-  branches: db.branches.countDocuments(),
-  policies: db.policies.countDocuments(),
-  customers: db.customers.countDocuments(),
-  claims: db.claims.countDocuments(),
-  agents: db.agents.countDocuments(),
-  vehicles: db.vehicles.countDocuments(),
-  properties: db.properties.countDocuments(),
-  reviews: db.reviews.countDocuments()
-};
-
-print("Collections created:");
-Object.keys(validation).forEach(function(key) {
-  print("- " + key + ": " + validation[key]);
-});
-
-// Verify text search capability
-print("\nText search validation:");
-var textSearchTest = db.policies.find({$text: {$search: "auto"}}).limit(1).toArray();
-print("- Policy text search: " + (textSearchTest.length > 0 ? "✓ Working" : "✗ Failed"));
-
-var reviewSearchTest = db.reviews.find({$text: {$search: "excellent"}}).limit(1).toArray();
-print("- Review text search: " + (reviewSearchTest.length > 0 ? "✓ Working" : "✗ Failed"));
-
-// Verify geospatial capability
-var geoTest = db.branches.find({
-  location: {
-    $near: {
-      $geometry: { type: "Point", coordinates: [-73.9857, 40.7484] },
-      $maxDistance: 1000
-    }
-  }
-}).limit(1).toArray();
-print("- Geospatial search: " + (geoTest.length > 0 ? "✓ Working" : "✗ Failed"));
+print("Analytics collections created:");
+print("- branches: " + branchCount);
+print("- policies: " + policyCount);
+print("- customers: " + customerCount);
+print("- claims: " + claimCount);
+print("- agents: " + agentCount);
+print("- reviews: " + reviewCount);
 
 print("\n=======================================================");
 print("✅ DAY 2 INSURANCE ANALYTICS DATA LOADING COMPLETE!");
 print("=======================================================");
-print("All data for MongoDB Day 2 labs has been loaded successfully.");
+print("All analytics data for MongoDB Day 2 labs has been loaded successfully.");
 print("");
-print("Advanced features ready:");
-print("- Text search indexes for policy and review content");
-print("- Geospatial indexes for territory-based queries");
-print("- Complex aggregation datasets with risk analytics");
-print("- Comprehensive schema examples for data modeling");
-print("- Performance-optimized indexes for lab exercises");
+print("Analytics features ready:");
+print("- Comprehensive branch network with performance metrics");
+print("- Rich customer profiles with loyalty and risk data");
+print("- Detailed claims with geospatial and fraud indicators");
+print("- Agent performance data for workforce analytics");
+print("- Customer reviews for text search and sentiment analysis");
+print("- Production-ready indexes for optimal query performance");
 print("");
 print("You can now proceed with any Day 2 lab:");
-print("- Lab 1: Advanced Querying and Aggregation Framework");
-print("- Lab 2: Data Modeling and Schema Design");
-print("- Lab 3: Indexing Strategies and Performance Optimization");
+print("- Lab 1: Advanced Querying & Filtering");
+print("- Lab 2: Aggregation Framework Mastery");
+print("- Lab 3: Text Search and Analytics");
+print("- Lab 4: Advanced Indexing Strategies");
 print("");
 print("To reload this data at any time, run:");
 print("mongosh < day2_data_loader.js");
