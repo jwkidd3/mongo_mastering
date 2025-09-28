@@ -44,13 +44,34 @@ mongosh < test_connection.js
 
 ### 5. Run Comprehensive Lab Tests
 
-**Option A: Complete Lab Validation (Recommended)**
+**Option A: Complete End-to-End Test (Recommended)**
+Tests entire environment setup, data loading, and lab validation:
+
+**macOS/Linux:**
+```bash
+# From scripts directory:
+./comprehensive_test.sh
+
+# From project root:
+scripts/comprehensive_test.sh
+```
+
+**Windows PowerShell:**
+```powershell
+# From scripts directory:
+.\comprehensive_test.ps1
+
+# From project root:
+scripts\comprehensive_test.ps1
+```
+
+**Option B: Lab Validation Only**
 Validates every operation from all 12 labs:
 ```bash
 mongosh < lab_validation_comprehensive.js
 ```
 
-**Option B: General Operations Test**
+**Option C: General Operations Test**
 Tests general MongoDB operations:
 ```bash
 mongosh < test_all_labs.js
@@ -109,6 +130,18 @@ mongosh < test_all_labs.js
 - Tests write/read operations
 - Optionally loads course data
 - **Duration:** ~15 seconds
+
+#### **Comprehensive Test Script** - Complete End-to-End Validation
+- **`comprehensive_test.sh`** (macOS/Linux)
+- **`comprehensive_test.ps1`** (Windows PowerShell)
+
+**What they do:**
+- Sets up complete 3-node MongoDB replica set
+- Loads all course data (Days 1, 2, 3)
+- Runs comprehensive lab validation (60+ tests)
+- Tears down environment completely
+- Provides detailed success/failure reporting
+- **Duration:** ~3-5 minutes
 
 #### **Manual Setup Instructions**
 - **`SETUP.md`** - Complete step-by-step manual setup
@@ -201,6 +234,8 @@ scripts/
 ├── teardown.ps1                  # Cleanup (Windows PowerShell)
 ├── test.sh                       # Connection test (macOS/Linux)
 ├── test.ps1                      # Connection test (Windows PowerShell)
+├── comprehensive_test.sh          # Complete end-to-end test (macOS/Linux)
+├── comprehensive_test.ps1         # Complete end-to-end test (Windows PowerShell)
 ├── test_connection.js            # Basic MongoDB connection test
 ├── lab_validation_comprehensive.js # Complete lab validation test
 ├── test_all_labs.js              # General operations test
