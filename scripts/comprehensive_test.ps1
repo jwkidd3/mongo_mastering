@@ -204,7 +204,7 @@ Start-Sleep -Seconds 15
 # Initialize replica set
 Write-Status "Initializing replica set..."
 try {
-    $initCommand = "rs.initiate({_id:'rs0',members:[{_id:0,host:'mongo1:27017',priority:2},{_id:1,host:'mongo2:27017',priority:1},{_id:2,host:'mongo3:27017',priority:1}]});"
+    $initCommand = 'rs.initiate({_id:"rs0",members:[{_id:0,host:"mongo1:27017",priority:2},{_id:1,host:"mongo2:27017",priority:1},{_id:2,host:"mongo3:27017",priority:1}]});'
     $result = docker exec mongo1 mongosh --quiet --eval $initCommand
     if ($LASTEXITCODE -ne 0) {
         throw "Docker exec failed with exit code $LASTEXITCODE"
@@ -224,7 +224,7 @@ Start-Sleep -Seconds 30
 # Set write concern
 Write-Status "Setting write concern..."
 try {
-    $writeConcernCommand = "db.adminCommand({setDefaultRWConcern:1,defaultWriteConcern:{w:'majority',wtimeout:5000}});"
+    $writeConcernCommand = 'db.adminCommand({setDefaultRWConcern:1,defaultWriteConcern:{w:"majority",wtimeout:5000}});'
     $result = mongosh --quiet --eval $writeConcernCommand
     if ($LASTEXITCODE -ne 0) {
         throw "mongosh command failed with exit code $LASTEXITCODE"
@@ -238,7 +238,7 @@ try {
 # Verify replica set status
 Write-Status "Verifying replica set status..."
 try {
-    $statusResult = mongosh --quiet --eval "rs.status().members.forEach(function(m){print('  '+m.name+': '+m.stateStr);});"
+    $statusResult = mongosh --quiet --eval 'rs.status().members.forEach(function(m){print("  "+m.name+": "+m.stateStr);});'
     if ($statusResult) {
         Write-Host $statusResult -ForegroundColor Cyan
     }
