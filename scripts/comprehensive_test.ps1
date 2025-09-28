@@ -96,7 +96,7 @@ try {
     # Method 2: cmd /c approach
     if (-not $dockerWorking) {
         try {
-            $dockerInfo = cmd /c "docker version --format `"{{.Server.Version}}`" 2>nul"
+            $dockerInfo = cmd /c 'docker version --format "{{.Server.Version}}" 2>nul'
             if ($dockerInfo -and $LASTEXITCODE -eq 0) {
                 $dockerWorking = $true
             }
@@ -149,10 +149,10 @@ Write-Status "Starting MongoDB replica set setup..."
 # Clean up any existing containers first
 Write-Status "Cleaning up existing MongoDB containers..."
 try {
-    cmd /c "docker rm -f mongo1 mongo2 mongo3 2>nul" | Out-Null
+    docker rm -f mongo1 mongo2 mongo3 2>$null | Out-Null
 } catch {}
 try {
-    cmd /c "docker network rm mongodb-net 2>nul" | Out-Null
+    docker network rm mongodb-net 2>$null | Out-Null
 } catch {}
 
 # Create Docker network
@@ -212,8 +212,8 @@ try {
     Write-Success "Replica set initialized"
 } catch {
     Write-ScriptError "Failed to initialize replica set: $_"
-    cmd /c "docker rm -f mongo1 mongo2 mongo3 2>nul" | Out-Null
-    cmd /c "docker network rm mongodb-net 2>nul" | Out-Null
+    docker rm -f mongo1 mongo2 mongo3 2>$null | Out-Null
+    docker network rm mongodb-net 2>$null | Out-Null
     exit 1
 }
 
@@ -269,8 +269,8 @@ if (Test-Path "..\data") {
     Write-ScriptError "Please run this script from either:"
     Write-ScriptError "  - The scripts\ directory: .\comprehensive_test.ps1"
     Write-ScriptError "  - The project root: scripts\comprehensive_test.ps1"
-    cmd /c "docker rm -f mongo1 mongo2 mongo3 2>nul" | Out-Null
-    cmd /c "docker network rm mongodb-net 2>nul" | Out-Null
+    docker rm -f mongo1 mongo2 mongo3 2>$null | Out-Null
+    docker network rm mongodb-net 2>$null | Out-Null
     exit 1
 }
 
@@ -286,8 +286,8 @@ try {
 } catch {
     Write-ScriptError "Failed to load Day 1 data"
     Pop-Location
-    cmd /c "docker rm -f mongo1 mongo2 mongo3 2>nul" | Out-Null
-    cmd /c "docker network rm mongodb-net 2>nul" | Out-Null
+    docker rm -f mongo1 mongo2 mongo3 2>$null | Out-Null
+    docker network rm mongodb-net 2>$null | Out-Null
     exit 1
 }
 
@@ -301,8 +301,8 @@ try {
 } catch {
     Write-ScriptError "Failed to load Day 2 data"
     Pop-Location
-    cmd /c "docker rm -f mongo1 mongo2 mongo3 2>nul" | Out-Null
-    cmd /c "docker network rm mongodb-net 2>nul" | Out-Null
+    docker rm -f mongo1 mongo2 mongo3 2>$null | Out-Null
+    docker network rm mongodb-net 2>$null | Out-Null
     exit 1
 }
 
@@ -316,8 +316,8 @@ try {
 } catch {
     Write-ScriptError "Failed to load Day 3 data"
     Pop-Location
-    cmd /c "docker rm -f mongo1 mongo2 mongo3 2>nul" | Out-Null
-    cmd /c "docker network rm mongodb-net 2>nul" | Out-Null
+    docker rm -f mongo1 mongo2 mongo3 2>$null | Out-Null
+    docker network rm mongodb-net 2>$null | Out-Null
     exit 1
 }
 
@@ -386,8 +386,8 @@ try {
             Write-ScriptError "Unexpected test failures detected"
             Write-Status "Full lab validation output:"
             Write-Host $labResults -ForegroundColor Gray
-            cmd /c "docker rm -f mongo1 mongo2 mongo3 2>nul" | Out-Null
-            cmd /c "docker network rm mongodb-net 2>nul" | Out-Null
+            docker rm -f mongo1 mongo2 mongo3 2>$null | Out-Null
+            docker network rm mongodb-net 2>$null | Out-Null
             exit 1
         }
     } else {
@@ -395,8 +395,8 @@ try {
     }
 } catch {
     Write-ScriptError "Lab validation test failed: $_"
-    cmd /c "docker rm -f mongo1 mongo2 mongo3 2>nul" | Out-Null
-    cmd /c "docker network rm mongodb-net 2>nul" | Out-Null
+    docker rm -f mongo1 mongo2 mongo3 2>$null | Out-Null
+    docker network rm mongodb-net 2>$null | Out-Null
     exit 1
 }
 
@@ -408,7 +408,7 @@ Write-Status "Tearing down MongoDB environment..."
 # Stop and remove containers
 Write-Status "Stopping MongoDB containers..."
 try {
-    cmd /c "docker rm -f mongo1 mongo2 mongo3 2>nul" | Out-Null
+    docker rm -f mongo1 mongo2 mongo3 2>$null | Out-Null
     Write-Success "MongoDB containers stopped and removed"
 } catch {
     Write-ScriptWarning "Some issues during container cleanup"
@@ -417,7 +417,7 @@ try {
 # Remove network
 Write-Status "Removing Docker network..."
 try {
-    cmd /c "docker network rm mongodb-net 2>nul" | Out-Null
+    docker network rm mongodb-net 2>$null | Out-Null
     Write-Success "Docker network removed"
 } catch {
     Write-ScriptWarning "Some issues during network cleanup"
