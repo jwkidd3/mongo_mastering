@@ -92,20 +92,24 @@ function Wait-MongoReady {
 
     while ($elapsed -lt $MaxWaitSeconds -and -not $connected) {
         try {
-            # Simple connection test
-            $result = mongosh --quiet --eval "db.adminCommand('ping')" 2>$null
-            if ($LASTEXITCODE -eq 0) {
+            # Test connection using docker exec to avoid local connection issues
+            $result = & docker exec mongo1 mongosh --quiet --eval "db.adminCommand('ping')" 2>&1
+            if ($LASTEXITCODE -eq 0 -and $result -match "ok.*1") {
                 $connected = $true
                 Write-Success "MongoDB is ready"
             } else {
                 Start-Sleep -Seconds 5
                 $elapsed += 5
-                Write-Status "Still waiting... ($elapsed seconds)"
+                if (($elapsed % 15) -eq 0) {
+                    Write-Status "Still waiting for MongoDB... ($elapsed seconds)"
+                }
             }
         } catch {
             Start-Sleep -Seconds 5
             $elapsed += 5
-            Write-Status "Still waiting... ($elapsed seconds)"
+            if (($elapsed % 15) -eq 0) {
+                Write-Status "Still waiting for MongoDB... ($elapsed seconds)"
+            }
         }
     }
 
@@ -303,6 +307,10 @@ try {
 }
 
 Write-Success "All MongoDB containers started"
+
+# Give containers time to initialize MongoDB processes
+Write-Status "Waiting for MongoDB processes to start (20 seconds)..."
+Start-Sleep -Seconds 20
 
 # Wait for MongoDB to be ready
 Wait-MongoReady -MaxWaitSeconds 120
