@@ -259,7 +259,7 @@ try {
     if ($LASTEXITCODE -ne 0) {
         throw "Docker command failed with exit code $LASTEXITCODE. Output: $mongo1"
     }
-    if (-not $mongo1 -or $mongo1 -match "Error|error") {
+    if (-not $mongo1 -or $mongo1.ToString().ToLower().Contains("error")) {
         throw "Container creation failed. Output: $mongo1"
     }
     $shortMongo1 = if ($mongo1 -and $mongo1.Length -ge 12) { $mongo1.Substring(0,12) } else { $mongo1 }
@@ -276,7 +276,7 @@ try {
     if ($LASTEXITCODE -ne 0) {
         throw "Docker command failed with exit code $LASTEXITCODE. Output: $mongo2"
     }
-    if (-not $mongo2 -or $mongo2 -match "Error|error") {
+    if (-not $mongo2 -or $mongo2 .ToString().ToLower().Contains("error")) {
         throw "Container creation failed. Output: $mongo2"
     }
     $shortMongo2 = if ($mongo2 -and $mongo2.Length -ge 12) { $mongo2.Substring(0,12) } else { $mongo2 }
@@ -293,7 +293,7 @@ try {
     if ($LASTEXITCODE -ne 0) {
         throw "Docker command failed with exit code $LASTEXITCODE. Output: $mongo3"
     }
-    if (-not $mongo3 -or $mongo3 -match "Error|error") {
+    if (-not $mongo3 -or $mongo3 .ToString().ToLower().Contains("error")) {
         throw "Container creation failed. Output: $mongo3"
     }
     $shortMongo3 = if ($mongo3 -and $mongo3.Length -ge 12) { $mongo3.Substring(0,12) } else { $mongo3 }
