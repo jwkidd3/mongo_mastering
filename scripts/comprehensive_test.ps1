@@ -225,26 +225,43 @@ try {
 Write-Status "Waiting for replica set to stabilize - 30 seconds..."
 Start-Sleep -Seconds 30
 
-# Set write concern
+# Set write concern with retry logic
 Write-Status "Setting write concern..."
-try {
-    $writeConcernCommand = 'db.adminCommand({setDefaultRWConcern:1,defaultWriteConcern:{w:"majority",wtimeout:5000}});'
-    $result = mongosh --quiet --eval $writeConcernCommand
-    if ($LASTEXITCODE -ne 0) {
-        throw "mongosh command failed with exit code $LASTEXITCODE"
+$maxRetries = 5
+$retryCount = 0
+$writeConcernSet = $false
+
+while ($retryCount -lt $maxRetries -and -not $writeConcernSet) {
+    try {
+        $writeConcernCommand = 'db.adminCommand({setDefaultRWConcern:1,defaultWriteConcern:{w:"majority",wtimeout:5000}});'
+        $result = mongosh --quiet --eval $writeConcernCommand
+        if ($LASTEXITCODE -eq 0) {
+            $writeConcernSet = $true
+            Write-Success "Write concern configured"
+        } else {
+            throw "mongosh command failed with exit code $LASTEXITCODE"
+        }
+    } catch {
+        $retryCount++
+        if ($retryCount -lt $maxRetries) {
+            Write-Status "Connection attempt $retryCount failed, retrying in 10 seconds..."
+            Start-Sleep -Seconds 10
+        } else {
+            Write-ScriptWarning "Failed to set write concern after $maxRetries attempts: $_"
+            Write-ScriptWarning "This is usually not critical for learning labs."
+        }
     }
-    Write-Success "Write concern configured"
-} catch {
-    Write-ScriptWarning "Failed to set write concern: $_"
-    Write-ScriptWarning "This is usually not critical for learning labs."
 }
 
 # Verify replica set status
 Write-Status "Verifying replica set status..."
 try {
+    # Wait a bit more for replica set to be fully ready
+    Start-Sleep -Seconds 10
     $statusResult = mongosh --quiet --eval 'rs.status().members.forEach(function(m){print("  "+m.name+": "+m.stateStr);});'
     if ($statusResult) {
-        Write-Host $statusResult -ForegroundColor Cyan
+        # Safely display the output without PowerShell interpreting it
+        $statusResult | ForEach-Object { Write-Host $_ -ForegroundColor Cyan }
     }
 } catch {
     Write-ScriptWarning "Could not verify replica set status, but setup likely succeeded"
