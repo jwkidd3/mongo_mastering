@@ -55,7 +55,9 @@ function Write-Error {
 # Check if containers exist
 Write-Status "Checking for MongoDB containers..."
 try {
-    $containers = docker ps -a --filter "name=mongo" --format "{{.Names}}" 2>$null | Where-Object { $_ -match "^mongo[123]$" }
+    # Use cmd for better Windows compatibility
+    $containerList = cmd /c "docker ps -a --filter `"name=mongo`" --format `"{{.Names}}`" 2>nul"
+    $containers = $containerList | Where-Object { $_ -match "^mongo[123]$" }
 
     if (-not $containers) {
         Write-Warning "No MongoDB containers found"
@@ -72,7 +74,7 @@ if ($containers) {
     foreach ($container in $containers) {
         Write-Status "  Force removing $container..."
         try {
-            docker rm -f $container 2>$null | Out-Null
+            cmd /c "docker rm -f $container 2>nul" | Out-Null
         } catch {
             Write-Warning "  Could not force remove $container"
         }

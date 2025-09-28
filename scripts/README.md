@@ -205,42 +205,96 @@ If the automated scripts don't work, follow the manual instructions in `SETUP.md
 
 ```
 scripts/
-├── README.md           # This file
-├── SETUP.md           # Manual setup instructions
-├── setup.sh           # Automated setup script
-├── teardown.sh        # Cleanup script
-└── test.sh            # Connection test script
+├── README.md                       # This file
+├── SETUP.md                       # Manual setup instructions
+├── setup.sh                      # Automated setup (macOS/Linux)
+├── setup.ps1                     # Automated setup (Windows PowerShell)
+├── setup.cmd                     # Automated setup (Windows Command)
+├── teardown.sh                   # Cleanup (macOS/Linux)
+├── teardown.ps1                  # Cleanup (Windows PowerShell)
+├── teardown.cmd                  # Cleanup (Windows Command)
+├── test.sh                       # Connection test (macOS/Linux)
+├── test.ps1                      # Connection test (Windows PowerShell)
+├── test_connection.js            # Basic MongoDB connection test
+├── lab_validation_comprehensive.js # Complete lab validation test
+├── test_all_labs.js              # General operations test
+└── WINDOWS_TROUBLESHOOTING.md    # Windows-specific troubleshooting
 ```
 
 ## Troubleshooting
 
-### Script won't run
+### General Issues
+
+#### Script won't run
 ```bash
 chmod +x *.sh  # Make scripts executable
 ```
 
-### Docker not found
+#### Docker not found
 - Install Docker Desktop
 - Start Docker Desktop
 - Verify: `docker --version`
 
-### Permission denied
+#### Permission denied
 ```bash
 sudo ./setup.sh  # Try with sudo (Linux)
 ```
 
-### MongoDB connection fails
+#### MongoDB connection fails
 ```bash
 ./teardown.sh && ./setup.sh  # Fresh setup
 ```
 
-### Port conflicts
+#### Port conflicts
 Edit `setup.sh` and change ports:
 ```bash
 # Change -p 27017:27017 to -p 27020:27017
 # Change -p 27018:27017 to -p 27021:27017
 # Change -p 27019:27017 to -p 27022:27017
 ```
+
+### Windows PowerShell Issues
+
+#### PowerShell execution policy error
+```powershell
+# Set execution policy for current user (recommended)
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+
+# Or bypass for single execution
+PowerShell -ExecutionPolicy Bypass -File .\setup.ps1
+```
+
+#### PowerShell version compatibility
+The scripts require PowerShell 5.0 or later. Check your version:
+```powershell
+$PSVersionTable.PSVersion
+```
+
+If you have an older version:
+- **Windows 10/11**: Update via Windows Update
+- **Older Windows**: Download PowerShell 7 from GitHub
+- **Alternative**: Use `setup.cmd` instead
+
+#### Docker command issues on Windows
+If Docker commands fail in PowerShell:
+1. **Restart Docker Desktop** completely
+2. **Use Command Prompt instead** of PowerShell
+3. **Try running as Administrator**
+4. **Check firewall settings** - allow Docker Desktop
+
+#### String/character encoding issues
+If you see character encoding problems:
+1. **Use Windows PowerShell** instead of PowerShell Core
+2. **Try from Command Prompt**:
+   ```cmd
+   powershell -File .\setup.ps1
+   ```
+
+### Windows-Specific Files
+
+For comprehensive Windows troubleshooting, see:
+- **`WINDOWS_TROUBLESHOOTING.md`** - Complete Windows troubleshooting guide
+- **`.\test.ps1 -Validate`** - Validate PowerShell script improvements
 
 ## Script Features
 
