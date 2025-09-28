@@ -16,10 +16,6 @@ This directory contains automated setup and teardown scripts for the MongoDB Mas
 .\setup.ps1
 ```
 
-**Windows Command Prompt:**
-```cmd
-setup.cmd
-```
 
 ### 2. Load Course Data
 ```bash
@@ -72,10 +68,6 @@ mongosh < test_all_labs.js
 .\teardown.ps1
 ```
 
-**Windows Command Prompt:**
-```cmd
-teardown.cmd
-```
 
 ## Scripts Overview
 
@@ -84,7 +76,6 @@ teardown.cmd
 #### **Setup Scripts** - Automated Environment Setup
 - **`setup.sh`** (macOS/Linux)
 - **`setup.ps1`** (Windows PowerShell)
-- **`setup.cmd`** (Windows Command Prompt - auto-detects PowerShell/WSL)
 
 **What they do:**
 - Creates 3-node MongoDB replica set
@@ -101,7 +92,6 @@ teardown.cmd
 #### **Teardown Scripts** - Complete Cleanup
 - **`teardown.sh`** (macOS/Linux)
 - **`teardown.ps1`** (Windows PowerShell)
-- **`teardown.cmd`** (Windows Command Prompt - auto-detects PowerShell/WSL)
 
 **What they do:**
 - Stops all MongoDB containers
@@ -143,7 +133,7 @@ mongosh < day3_data_loader.js  # Day 3
 mongosh  # Connect and work
 
 # Evening cleanup
-cd ../setup
+cd ../scripts
 ./teardown.sh
 ```
 
@@ -193,9 +183,7 @@ Choose ONE of the following:
 **Option 2: Windows Subsystem for Linux (WSL)**
 - WSL installed and configured
 - Ubuntu or another Linux distribution in WSL
-
-**Option 3: Command Prompt with Auto-Detection**
-- Use `setup.cmd` which automatically detects and uses PowerShell or WSL
+- Use the bash scripts (setup.sh/teardown.sh) from within WSL
 
 ## Manual Setup Alternative
 
@@ -209,10 +197,8 @@ scripts/
 ├── SETUP.md                       # Manual setup instructions
 ├── setup.sh                      # Automated setup (macOS/Linux)
 ├── setup.ps1                     # Automated setup (Windows PowerShell)
-├── setup.cmd                     # Automated setup (Windows Command)
 ├── teardown.sh                   # Cleanup (macOS/Linux)
 ├── teardown.ps1                  # Cleanup (Windows PowerShell)
-├── teardown.cmd                  # Cleanup (Windows Command)
 ├── test.sh                       # Connection test (macOS/Linux)
 ├── test.ps1                      # Connection test (Windows PowerShell)
 ├── test_connection.js            # Basic MongoDB connection test
@@ -273,22 +259,20 @@ $PSVersionTable.PSVersion
 If you have an older version:
 - **Windows 10/11**: Update via Windows Update
 - **Older Windows**: Download PowerShell 7 from GitHub
-- **Alternative**: Use `setup.cmd` instead
+- **Alternative**: Use WSL with bash scripts
 
 #### Docker command issues on Windows
 If Docker commands fail in PowerShell:
 1. **Restart Docker Desktop** completely
-2. **Use Command Prompt instead** of PowerShell
-3. **Try running as Administrator**
-4. **Check firewall settings** - allow Docker Desktop
+2. **Try running as Administrator**
+3. **Check firewall settings** - allow Docker Desktop
+4. **Alternative**: Use WSL with bash scripts
 
 #### String/character encoding issues
 If you see character encoding problems:
 1. **Use Windows PowerShell** instead of PowerShell Core
-2. **Try from Command Prompt**:
-   ```cmd
-   powershell -File .\setup.ps1
-   ```
+2. **Try running as Administrator**
+3. **Alternative**: Use WSL with bash scripts
 
 ### Windows-Specific Files
 

@@ -92,7 +92,7 @@ Get-Process -Name "*Docker*" -ErrorAction SilentlyContinue
 **If detection still fails:**
 1. **Run PowerShell as Administrator**
 2. **Try the validation script:** `.\test.ps1 -Validate`
-3. **Use alternative script:** `setup.cmd` (auto-detects best method)
+3. **Use alternative:** WSL with bash scripts (setup.sh)
 
 ### 5. MongoDB Connection Issues
 
@@ -271,7 +271,6 @@ If none of these solutions work:
    - Virtualization enabled in BIOS
 
 4. **Alternative options:**
-   - Use `setup.cmd` (Command Prompt version)
    - Use Windows Subsystem for Linux (WSL) with `setup.sh`
    - Run scripts as Administrator
 

@@ -102,9 +102,9 @@ var lastNames = ["Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Mi
 var states = ["NY", "CA", "TX", "FL", "IL", "PA", "OH", "GA", "NC", "MI", "NJ", "WA", "AZ", "MA", "TN", "IN", "MO", "MD", "WI", "CO", "MN", "SC", "AL", "LA", "KY", "OR", "OK", "CT", "UT", "IA"];
 
 // Create a smaller sample of customers to avoid hanging - using individual variables
-var customer1 = {_id: "customer1", customerId: "CUST000001", firstName: "John", lastName: "Smith", email: "customer1@example.com", address: {street: "123 Main St", city: "New York", state: "NY", zipCode: "10001"}, registrationDate: new Date(2024, 1, 15), insuranceProfile: {riskLevel: "medium", policyTypes: ["auto"], paymentMethod: "monthly", totalPremiumValue: 1250.00}, metadata: {lastLogin: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), claimCount: 1, customerType: "standard"}};
-var customer2 = {_id: "customer2", customerId: "CUST000002", firstName: "Sarah", lastName: "Johnson", email: "customer2@example.com", address: {street: "456 Oak St", city: "Los Angeles", state: "CA", zipCode: "90210"}, registrationDate: new Date(2024, 2, 20), insuranceProfile: {riskLevel: "low", policyTypes: ["auto", "home"], paymentMethod: "annual", totalPremiumValue: 2750.00}, metadata: {lastLogin: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), claimCount: 0, customerType: "premium"}};
-var customer3 = {_id: "customer3", customerId: "CUST000003", firstName: "Michael", lastName: "Davis", email: "customer3@example.com", address: {street: "789 Pine St", city: "Chicago", state: "IL", zipCode: "60601"}, registrationDate: new Date(2024, 3, 10), insuranceProfile: {riskLevel: "high", policyTypes: ["auto"], paymentMethod: "monthly", totalPremiumValue: 1850.00}, metadata: {lastLogin: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), claimCount: 3, customerType: "standard"}};
+var customer1 = {_id: "customer1", customerId: "CUST000004", firstName: "Emma", lastName: "Wilson", email: "customer4@example.com", address: {street: "123 Main St", city: "New York", state: "NY", zipCode: "10001"}, registrationDate: new Date(2024, 1, 15), insuranceProfile: {riskLevel: "medium", policyTypes: ["auto"], paymentMethod: "monthly", totalPremiumValue: 1250.00}, metadata: {lastLogin: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), claimCount: 1, customerType: "standard"}};
+var customer2 = {_id: "customer2", customerId: "CUST000005", firstName: "James", lastName: "Miller", email: "customer5@example.com", address: {street: "456 Oak St", city: "Los Angeles", state: "CA", zipCode: "90210"}, registrationDate: new Date(2024, 2, 20), insuranceProfile: {riskLevel: "low", policyTypes: ["auto", "home"], paymentMethod: "annual", totalPremiumValue: 2750.00}, metadata: {lastLogin: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), claimCount: 0, customerType: "premium"}};
+var customer3 = {_id: "customer3", customerId: "CUST000006", firstName: "Olivia", lastName: "Brown", email: "customer6@example.com", address: {street: "789 Pine St", city: "Chicago", state: "IL", zipCode: "60601"}, registrationDate: new Date(2024, 3, 10), insuranceProfile: {riskLevel: "high", policyTypes: ["auto"], paymentMethod: "monthly", totalPremiumValue: 1850.00}, metadata: {lastLogin: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), claimCount: 3, customerType: "standard"}};
 
 customers.push(customer1);
 customers.push(customer2);
@@ -123,9 +123,9 @@ var claims = [];
 var claimTypes = ["Auto Accident", "Property Damage", "Theft", "Fire", "Water Damage", "Medical", "Liability", "Vandalism", "Natural Disaster", "Cyber Attack", "Equipment Failure", "Personal Injury", "Product Liability", "Professional Liability", "Workers Compensation"];
 
 // Create sample claims using individual variables to avoid hanging
-var claim1 = {_id: "claim1", claimNumber: "CLM-2024-000001", customerId: "customer1", claimDate: new Date(2024, 3, 15), claimType: "Auto Accident", claimAmount: 8500.00, deductible: 500, status: "settled", incidentLocation: {street: "123 Insurance Ave", city: "New York", state: "NY", zipCode: "10001"}, territory: "north", adjusterAssigned: "ADJ001", fraudFlag: false};
-var claim2 = {_id: "claim2", claimNumber: "CLM-2024-000002", customerId: "customer2", claimDate: new Date(2024, 2, 20), claimType: "Property Damage", claimAmount: 15000.00, deductible: 1000, status: "pending", incidentLocation: {street: "456 Insurance Ave", city: "Los Angeles", state: "CA", zipCode: "90210"}, territory: "west", adjusterAssigned: "ADJ002", fraudFlag: false};
-var claim3 = {_id: "claim3", claimNumber: "CLM-2024-000003", customerId: "customer3", claimDate: new Date(2024, 1, 10), claimType: "Theft", claimAmount: 3200.00, deductible: 250, status: "settled", incidentLocation: {street: "789 Insurance Ave", city: "Chicago", state: "IL", zipCode: "60601"}, territory: "central", adjusterAssigned: "ADJ003", fraudFlag: false};
+var claim1 = {_id: "claim1", claimNumber: "CLM-2024-000004", customerId: "customer1", claimDate: new Date(2024, 3, 15), claimType: "Auto Accident", claimAmount: 8500.00, deductible: 500, status: "settled", incidentLocation: {street: "123 Insurance Ave", city: "New York", state: "NY", zipCode: "10001"}, territory: "north", adjusterAssigned: "ADJ001", fraudFlag: false};
+var claim2 = {_id: "claim2", claimNumber: "CLM-2024-000005", customerId: "customer2", claimDate: new Date(2024, 2, 20), claimType: "Property Damage", claimAmount: 15000.00, deductible: 1000, status: "pending", incidentLocation: {street: "456 Insurance Ave", city: "Los Angeles", state: "CA", zipCode: "90210"}, territory: "west", adjusterAssigned: "ADJ002", fraudFlag: false};
+var claim3 = {_id: "claim3", claimNumber: "CLM-2024-000006", customerId: "customer3", claimDate: new Date(2024, 1, 10), claimType: "Theft", claimAmount: 3200.00, deductible: 250, status: "settled", incidentLocation: {street: "789 Insurance Ave", city: "Chicago", state: "IL", zipCode: "60601"}, territory: "central", adjusterAssigned: "ADJ003", fraudFlag: false};
 
 claims.push(claim1);
 claims.push(claim2);
@@ -259,13 +259,46 @@ print("✓ Created production indexes");
 print("\n🛠️ Creating utility functions");
 print("-----------------------------");
 
-// Function to reset lab data
-var resetFunction = {_id: "resetDay3Data", value: function() { print("Resetting Day 3 insurance data to initial state..."); db.policies.updateOne({_id: "pol1"}, {$set: {activePolicies: 10}}); db.policies.updateOne({_id: "pol2"}, {$set: {activePolicies: 25}}); db.policies.updateOne({_id: "pol3"}, {$set: {activePolicies: 15}}); db.policies.updateOne({_id: "pol4"}, {$set: {activePolicies: 8}}); db.customers.updateOne({_id: "cust1"}, {$set: {premiumBalance: 1200.00, totalPolicies: 0}}); db.customers.updateOne({_id: "cust2"}, {$set: {premiumBalance: 800.00, totalPolicies: 0}}); db.customers.updateOne({_id: "cust3"}, {$set: {premiumBalance: 1500.00, totalPolicies: 0}}); db.claims.deleteMany({_id: /^test_/}); db.payments.deleteMany({paymentType: "test"}); db.policy_notifications.deleteMany({type: {$in: ["test", "claim_created", "status_update"]}}); db.claim_activity_log.deleteMany({}); db.resume_tokens.deleteMany({}); print("✓ Day 3 data reset complete!"); }};
-db.system.js.save(resetFunction);
+// Store utility functions as global functions (alternative to deprecated db.system.js.save)
+print("Note: Utility functions available for manual execution:");
+print("- resetDay3Data(): Reset all data to initial state");
+print("- generateTestClaims(count): Generate test claims");
 
-// Function to generate test claims (simplified to avoid for loops)
-var generateFunction = {_id: "generateTestClaims", value: function(count) { count = count || 10; print("Generating " + count + " test claims..."); var customers = ["cust1", "cust2", "cust3"]; var claimTypes = ["Auto Accident", "Property Damage", "Theft", "Fire"]; var claims = []; var baseTime = Date.now(); var claim1 = {_id: "test_claim_" + baseTime + "_1", claimNumber: "CLM-TEST-000001", customerId: "cust1", claimType: "Auto Accident", claimAmount: 2500.00, status: "submitted", claimDate: new Date()}; var claim2 = {_id: "test_claim_" + baseTime + "_2", claimNumber: "CLM-TEST-000002", customerId: "cust2", claimType: "Property Damage", claimAmount: 1500.00, status: "submitted", claimDate: new Date()}; var claim3 = {_id: "test_claim_" + baseTime + "_3", claimNumber: "CLM-TEST-000003", customerId: "cust3", claimType: "Theft", claimAmount: 3200.00, status: "submitted", claimDate: new Date()}; claims.push(claim1); claims.push(claim2); claims.push(claim3); db.claims.insertMany(claims); print("✓ Generated " + claims.length + " test claims"); return [claim1._id, claim2._id, claim3._id]; }};
-db.system.js.save(generateFunction);
+// Manual utility function code (copy and paste to use):
+// function resetDay3Data() {
+//   print("Resetting Day 3 insurance data to initial state...");
+//   db.policies.updateOne({_id: "pol1"}, {$set: {activePolicies: 10}});
+//   db.policies.updateOne({_id: "pol2"}, {$set: {activePolicies: 25}});
+//   db.policies.updateOne({_id: "pol3"}, {$set: {activePolicies: 15}});
+//   db.policies.updateOne({_id: "pol4"}, {$set: {activePolicies: 8}});
+//   db.customers.updateOne({_id: "cust1"}, {$set: {premiumBalance: 1200.00, totalPolicies: 0}});
+//   db.customers.updateOne({_id: "cust2"}, {$set: {premiumBalance: 800.00, totalPolicies: 0}});
+//   db.customers.updateOne({_id: "cust3"}, {$set: {premiumBalance: 1500.00, totalPolicies: 0}});
+//   db.claims.deleteMany({_id: /^test_/});
+//   db.payments.deleteMany({paymentType: "test"});
+//   db.policy_notifications.deleteMany({type: {$in: ["test", "claim_created", "status_update"]}});
+//   db.claim_activity_log.deleteMany({});
+//   db.resume_tokens.deleteMany({});
+//   print("✓ Day 3 data reset complete!");
+// }
+
+// function generateTestClaims(count) {
+//   count = count || 10;
+//   print("Generating " + count + " test claims...");
+//   var customers = ["cust1", "cust2", "cust3"];
+//   var claimTypes = ["Auto Accident", "Property Damage", "Theft", "Fire"];
+//   var claims = [];
+//   var baseTime = Date.now();
+//   var claim1 = {_id: "test_claim_" + baseTime + "_1", claimNumber: "CLM-TEST-000001", customerId: "cust1", claimType: "Auto Accident", claimAmount: 2500.00, status: "submitted", claimDate: new Date()};
+//   var claim2 = {_id: "test_claim_" + baseTime + "_2", claimNumber: "CLM-TEST-000002", customerId: "cust2", claimType: "Property Damage", claimAmount: 1500.00, status: "submitted", claimDate: new Date()};
+//   var claim3 = {_id: "test_claim_" + baseTime + "_3", claimNumber: "CLM-TEST-000003", customerId: "cust3", claimType: "Theft", claimAmount: 3200.00, status: "submitted", claimDate: new Date()};
+//   claims.push(claim1);
+//   claims.push(claim2);
+//   claims.push(claim3);
+//   db.claims.insertMany(claims);
+//   print("✓ Generated " + claims.length + " test claims");
+//   return [claim1._id, claim2._id, claim3._id];
+// }
 
 print("✓ Created utility functions");
 
