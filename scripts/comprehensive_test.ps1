@@ -63,6 +63,57 @@ function Write-Section($Message) {
     Write-Host ""
 }
 
+# Function to safely clean up MongoDB containers and network
+function Remove-MongoEnvironment {
+    # Remove containers individually to avoid errors if they don't exist
+    @('mongo1', 'mongo2', 'mongo3') | ForEach-Object {
+        try {
+            docker rm -f $_ 2>$null | Out-Null
+        } catch {
+            # Silently ignore errors for non-existent containers
+        }
+    }
+
+    # Remove network
+    try {
+        docker network rm mongodb-net 2>$null | Out-Null
+    } catch {
+        # Silently ignore errors for non-existent network
+    }
+}
+
+# Function to wait for MongoDB to be ready
+function Wait-MongoReady {
+    param([int]$MaxWaitSeconds = 120)
+
+    Write-Status "Waiting for MongoDB to be ready..."
+    $elapsed = 0
+    $connected = $false
+
+    while ($elapsed -lt $MaxWaitSeconds -and -not $connected) {
+        try {
+            # Simple connection test
+            $result = mongosh --quiet --eval "db.adminCommand('ping')" 2>$null
+            if ($LASTEXITCODE -eq 0) {
+                $connected = $true
+                Write-Success "MongoDB is ready"
+            } else {
+                Start-Sleep -Seconds 5
+                $elapsed += 5
+                Write-Status "Still waiting... ($elapsed seconds)"
+            }
+        } catch {
+            Start-Sleep -Seconds 5
+            $elapsed += 5
+            Write-Status "Still waiting... ($elapsed seconds)"
+        }
+    }
+
+    if (-not $connected) {
+        throw "MongoDB failed to become ready within $MaxWaitSeconds seconds"
+    }
+}
+
 # Track start time
 $StartTime = Get-Date
 
@@ -149,7 +200,7 @@ Write-Status "Starting MongoDB replica set setup..."
 # Clean up any existing containers first
 Write-Status "Cleaning up existing MongoDB containers..."
 try {
-    docker rm -f mongo1 mongo2 mongo3 2>$null | Out-Null
+    Remove-MongoEnvironment
 } catch {}
 try {
     docker network rm mongodb-net 2>$null | Out-Null
@@ -201,9 +252,8 @@ try {
 
 Write-Success "All MongoDB containers started"
 
-# Wait for containers to be ready
-Write-Status "Waiting for containers to start - 15 seconds..."
-Start-Sleep -Seconds 15
+# Wait for MongoDB to be ready
+Wait-MongoReady -MaxWaitSeconds 120
 
 # Initialize replica set
 Write-Status "Initializing replica set..."
@@ -216,8 +266,7 @@ try {
     Write-Success "Replica set initialized"
 } catch {
     Write-ScriptError "Failed to initialize replica set: $_"
-    docker rm -f mongo1 mongo2 mongo3 2>$null | Out-Null
-    docker network rm mongodb-net 2>$null | Out-Null
+    Remove-MongoEnvironment
     exit 1
 }
 
@@ -290,8 +339,7 @@ if (Test-Path "..\data") {
     Write-ScriptError "Please run this script from either:"
     Write-ScriptError "  - The scripts\ directory: .\comprehensive_test.ps1"
     Write-ScriptError "  - The project root: scripts\comprehensive_test.ps1"
-    docker rm -f mongo1 mongo2 mongo3 2>$null | Out-Null
-    docker network rm mongodb-net 2>$null | Out-Null
+    Remove-MongoEnvironment
     exit 1
 }
 
@@ -307,8 +355,7 @@ try {
 } catch {
     Write-ScriptError "Failed to load Day 1 data"
     Pop-Location
-    docker rm -f mongo1 mongo2 mongo3 2>$null | Out-Null
-    docker network rm mongodb-net 2>$null | Out-Null
+    Remove-MongoEnvironment
     exit 1
 }
 
@@ -322,8 +369,7 @@ try {
 } catch {
     Write-ScriptError "Failed to load Day 2 data"
     Pop-Location
-    docker rm -f mongo1 mongo2 mongo3 2>$null | Out-Null
-    docker network rm mongodb-net 2>$null | Out-Null
+    Remove-MongoEnvironment
     exit 1
 }
 
@@ -337,8 +383,7 @@ try {
 } catch {
     Write-ScriptError "Failed to load Day 3 data"
     Pop-Location
-    docker rm -f mongo1 mongo2 mongo3 2>$null | Out-Null
-    docker network rm mongodb-net 2>$null | Out-Null
+    Remove-MongoEnvironment
     exit 1
 }
 
@@ -407,7 +452,7 @@ try {
             Write-ScriptError "Unexpected test failures detected"
             Write-Status "Full lab validation output:"
             Write-Host $labResults -ForegroundColor Gray
-            docker rm -f mongo1 mongo2 mongo3 2>$null | Out-Null
+            Remove-MongoEnvironment
             docker network rm mongodb-net 2>$null | Out-Null
             exit 1
         }
@@ -416,8 +461,7 @@ try {
     }
 } catch {
     Write-ScriptError "Lab validation test failed: $_"
-    docker rm -f mongo1 mongo2 mongo3 2>$null | Out-Null
-    docker network rm mongodb-net 2>$null | Out-Null
+    Remove-MongoEnvironment
     exit 1
 }
 
@@ -429,7 +473,7 @@ Write-Status "Tearing down MongoDB environment..."
 # Stop and remove containers
 Write-Status "Stopping MongoDB containers..."
 try {
-    docker rm -f mongo1 mongo2 mongo3 2>$null | Out-Null
+    Remove-MongoEnvironment
     Write-Success "MongoDB containers stopped and removed"
 } catch {
     Write-ScriptWarning "Some issues during container cleanup"
