@@ -255,31 +255,52 @@ Write-Status "Starting MongoDB containers..."
 
 Write-Status "  Starting mongo1 Primary..."
 try {
-    $mongo1 = docker run -d --name mongo1 --network mongodb-net -p 27017:27017 mongo:8.0 --replSet rs0 --bind_ip_all
+    $mongo1 = docker run -d --name mongo1 --network mongodb-net -p 27017:27017 mongo:8.0 --replSet rs0 --bind_ip_all 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        throw "Docker command failed with exit code $LASTEXITCODE. Output: $mongo1"
+    }
+    if (-not $mongo1 -or $mongo1 -match "Error|error") {
+        throw "Container creation failed. Output: $mongo1"
+    }
     $shortMongo1 = if ($mongo1 -and $mongo1.Length -ge 12) { $mongo1.Substring(0,12) } else { $mongo1 }
     Write-Success "  mongo1 started: $shortMongo1"
 } catch {
     Write-ScriptError "Failed to start mongo1: $_"
+    Write-ScriptError "Docker output: $mongo1"
     exit 1
 }
 
 Write-Status "  Starting mongo2 Secondary..."
 try {
-    $mongo2 = docker run -d --name mongo2 --network mongodb-net -p 27018:27017 mongo:8.0 --replSet rs0 --bind_ip_all
+    $mongo2 = docker run -d --name mongo2 --network mongodb-net -p 27018:27017 mongo:8.0 --replSet rs0 --bind_ip_all 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        throw "Docker command failed with exit code $LASTEXITCODE. Output: $mongo2"
+    }
+    if (-not $mongo2 -or $mongo2 -match "Error|error") {
+        throw "Container creation failed. Output: $mongo2"
+    }
     $shortMongo2 = if ($mongo2 -and $mongo2.Length -ge 12) { $mongo2.Substring(0,12) } else { $mongo2 }
     Write-Success "  mongo2 started: $shortMongo2"
 } catch {
     Write-ScriptError "Failed to start mongo2: $_"
+    Write-ScriptError "Docker output: $mongo2"
     exit 1
 }
 
 Write-Status "  Starting mongo3 Secondary..."
 try {
-    $mongo3 = docker run -d --name mongo3 --network mongodb-net -p 27019:27017 mongo:8.0 --replSet rs0 --bind_ip_all
+    $mongo3 = docker run -d --name mongo3 --network mongodb-net -p 27019:27017 mongo:8.0 --replSet rs0 --bind_ip_all 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        throw "Docker command failed with exit code $LASTEXITCODE. Output: $mongo3"
+    }
+    if (-not $mongo3 -or $mongo3 -match "Error|error") {
+        throw "Container creation failed. Output: $mongo3"
+    }
     $shortMongo3 = if ($mongo3 -and $mongo3.Length -ge 12) { $mongo3.Substring(0,12) } else { $mongo3 }
     Write-Success "  mongo3 started: $shortMongo3"
 } catch {
     Write-ScriptError "Failed to start mongo3: $_"
+    Write-ScriptError "Docker output: $mongo3"
     exit 1
 }
 
