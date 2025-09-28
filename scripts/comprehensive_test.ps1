@@ -94,7 +94,7 @@ function Wait-MongoReady {
         try {
             # Test connection using docker exec to avoid local connection issues
             $result = & docker exec mongo1 mongosh --quiet --eval "db.adminCommand('ping')" 2>&1
-            if ($LASTEXITCODE -eq 0 -and $result -match "ok.*1") {
+            if ($LASTEXITCODE -eq 0 -and $result.ToString().Contains("ok")) {
                 $connected = $true
                 Write-Success "MongoDB is ready"
             } else {
