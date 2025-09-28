@@ -7,26 +7,24 @@ param(
 )
 
 if ($Help) {
-    Write-Host @"
-MongoDB Mastering Course - Comprehensive End-to-End Test
-
-USAGE:
-    .\comprehensive_test.ps1
-
-REQUIREMENTS:
-    - Docker Desktop installed and running
-    - MongoDB Shell (mongosh) installed
-    - PowerShell 5.0 or later
-
-WHAT IT DOES:
-    1. Sets up complete 3-node MongoDB replica set
-    2. Loads all course data (Days 1, 2, 3)
-    3. Runs comprehensive lab validation (60+ tests)
-    4. Tears down environment completely
-    5. Provides detailed success/failure reporting
-
-DURATION: ~3-5 minutes
-"@ -ForegroundColor Cyan
+    Write-Host "MongoDB Mastering Course - Comprehensive End-to-End Test" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host "USAGE:" -ForegroundColor Cyan
+    Write-Host "    .\comprehensive_test.ps1" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host "REQUIREMENTS:" -ForegroundColor Cyan
+    Write-Host "    - Docker Desktop installed and running" -ForegroundColor Cyan
+    Write-Host "    - MongoDB Shell (mongosh) installed" -ForegroundColor Cyan
+    Write-Host "    - PowerShell 5.0 or later" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host "WHAT IT DOES:" -ForegroundColor Cyan
+    Write-Host "    1. Sets up complete 3-node MongoDB replica set" -ForegroundColor Cyan
+    Write-Host "    2. Loads all course data (Days 1, 2, 3)" -ForegroundColor Cyan
+    Write-Host "    3. Runs comprehensive lab validation (60+ tests)" -ForegroundColor Cyan
+    Write-Host "    4. Tears down environment completely" -ForegroundColor Cyan
+    Write-Host "    5. Provides detailed success/failure reporting" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host "DURATION: ~3-5 minutes" -ForegroundColor Cyan
     exit 0
 }
 
@@ -328,20 +326,8 @@ Write-Status "Verifying loaded data..."
 Pop-Location
 
 try {
-    $dataSummary = mongosh --quiet --eval @"
-print('insurance_company database:');
-db = db.getSiblingDB('insurance_company');
-print('  Policies: ' + db.policies.countDocuments());
-print('  Customers: ' + db.customers.countDocuments());
-print('  Claims: ' + db.claims.countDocuments());
-print('  Branches: ' + db.branches.countDocuments());
-print('');
-print('insurance_analytics database:');
-db = db.getSiblingDB('insurance_analytics');
-print('  Policy Analytics: ' + db.policy_analytics.countDocuments());
-print('  Customer Analytics: ' + db.customer_analytics.countDocuments());
-print('  Claims Analytics: ' + db.claims_analytics.countDocuments());
-"@
+    $dataCommand = "print('insurance_company database:'); db = db.getSiblingDB('insurance_company'); print('  Policies: ' + db.policies.countDocuments()); print('  Customers: ' + db.customers.countDocuments()); print('  Claims: ' + db.claims.countDocuments()); print('  Branches: ' + db.branches.countDocuments()); print(''); print('insurance_analytics database:'); db = db.getSiblingDB('insurance_analytics'); print('  Policy Analytics: ' + db.policy_analytics.countDocuments()); print('  Customer Analytics: ' + db.customer_analytics.countDocuments()); print('  Claims Analytics: ' + db.claims_analytics.countDocuments());"
+    $dataSummary = mongosh --quiet --eval $dataCommand
 
     Write-Host $dataSummary -ForegroundColor Cyan
     Write-Success "All course data loaded and verified"
