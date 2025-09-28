@@ -114,6 +114,39 @@ function Wait-MongoReady {
     }
 }
 
+# Function to execute MongoDB data loading with retry logic
+function Invoke-MongoDataLoad {
+    param(
+        [string]$DataFile,
+        [string]$Description,
+        [int]$MaxRetries = 3
+    )
+
+    $retryCount = 0
+    $success = $false
+
+    while ($retryCount -lt $MaxRetries -and -not $success) {
+        try {
+            Write-Status "Loading $Description..."
+            $result = Get-Content $DataFile | mongosh --quiet
+            if ($LASTEXITCODE -eq 0) {
+                $success = $true
+                Write-Success "$Description loaded successfully"
+            } else {
+                throw "MongoDB command failed with exit code $LASTEXITCODE"
+            }
+        } catch {
+            $retryCount++
+            if ($retryCount -lt $MaxRetries) {
+                Write-Status "$Description loading failed (attempt $retryCount), retrying in 10 seconds..."
+                Start-Sleep -Seconds 10
+            } else {
+                throw "Failed to load $Description after $MaxRetries attempts: $_"
+            }
+        }
+    }
+}
+
 # Track start time
 $StartTime = Get-Date
 
@@ -345,43 +378,28 @@ if (Test-Path "..\data") {
 
 Push-Location $dataPath
 
-Write-Status "Loading Day 1 data..."
 try {
-    $day1Result = Get-Content day1_data_loader.js | mongosh --quiet
-    if ($LASTEXITCODE -ne 0) {
-        throw "Day 1 data loading failed"
-    }
-    Write-Success "Day 1 data loaded successfully"
+    Invoke-MongoDataLoad -DataFile "day1_data_loader.js" -Description "Day 1 data" -MaxRetries 3
 } catch {
-    Write-ScriptError "Failed to load Day 1 data"
+    Write-ScriptError "Failed to load Day 1 data: $_"
     Pop-Location
     Remove-MongoEnvironment
     exit 1
 }
 
-Write-Status "Loading Day 2 data..."
 try {
-    $day2Result = Get-Content day2_data_loader.js | mongosh --quiet
-    if ($LASTEXITCODE -ne 0) {
-        throw "Day 2 data loading failed"
-    }
-    Write-Success "Day 2 data loaded successfully"
+    Invoke-MongoDataLoad -DataFile "day2_data_loader.js" -Description "Day 2 data" -MaxRetries 3
 } catch {
-    Write-ScriptError "Failed to load Day 2 data"
+    Write-ScriptError "Failed to load Day 2 data: $_"
     Pop-Location
     Remove-MongoEnvironment
     exit 1
 }
 
-Write-Status "Loading Day 3 data..."
 try {
-    $day3Result = Get-Content day3_data_loader.js | mongosh --quiet
-    if ($LASTEXITCODE -ne 0) {
-        throw "Day 3 data loading failed"
-    }
-    Write-Success "Day 3 data loaded successfully"
+    Invoke-MongoDataLoad -DataFile "day3_data_loader.js" -Description "Day 3 data" -MaxRetries 3
 } catch {
-    Write-ScriptError "Failed to load Day 3 data"
+    Write-ScriptError "Failed to load Day 3 data: $_"
     Pop-Location
     Remove-MongoEnvironment
     exit 1
