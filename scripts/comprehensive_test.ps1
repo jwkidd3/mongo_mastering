@@ -41,28 +41,23 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
 $ErrorActionPreference = "Stop"
 
 # Function to print colored output
-function Write-Status {
-    param([string]$Message)
+function Write-Status($Message) {
     Write-Host "[INFO] $Message" -ForegroundColor Blue
 }
 
-function Write-Success {
-    param([string]$Message)
+function Write-Success($Message) {
     Write-Host "[SUCCESS] $Message" -ForegroundColor Green
 }
 
-function Write-ScriptWarning {
-    param([string]$Message)
+function Write-ScriptWarning($Message) {
     Write-Host "[WARNING] $Message" -ForegroundColor Yellow
 }
 
-function Write-ScriptError {
-    param([string]$Message)
+function Write-ScriptError($Message) {
     Write-Host "[ERROR] $Message" -ForegroundColor Red
 }
 
-function Write-Section {
-    param([string]$Message)
+function Write-Section($Message) {
     Write-Host ""
     Write-Host "==================================================" -ForegroundColor Blue
     Write-Host $Message -ForegroundColor Blue
