@@ -198,7 +198,7 @@ try {
 Write-Success "All MongoDB containers started"
 
 # Wait for containers to be ready
-Write-Status "Waiting for containers to start (15 seconds)..."
+Write-Status "Waiting for containers to start - 15 seconds..."
 Start-Sleep -Seconds 15
 
 # Initialize replica set
@@ -218,7 +218,7 @@ try {
 }
 
 # Wait for replica set to stabilize
-Write-Status "Waiting for replica set to stabilize (30 seconds)..."
+Write-Status "Waiting for replica set to stabilize - 30 seconds..."
 Start-Sleep -Seconds 30
 
 # Set write concern
@@ -448,7 +448,7 @@ Write-Section "✅ COMPREHENSIVE TEST COMPLETE!"
 Write-Host "Test Summary:"
 Write-Host "  🔧 Environment: Set up and torn down successfully"
 Write-Host "  📊 Data Loading: All 3 days loaded successfully"
-Write-Host "  🧪 Lab Validation: $passedTests passed, $failedTests failed ($successRate)"
+Write-Host "  🧪 Lab Validation: $passedTests passed, $failedTests failed - $successRate"
 Write-Host "  ⏱️  Total Duration: ${minutes}m ${seconds}s"
 Write-Host ""
 
