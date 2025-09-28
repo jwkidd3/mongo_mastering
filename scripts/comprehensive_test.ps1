@@ -51,12 +51,12 @@ function Write-Success {
     Write-Host "[SUCCESS] $Message" -ForegroundColor Green
 }
 
-function Write-Warning {
+function Write-ScriptWarning {
     param([string]$Message)
     Write-Host "[WARNING] $Message" -ForegroundColor Yellow
 }
 
-function Write-Error {
+function Write-ScriptError {
     param([string]$Message)
     Write-Host "[ERROR] $Message" -ForegroundColor Red
 }
@@ -129,7 +129,7 @@ try {
 
     Write-Success "Docker is available and running"
 } catch {
-    Write-Error "Docker is not running or not accessible. Please start Docker Desktop and try again."
+    Write-ScriptError "Docker is not running or not accessible. Please start Docker Desktop and try again."
     Write-Host ""
     Write-Host "To start Docker Desktop:" -ForegroundColor Yellow
     Write-Host "  1. Find Docker Desktop in Start Menu" -ForegroundColor Yellow
@@ -147,7 +147,7 @@ try {
     }
     Write-Success "MongoDB Shell (mongosh) is available"
 } catch {
-    Write-Error "MongoDB Shell (mongosh) is not installed or not in PATH"
+    Write-ScriptError "MongoDB Shell (mongosh) is not installed or not in PATH"
     exit 1
 }
 
@@ -168,7 +168,7 @@ try {
     $networkId = docker network create mongodb-net
     Write-Success "Network 'mongodb-net' created: $($networkId.Substring(0,12))"
 } catch {
-    Write-Error "Failed to create Docker network: $_"
+    Write-ScriptError "Failed to create Docker network: $_"
     exit 1
 }
 
@@ -180,7 +180,7 @@ try {
     $mongo1 = docker run -d --name mongo1 --network mongodb-net -p 27017:27017 mongo:8.0 --replSet rs0 --bind_ip_all
     Write-Success "  mongo1 started: $($mongo1.Substring(0,12))"
 } catch {
-    Write-Error "Failed to start mongo1: $_"
+    Write-ScriptError "Failed to start mongo1: $_"
     exit 1
 }
 
@@ -189,7 +189,7 @@ try {
     $mongo2 = docker run -d --name mongo2 --network mongodb-net -p 27018:27017 mongo:8.0 --replSet rs0 --bind_ip_all
     Write-Success "  mongo2 started: $($mongo2.Substring(0,12))"
 } catch {
-    Write-Error "Failed to start mongo2: $_"
+    Write-ScriptError "Failed to start mongo2: $_"
     exit 1
 }
 
@@ -198,7 +198,7 @@ try {
     $mongo3 = docker run -d --name mongo3 --network mongodb-net -p 27019:27017 mongo:8.0 --replSet rs0 --bind_ip_all
     Write-Success "  mongo3 started: $($mongo3.Substring(0,12))"
 } catch {
-    Write-Error "Failed to start mongo3: $_"
+    Write-ScriptError "Failed to start mongo3: $_"
     exit 1
 }
 
@@ -218,7 +218,7 @@ try {
     }
     Write-Success "Replica set initialized"
 } catch {
-    Write-Error "Failed to initialize replica set: $_"
+    Write-ScriptError "Failed to initialize replica set: $_"
     cmd /c "docker rm -f mongo1 mongo2 mongo3 2>nul" | Out-Null
     cmd /c "docker network rm mongodb-net 2>nul" | Out-Null
     exit 1
@@ -238,8 +238,8 @@ try {
     }
     Write-Success "Write concern configured"
 } catch {
-    Write-Warning "Failed to set write concern: $_"
-    Write-Warning "This is usually not critical for learning labs."
+    Write-ScriptWarning "Failed to set write concern: $_"
+    Write-ScriptWarning "This is usually not critical for learning labs."
 }
 
 # Verify replica set status
@@ -250,7 +250,7 @@ try {
         Write-Host $statusResult -ForegroundColor Cyan
     }
 } catch {
-    Write-Warning "Could not verify replica set status, but setup likely succeeded"
+    Write-ScriptWarning "Could not verify replica set status, but setup likely succeeded"
 }
 
 Write-Success "MongoDB replica set is ready"
@@ -271,11 +271,11 @@ if (Test-Path "..\data") {
     Write-Status "Found data directory at ..\..\data"
     $dataPath = "..\..\data"
 } else {
-    Write-Error "Cannot find data directory. Current location: $(Get-Location)"
-    Write-Error "Checked paths: ..\data, .\data, and ..\..\data"
-    Write-Error "Please run this script from either:"
-    Write-Error "  - The scripts\ directory: .\comprehensive_test.ps1"
-    Write-Error "  - The project root: scripts\comprehensive_test.ps1"
+    Write-ScriptError "Cannot find data directory. Current location: $(Get-Location)"
+    Write-ScriptError "Checked paths: ..\data, .\data, and ..\..\data"
+    Write-ScriptError "Please run this script from either:"
+    Write-ScriptError "  - The scripts\ directory: .\comprehensive_test.ps1"
+    Write-ScriptError "  - The project root: scripts\comprehensive_test.ps1"
     cmd /c "docker rm -f mongo1 mongo2 mongo3 2>nul" | Out-Null
     cmd /c "docker network rm mongodb-net 2>nul" | Out-Null
     exit 1
@@ -291,7 +291,7 @@ try {
     }
     Write-Success "Day 1 data loaded successfully"
 } catch {
-    Write-Error "Failed to load Day 1 data"
+    Write-ScriptError "Failed to load Day 1 data"
     Pop-Location
     cmd /c "docker rm -f mongo1 mongo2 mongo3 2>nul" | Out-Null
     cmd /c "docker network rm mongodb-net 2>nul" | Out-Null
@@ -306,7 +306,7 @@ try {
     }
     Write-Success "Day 2 data loaded successfully"
 } catch {
-    Write-Error "Failed to load Day 2 data"
+    Write-ScriptError "Failed to load Day 2 data"
     Pop-Location
     cmd /c "docker rm -f mongo1 mongo2 mongo3 2>nul" | Out-Null
     cmd /c "docker network rm mongodb-net 2>nul" | Out-Null
@@ -321,7 +321,7 @@ try {
     }
     Write-Success "Day 3 data loaded successfully"
 } catch {
-    Write-Error "Failed to load Day 3 data"
+    Write-ScriptError "Failed to load Day 3 data"
     Pop-Location
     cmd /c "docker rm -f mongo1 mongo2 mongo3 2>nul" | Out-Null
     cmd /c "docker network rm mongodb-net 2>nul" | Out-Null
@@ -351,7 +351,7 @@ print('  Claims Analytics: ' + db.claims_analytics.countDocuments());
     Write-Host $dataSummary -ForegroundColor Cyan
     Write-Success "All course data loaded and verified"
 } catch {
-    Write-Warning "Could not verify data counts, but loading likely succeeded"
+    Write-ScriptWarning "Could not verify data counts, but loading likely succeeded"
 }
 
 # Step 3: Lab Validation
@@ -389,7 +389,7 @@ try {
 
     # Check if there were any failed tests
     if ($failedTests -ne "0") {
-        Write-Warning "Some tests failed - checking for expected failures..."
+        Write-ScriptWarning "Some tests failed - checking for expected failures..."
 
         # Extract failed test details
         $failedDetails = ($labResults -split "`n" | Where-Object { $_ -match "FAILED TESTS:" -or $_ -match "^[0-9]+\." }) -join "`n"
@@ -399,10 +399,10 @@ try {
 
         # Determine if failures are acceptable (aggregation tests without Day 2 data)
         if ($failedDetails -match "aggregation" -and [int]$failedTests -le 2) {
-            Write-Warning "Failed tests are expected (aggregation tests require specific data setup)"
+            Write-ScriptWarning "Failed tests are expected (aggregation tests require specific data setup)"
             Write-Success "Lab validation completed with acceptable results"
         } else {
-            Write-Error "Unexpected test failures detected"
+            Write-ScriptError "Unexpected test failures detected"
             Write-Status "Full lab validation output:"
             Write-Host $labResults -ForegroundColor Gray
             cmd /c "docker rm -f mongo1 mongo2 mongo3 2>nul" | Out-Null
@@ -413,7 +413,7 @@ try {
         Write-Success "All lab validation tests passed!"
     }
 } catch {
-    Write-Error "Lab validation test failed: $_"
+    Write-ScriptError "Lab validation test failed: $_"
     cmd /c "docker rm -f mongo1 mongo2 mongo3 2>nul" | Out-Null
     cmd /c "docker network rm mongodb-net 2>nul" | Out-Null
     exit 1
@@ -430,7 +430,7 @@ try {
     cmd /c "docker rm -f mongo1 mongo2 mongo3 2>nul" | Out-Null
     Write-Success "MongoDB containers stopped and removed"
 } catch {
-    Write-Warning "Some issues during container cleanup"
+    Write-ScriptWarning "Some issues during container cleanup"
 }
 
 # Remove network
@@ -439,7 +439,7 @@ try {
     cmd /c "docker network rm mongodb-net 2>nul" | Out-Null
     Write-Success "Docker network removed"
 } catch {
-    Write-Warning "Some issues during network cleanup"
+    Write-ScriptWarning "Some issues during network cleanup"
 }
 
 # Verify cleanup
@@ -449,10 +449,10 @@ try {
     if ($remainingContainers -eq 0) {
         Write-Success "All MongoDB containers cleaned up"
     } else {
-        Write-Warning "Some containers may still exist"
+        Write-ScriptWarning "Some containers may still exist"
     }
 } catch {
-    Write-Warning "Could not verify cleanup status"
+    Write-ScriptWarning "Could not verify cleanup status"
 }
 
 # Calculate total time
@@ -483,7 +483,7 @@ if ($failedTests -eq "0" -or [int]$failedTests -le 2) {
     Write-Host "The course environment is ready for student use! 🚀"
     exit 0
 } else {
-    Write-Error "Some critical issues were detected in the lab environment"
+    Write-ScriptError "Some critical issues were detected in the lab environment"
     Write-Host "Please review the failed tests and address any issues before student use."
     exit 1
 }
