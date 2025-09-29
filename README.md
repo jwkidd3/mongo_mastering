@@ -4,59 +4,96 @@ Complete 3-day MongoDB training course with hands-on labs and enterprise-ready c
 
 ## Quick Start
 
-### 1. Automated Setup (30 seconds)
+### 1. Automated Setup (Recommended)
 
 **macOS/Linux:**
 ```bash
-cd setup
 ./setup.sh
 ```
 
 **Windows PowerShell:**
 ```powershell
-cd setup
 .\setup.ps1
-```
-
-**Windows Command Prompt:**
-```cmd
-cd setup
-setup.cmd
 ```
 
 ### 2. Load Course Data
 ```bash
-cd data
-mongosh < day1_data_loader.js    # For Day 1 labs
-mongosh < day2_data_loader.js    # For Day 2 labs
-mongosh < day3_data_loader.js    # For Day 3 labs
+cd ../data
+mongosh < day1_data_loader.js
 ```
 
-💡 **See [LOAD_DATA.md](LOAD_DATA.md) for detailed instructions**
-
-### 3. Start Learning!
-```bash
-mongosh  # Connect and start labs
-```
-
-### 4. Cleanup When Done
+### 3. Test Everything Works
 
 **macOS/Linux:**
 ```bash
-cd setup
+./test.sh
+```
+
+**Windows PowerShell:**
+```powershell
+.\test.ps1
+```
+
+### 4. Verify Connection (Optional)
+
+Test basic MongoDB connection:
+
+**macOS/Linux:**
+```bash
+mongosh < test_connection.js
+```
+
+**Windows PowerShell:**
+```powershell
+Get-Content test_connection.js | mongosh
+```
+
+### 5. Run Comprehensive Lab Tests
+
+**Option A: Complete End-to-End Test (Recommended)**
+Tests entire environment setup, data loading, and lab validation:
+
+**macOS/Linux:**
+```bash
+# From scripts directory:
+./comprehensive_test.sh
+
+# From project root:
+scripts/comprehensive_test.sh
+```
+
+**Windows PowerShell:**
+```powershell
+# From scripts directory:
+.\comprehensive_test.ps1
+
+# From project root:
+scripts\comprehensive_test.ps1
+```
+
+**Option B: Lab Validation Only**
+Validates every operation from all 12 labs:
+
+**macOS/Linux:**
+```bash
+mongosh < lab_validation_comprehensive.js
+```
+
+**Windows PowerShell:**
+```powershell
+Get-Content lab_validation_comprehensive.js | mongosh
+```
+
+### 6. Clean Up When Done
+
+**macOS/Linux:**
+```bash
 ./teardown.sh
 ```
 
 **Windows PowerShell:**
 ```powershell
-cd setup
 .\teardown.ps1
-```
-
-**Windows Command Prompt:**
-```cmd
-cd setup
-teardown.cmd
 ```
 
 ## Course Structure
@@ -129,19 +166,94 @@ mongo_mastering/
 - **Error handling**: Graceful failure recovery
 - **Testing scripts**: Verify everything works
 
+## Scripts Overview
+
+### Cross-Platform Setup Scripts
+
+#### **Setup Scripts** - Automated Environment Setup
+- **`setup.sh`** (macOS/Linux)
+- **`setup.ps1`** (Windows PowerShell)
+
+**What they do:**
+- Creates 3-node MongoDB replica set
+- Configures proper write concerns
+- Verifies everything works
+- **Duration:** ~30 seconds
+
+**What they create:**
+- `mongo1` (Primary) on `localhost:27017`
+- `mongo2` (Secondary) on `localhost:27018`
+- `mongo3` (Secondary) on `localhost:27019`
+- Docker network: `mongodb-net`
+
+#### **Teardown Scripts** - Complete Cleanup
+- **`teardown.sh`** (macOS/Linux)
+- **`teardown.ps1`** (Windows PowerShell)
+
+**What they do:**
+- Stops all MongoDB containers
+- Removes containers and networks
+- Verifies clean environment
+- **Duration:** ~10 seconds
+
+#### **Test Scripts** - Connection and Data Test
+- **`test.sh`** (macOS/Linux)
+- **`test.ps1`** (Windows PowerShell)
+
+**What they do:**
+- Tests MongoDB connection
+- Checks replica set status
+- Tests write/read operations
+- Optionally loads course data
+- **Duration:** ~15 seconds
+
+#### **Comprehensive Test Script** - Complete End-to-End Validation
+- **`comprehensive_test.sh`** (macOS/Linux)
+- **`comprehensive_test.ps1`** (Windows PowerShell)
+
+**What they do:**
+- Sets up complete 3-node MongoDB replica set
+- Loads all course data (Days 1, 2, 3)
+- Runs comprehensive lab validation (60+ tests)
+- Tears down environment completely
+- Provides detailed success/failure reporting
+- **Duration:** ~3-5 minutes
+
 ## Requirements
 
+### Universal Requirements
 - **Docker Desktop** installed and running
 - **MongoDB Shell (mongosh)** installed
-- **Web browser** for presentations
-- **Text editor** for labs
+
+### Platform-Specific Requirements
+
+#### **macOS**
+- Bash shell (built-in)
+- Terminal app
+
+#### **Linux**
+- Bash shell (built-in)
+- Terminal emulator
+
+#### **Windows**
+Choose ONE of the following:
+
+**Option 1: PowerShell (Recommended)**
+- Windows PowerShell (built-in) OR
+- PowerShell Core 7+ (download from GitHub)
+- Command Prompt or PowerShell terminal
+
+**Option 2: Windows Subsystem for Linux (WSL)**
+- WSL installed and configured
+- Ubuntu or another Linux distribution in WSL
+- Use the bash scripts (setup.sh/teardown.sh) from within WSL
 
 ## Getting Started
 
 ### Option 1: Automated Setup (Recommended)
 ```bash
 # Clone or download course materials
-cd mongo_mastering/setup
+cd mongo_mastering/scripts
 ./setup.sh              # Creates MongoDB environment
 cd ../data
 mongosh < day1_data_loader.js  # Load Day 1 data
@@ -150,8 +262,8 @@ mongosh                  # Start working!
 
 ### Option 2: Manual Setup
 ```bash
-cd setup
-# Follow instructions in SETUP.md
+cd scripts
+# Follow manual setup instructions in this README
 ```
 
 ## Course Flow
@@ -159,7 +271,7 @@ cd setup
 ### Daily Workflow
 ```bash
 # Morning setup
-cd setup && ./setup.sh
+cd scripts && ./setup.sh
 
 # Load data for the day
 cd ../data
@@ -170,7 +282,7 @@ open ../presentations/mongodb_day1_presentation.html
 # Follow lab instructions in ../labs/
 
 # Evening cleanup (optional)
-cd ../setup && ./teardown.sh
+cd ../scripts && ./teardown.sh
 ```
 
 ### Lab Instructions
@@ -180,33 +292,162 @@ cd ../setup && ./teardown.sh
 4. **Load data** as needed for each lab
 5. **Ask for help** when stuck!
 
+## Usage Examples
+
+### Daily Course Setup
+```bash
+# Morning setup
+./setup.sh
+
+# Load data for the day you're working on
+cd ../data
+mongosh < day1_data_loader.js  # Day 1
+mongosh < day2_data_loader.js  # Day 2
+mongosh < day3_data_loader.js  # Day 3
+
+# Work on labs...
+mongosh  # Connect and work
+
+# Evening cleanup
+cd ../scripts
+./teardown.sh
+```
+
+### Quick Reset During Labs
+```bash
+# If you need to reset data during labs
+./teardown.sh
+./setup.sh
+cd ../data && mongosh < day1_data_loader.js
+```
+
+### Troubleshooting
+```bash
+# Test if everything is working
+./test.sh
+
+# If tests fail, try fresh setup
+./teardown.sh
+./setup.sh
+./test.sh
+```
+
 ## Troubleshooting
 
-### Common Issues
+### General Issues
 
-#### Setup Problems
+#### Script won't run
 ```bash
-cd setup
+chmod +x *.sh  # Make scripts executable
+```
+
+#### Docker not found
+- Install Docker Desktop
+- Start Docker Desktop
+- Verify: `docker --version`
+
+#### Permission denied
+```bash
+sudo ./setup.sh  # Try with sudo (Linux)
+```
+
+#### MongoDB connection fails
+```bash
 ./teardown.sh && ./setup.sh  # Fresh setup
-./test.sh                     # Verify everything works
 ```
 
-#### Data Loading Hangs
-- Updated scripts prevent hanging
-- Use `test_connection.js` to verify setup
-- Check `data/README.md` for troubleshooting
-
-#### Connection Issues
+#### Port conflicts
+Edit `setup.sh` and change ports:
 ```bash
-docker ps                     # Verify containers running
-mongosh --eval "db.hello()"  # Test connection
+# Change -p 27017:27017 to -p 27020:27017
+# Change -p 27018:27017 to -p 27021:27017
+# Change -p 27019:27017 to -p 27022:27017
 ```
+
+### Windows PowerShell Issues
+
+#### PowerShell execution policy error
+```powershell
+# Set execution policy for current user (recommended)
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+
+# Or bypass for single execution
+PowerShell -ExecutionPolicy Bypass -File .\setup.ps1
+```
+
+#### PowerShell version compatibility
+The scripts require PowerShell 5.0 or later. Check your version:
+```powershell
+$PSVersionTable.PSVersion
+```
+
+If you have an older version:
+- **Windows 10/11**: Update via Windows Update
+- **Older Windows**: Download PowerShell 7 from GitHub
+- **Alternative**: Use WSL with bash scripts
+
+#### Docker command issues on Windows
+If Docker commands fail in PowerShell:
+1. **Restart Docker Desktop** completely
+2. **Try running as Administrator**
+3. **Check firewall settings** - allow Docker Desktop
+4. **Alternative**: Use WSL with bash scripts
+
+#### String/character encoding issues
+If you see character encoding problems:
+1. **Use Windows PowerShell** instead of PowerShell Core
+2. **Try running as Administrator**
+3. **Alternative**: Use WSL with bash scripts
+
+### Step-by-Step Troubleshooting Process
+
+#### Quick Fix (Try First)
+1. Close PowerShell
+2. Run `.\teardown.ps1`
+3. Restart Docker Desktop
+4. Wait 30 seconds
+5. Run `.\setup.ps1`
+
+#### Complete Reset (If Quick Fix Fails)
+1. **Clean environment:**
+   ```powershell
+   .\teardown.ps1
+   docker system prune -f
+   ```
+
+2. **Restart Docker Desktop completely:**
+   - Right-click Docker Desktop system tray icon
+   - Select "Quit Docker Desktop"
+   - Wait 10 seconds
+   - Start Docker Desktop again
+   - Wait for "Docker Desktop is running" message
+
+3. **Verify prerequisites:**
+   ```powershell
+   docker --version
+   mongosh --version
+   ```
+
+4. **Run setup with verbose output:**
+   ```powershell
+   .\setup.ps1 -Verbose
+   ```
 
 ### Getting Help
-1. **Check scripts/README.md** for setup issues
-2. **Check data/README.md** for data loading issues
-3. **Run test.sh** to diagnose problems
-4. **Try fresh setup** with teardown.sh + setup.sh
+
+If none of these solutions work:
+
+1. **Check the specific error message** in PowerShell
+2. **Look at Docker Desktop logs** (Troubleshoot → Show container logs)
+3. **Verify system requirements:**
+   - Windows 10/11 with latest updates
+   - At least 4GB RAM available
+   - At least 10GB free disk space
+   - Virtualization enabled in BIOS
+
+4. **Alternative options:**
+   - Use Windows Subsystem for Linux (WSL) with `setup.sh`
+   - Run scripts as Administrator
 
 ## Advanced Usage
 
@@ -228,9 +469,41 @@ mongosh --eval "db.hello()"  # Test connection
 
 ---
 
+## Directory Structure
+
+```
+scripts/
+├── setup.sh                      # Automated setup (macOS/Linux)
+├── setup.ps1                     # Automated setup (Windows PowerShell)
+├── teardown.sh                   # Cleanup (macOS/Linux)
+├── teardown.ps1                  # Cleanup (Windows PowerShell)
+├── comprehensive_test.sh          # Complete end-to-end test (macOS/Linux)
+├── test_connection.js            # Basic MongoDB connection test
+└── lab_validation_comprehensive.js # Complete lab validation test
+```
+
+## Script Features
+
+### Error Handling
+- All scripts use `set -e` for fail-fast behavior
+- Colored output for status/success/warning/error
+- Graceful handling of missing containers/networks
+
+### Safety
+- Always cleans up existing containers before setup
+- Verifies operations completed successfully
+- No destructive operations without confirmation
+
+### Convenience
+- Shows progress with colored status messages
+- Provides next steps after completion
+- Tests basic operations automatically
+
+---
+
 ## 🎯 Ready to Master MongoDB?
 
-**Start with:** `cd setup && ./setup.sh`
+**Start with:** `cd scripts && ./setup.sh`
 
 **Learn with:** Comprehensive presentations and hands-on labs
 
@@ -240,4 +513,6 @@ mongosh --eval "db.hello()"  # Test connection
 
 ---
 
-*MongoDB Mastering Course - From beginner to enterprise expert in 3 days* 🚀
+**Ready to start?** Run `./setup.sh` and you'll be ready for the MongoDB course in 30 seconds! 🚀
+
+*MongoDB Mastering Course - From beginner to enterprise expert in 3 days*
