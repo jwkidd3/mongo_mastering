@@ -4,7 +4,8 @@
 
 ## Quick Data Loading
 
-### Option 1: From Project Root (Recommended)
+**Run from the project root directory:**
+
 ```bash
 # Day 1 Labs:
 mongosh < data/day1_data_loader.js
@@ -14,20 +15,6 @@ mongosh < data/day2_data_loader.js
 
 # Day 3 Labs:
 mongosh < data/day3_data_loader.js
-```
-
-### Option 2: From Data Directory
-```bash
-cd data
-
-# Day 1 Labs:
-mongosh < day1_data_loader.js
-
-# Day 2 Labs:
-mongosh < day2_data_loader.js
-
-# Day 3 Labs:
-mongosh < day3_data_loader.js
 ```
 
 ### 🍎 Mac Users - Enhanced Compatibility
@@ -117,10 +104,10 @@ cd setup
 ```
 
 ### "No such file"
-Make sure you're in the `data` directory:
+Make sure you're in the project root directory:
 ```bash
-cd mongo_mastering/data
-ls *.js    # Should show day1_data_loader.js, etc.
+cd mongo_mastering
+ls data/*.js    # Should show data/day1_data_loader.js, etc.
 ```
 
 ### Data Loading Hangs

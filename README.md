@@ -28,7 +28,7 @@ Complete 3-day MongoDB training course with hands-on labs and enterprise-ready c
 #### Option 1: Automatic Hosts File Update (Run as Administrator)
 ```powershell
 # Open PowerShell as Administrator and run:
-Add-Content -Path "$env:windir\System32\drivers\etc\hosts" -Value "`n127.0.0.1 mongo1"
+Add-Content -Path "$env:windir\System32\drivers\etc\hosts" -Value "127.0.0.1 mongo1"
 Add-Content -Path "$env:windir\System32\drivers\etc\hosts" -Value "127.0.0.1 mongo2"
 Add-Content -Path "$env:windir\System32\drivers\etc\hosts" -Value "127.0.0.1 mongo3"
 ```
