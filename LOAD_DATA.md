@@ -59,19 +59,48 @@ You can now proceed with any Day X lab:
 
 Verify data loaded correctly:
 
+### Day 1 Data Verification
 ```bash
+mongosh --eval "db.getSiblingDB('insurance_company').branches.countDocuments()"
+mongosh --eval "db.getSiblingDB('insurance_company').policies.countDocuments()"
+mongosh --eval "db.getSiblingDB('insurance_company').customers.countDocuments()"
+```
+
+### Day 2 Data Verification
+```bash
+mongosh --eval "db.getSiblingDB('insurance_analytics').branches.countDocuments()"
+mongosh --eval "db.getSiblingDB('insurance_analytics').policies.countDocuments()"
+mongosh --eval "db.getSiblingDB('insurance_analytics').customers.countDocuments()"
+```
+
+### Day 3 Data Verification (Same as Day 1 - uses insurance_company)
+```bash
+mongosh --eval "db.getSiblingDB('insurance_company').branches.countDocuments()"
+mongosh --eval "db.getSiblingDB('insurance_company').policies.countDocuments()"
+mongosh --eval "db.getSiblingDB('insurance_company').customers.countDocuments()"
+```
+
+### Quick All-in-One Verification
+```bash
+# Check both databases at once
 mongosh --eval "
-use insurance_company;
-print('Branches: ' + db.branches.countDocuments());
-print('Policies: ' + db.policies.countDocuments());
-print('Customers: ' + db.customers.countDocuments());
+print('=== Day 1/Day 3 (insurance_company) ===');
+print('Branches: ' + db.getSiblingDB('insurance_company').branches.countDocuments());
+print('Policies: ' + db.getSiblingDB('insurance_company').policies.countDocuments());
+print('Customers: ' + db.getSiblingDB('insurance_company').customers.countDocuments());
+print('=== Day 2 (insurance_analytics) ===');
+print('Branches: ' + db.getSiblingDB('insurance_analytics').branches.countDocuments());
+print('Policies: ' + db.getSiblingDB('insurance_analytics').policies.countDocuments());
+print('Customers: ' + db.getSiblingDB('insurance_analytics').customers.countDocuments());
 "
 ```
 
 **Expected Results:**
-- **Day 1**: Branches: 2, Policies: 6, Customers: 3
-- **Day 2**: Branches: 3, Policies: 50+, Customers: 100+
-- **Day 3**: Branches: 400+, Policies: 4+, Customers: 1000+
+- **Day 1**: Branches: 5, Policies: 10, Customers: 20 (insurance_company database)
+- **Day 2**: Branches: 3, Policies: 3, Customers: 3 (insurance_analytics database)
+- **Day 3**: Branches: 5, Policies: 4, Customers: 6 (insurance_company database - replaces Day 1)
+
+**Note:** Day 1 and Day 3 share the same database (`insurance_company`), so loading Day 3 will replace Day 1 data.
 
 ## Troubleshooting
 
