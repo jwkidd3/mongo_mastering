@@ -6,7 +6,13 @@ print("=======================================================");
 print("MongoDB Mastering Course - Lab Validation Test");
 print("=======================================================");
 print("Validating all operations from 16 labs across 3 days");
+print("Testing infrastructure compatibility and lab functionality");
+print("=======================================================");
 print("");
+
+// =============================================================================
+// SETUP VALIDATION FUNCTIONS
+// =============================================================================
 
 var testResults = {
     passed: 0,
@@ -34,6 +40,77 @@ function testOperation(testName, operation) {
         return false;
     }
 }
+
+// =============================================================================
+// CRITICAL INFRASTRUCTURE VALIDATION
+// =============================================================================
+
+print("=== INFRASTRUCTURE COMPATIBILITY CHECKS ===");
+
+testOperation("CRITICAL: Standard 3-node replica set required", function() {
+    try {
+        var status = rs.status();
+        if (!status.set) {
+            print("  ❌ CRITICAL FAILURE: No replica set detected");
+            print("     Labs 10, 11, 13 require replica set infrastructure");
+            return false;
+        }
+
+        if (status.members.length < 3) {
+            print("  ❌ CRITICAL FAILURE: Replica set has only " + status.members.length + " members");
+            print("     Standard course infrastructure requires 3-node replica set");
+            return false;
+        }
+
+        print("  ✅ Standard 3-node replica set detected: " + status.set);
+        return true;
+    } catch (e) {
+        print("  ❌ CRITICAL FAILURE: Cannot access replica set status");
+        return false;
+    }
+});
+
+testOperation("CRITICAL: No conflicting sharding infrastructure", function() {
+    try {
+        // Test if we're connected to a mongos (sharding infrastructure)
+        var isMongos = db.runCommand({ismaster: 1}).msg === "isdbgrid";
+        if (isMongos) {
+            print("  ❌ CRITICAL FAILURE: Connected to mongos (sharded cluster)");
+            print("     Labs assume standard replica set, not sharded infrastructure");
+            return false;
+        }
+
+        print("  ✅ Standard MongoDB instance (not sharded cluster)");
+        return true;
+    } catch (e) {
+        print("  ⚠️  Cannot determine if sharded - assuming standard setup");
+        return true;
+    }
+});
+
+testOperation("CRITICAL: Course data available", function() {
+    var databases = ["insurance_company"];
+    var hasRequiredData = false;
+
+    databases.forEach(function(dbName) {
+        var testDb = db.getSiblingDB(dbName);
+        var collections = testDb.getCollectionNames();
+        if (collections.length > 0) {
+            hasRequiredData = true;
+        }
+    });
+
+    if (!hasRequiredData) {
+        print("  ❌ CRITICAL FAILURE: No course data found");
+        print("     Run: mongosh < comprehensive_data_loader.js");
+        return false;
+    }
+
+    print("  ✅ Course data available");
+    return true;
+});
+
+print("");
 
 // =============================================================================
 // DAY 1 LAB VALIDATIONS - Basic Operations & CRUD
@@ -824,49 +901,90 @@ testOperation("Geographic data consistency", function() {
 // Lab 12: Sharding & Horizontal Scaling
 print("\n⚡ Lab 12: Sharding & Horizontal Scaling");
 
-testOperation("Shard key candidate analysis", function() {
+testOperation("Infrastructure compatibility check", function() {
+    // Test: Lab 12 should work with standard 3-node replica set (not require actual sharding cluster)
+    var isReplicaSet = false;
+    try {
+        var status = rs.status();
+        isReplicaSet = status.set && status.members && status.members.length >= 3;
+    } catch (e) {
+        return false;
+    }
+
+    if (!isReplicaSet) {
+        print("  ❌ CRITICAL: Lab 12 requires infrastructure changes that conflict with course setup");
+        return false;
+    }
+
+    print("  ✅ Lab 12 compatible with standard replica set infrastructure");
+    return true;
+});
+
+testOperation("Educational sharding concepts validation", function() {
+    // Test: Validate that data exists for sharding education/simulation
     var collections = ["customers", "policies", "claims"];
-    var shardable = 0;
+    var hasShardableData = 0;
 
     collections.forEach(function(collName) {
         var sample = db.getCollection(collName).findOne();
         if (sample && (sample.customerId || sample.region || sample._id)) {
-            shardable++;
+            hasShardableData++;
         }
     });
 
-    return shardable > 0;
-});
-
-testOperation("Large dataset handling", function() {
-    var policyCount = db.policies.countDocuments();
-    var customerCount = db.customers.countDocuments();
-
-    if (policyCount === 0 || customerCount === 0) {
-        print("  ℹ️  Skipping dataset test - insufficient data (policies: " + policyCount + ", customers: " + customerCount + ")");
-        return true; // Pass test when no data present
+    if (hasShardableData === 0) {
+        print("  ❌ No data available for sharding education");
+        return false;
     }
 
-    return policyCount > 0 && customerCount > 0;
+    print("  ✅ Data available for sharding concept demonstration");
+    return hasShardableData >= 2;
 });
 
 // Lab 13: Change Streams for Real-time Applications
 print("\n📡 Lab 13: Change Streams & Real-time Applications");
 
-testOperation("Change stream infrastructure", function() {
-    var collections = ["policy_notifications", "claim_activity_log"];
-    var readyCollections = 0;
-
-    collections.forEach(function(collName) {
-        try {
-            var count = db.getCollection(collName).countDocuments();
-            readyCollections++;
-        } catch (e) {
-            // Collection doesn't exist, that's ok for testing
+testOperation("Change stream replica set support", function() {
+    // Test: Change streams require replica set (which we have)
+    try {
+        var status = rs.status();
+        if (!status.set || status.members.length < 3) {
+            print("  ❌ Change streams require replica set with at least 3 members");
+            return false;
         }
-    });
+        print("  ✅ Replica set supports change streams");
+        return true;
+    } catch (e) {
+        print("  ❌ No replica set detected - change streams not supported");
+        return false;
+    }
+});
 
-    return readyCollections >= 0; // Infrastructure ready
+testOperation("Change stream functionality test", function() {
+    // Test: Actual change stream creation and basic functionality
+    try {
+        // Test that we can create a change stream on existing collection
+        var changeStream = db.policies.watch();
+
+        // Verify change stream was created successfully
+        var hasChangeStream = changeStream !== null;
+
+        // Close the change stream to clean up
+        if (changeStream) {
+            changeStream.close();
+        }
+
+        if (hasChangeStream) {
+            print("  ✅ Change streams functional on replica set");
+            return true;
+        } else {
+            print("  ❌ Change stream creation failed");
+            return false;
+        }
+    } catch (e) {
+        print("  ❌ Change stream test failed: " + e.message);
+        return false;
+    }
 });
 
 testOperation("Change stream capability", function() {
@@ -876,33 +994,49 @@ testOperation("Change stream capability", function() {
 // Lab 14a/14b/14c: Application Integration
 print("\n🔗 Lab 14a/14b/14c: Application Integration");
 
-testOperation("Application connection infrastructure", function() {
-    // Validate basic MongoDB driver capabilities for app integration
+testOperation("MongoDB connection readiness for apps", function() {
+    // Test: Validate basic MongoDB connection is ready for application drivers
     var stats = db.stats();
-    return stats.ok === 1 && stats.collections >= 0;
+    if (stats.ok !== 1) {
+        print("  ❌ MongoDB not ready for application connections");
+        return false;
+    }
+    print("  ✅ MongoDB ready for application driver connections");
+    return true;
 });
 
-testOperation("Application data structure validation", function() {
-    // Ensure data structures support application integration
+testOperation("Development environment requirements check", function() {
+    // Test: WARN about additional requirements Labs 14a/14b/14c need
+    print("  ⚠️  WARNING: Labs 14a/14b/14c require additional development environments:");
+    print("     • Lab 14A (C#): Requires .NET SDK, Visual Studio Code, NuGet packages");
+    print("     • Lab 14B (JavaScript): Requires Node.js, npm, mongodb driver package");
+    print("     • Lab 14C (Python): Requires Python 3.x, pip, pymongo package");
+    print("  ℹ️  These labs include environment setup instructions");
+
+    // This test always passes but warns about requirements
+    return true;
+});
+
+testOperation("Application integration data availability", function() {
+    // Test: Ensure data exists for application integration examples
     var policyCount = db.policies.countDocuments();
     var customerCount = db.customers.countDocuments();
 
     if (policyCount === 0 || customerCount === 0) {
-        print("  ℹ️  Skipping structure test - insufficient data (policies: " + policyCount + ", customers: " + customerCount + ")");
-        return true; // Pass test when no data present
+        print("  ❌ Insufficient data for application integration (policies: " + policyCount + ", customers: " + customerCount + ")");
+        return false;
     }
 
     var samplePolicy = db.policies.findOne();
     var sampleCustomer = db.customers.findOne();
 
-    // Basic structure validation - just ensure documents exist and have some structure
     if (!samplePolicy || !sampleCustomer) {
-        print("  ℹ️  Skipping structure validation - no sample documents found");
-        return true; // Pass when no sample documents available
+        print("  ❌ No sample documents available for application examples");
+        return false;
     }
 
-    // Check that documents have at least some fields (basic structure validation)
-    return Object.keys(samplePolicy).length > 0 && Object.keys(sampleCustomer).length > 0;
+    print("  ✅ Data available for application integration examples");
+    return true;
 });
 
 testOperation("Connection pooling readiness", function() {

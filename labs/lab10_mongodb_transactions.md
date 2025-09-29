@@ -1,448 +1,300 @@
-# Lab 1: MongoDB Transactions
+# Lab 10: MongoDB Transactions
 **Duration:** 45 minutes
 **Objective:** Master ACID transactions in MongoDB for insurance claim processing
 
-## Part A: Replica Set Setup (10 minutes)
+## Prerequisites: Environment Setup
 
-### Step 1: Start MongoDB Containers
+### Step 1: Set Up MongoDB Environment
+Use the course's standardized setup scripts:
+
+**macOS/Linux:**
 ```bash
-# Create network for MongoDB containers
-docker network create mongodb-net
-
-# Start three MongoDB nodes for replica set
-docker run -d --name mongo1 --network mongodb-net -p 27017:27017 mongo:8.0 --replSet rs0 --bind_ip_all
-docker run -d --name mongo2 --network mongodb-net -p 27018:27017 mongo:8.0 --replSet rs0 --bind_ip_all
-docker run -d --name mongo3 --network mongodb-net -p 27019:27017 mongo:8.0 --replSet rs0 --bind_ip_all
-
-# Verify containers are running
-docker ps
+cd scripts
+./setup.sh
 ```
 
-### Step 2: Initialize Replica Set
+**Windows PowerShell:**
+```powershell
+cd scripts
+.\setup.ps1
+```
+
+**Load Course Data:**
 ```bash
-# Wait for containers to fully start
-sleep 20
+cd data
+mongosh < comprehensive_data_loader.js
+```
 
-# Initialize replica set
-docker exec -it mongo1 mongosh --eval "
-rs.initiate({
-  _id: 'rs0',
-  members: [
-    { _id: 0, host: 'mongo1:27017' },
-    { _id: 1, host: 'mongo2:27017' },
-    { _id: 2, host: 'mongo3:27017' }
-  ]
-})
-"
+### Step 2: Verify Replica Set Ready for Transactions
+```bash
+# Connect to MongoDB and verify replica set status
+mongosh
+```
 
-# Verify replica set status
-docker exec -it mongo1 mongosh --eval "rs.status()"
+```javascript
+// Verify replica set is properly configured for transactions
+rs.status()
+
+// Confirm we have a primary node for transactions
+db.hello()
+
+// Verify transaction support is available
+db.runCommand({serverStatus: 1}).transactions
 ```
 
 ### Step 3: Connect with MongoDB Compass
 1. Open MongoDB Compass
-2. Connection String: `mongodb://localhost:27017,localhost:27018,localhost:27019/?replicaSet=rs0`
+2. Connection String: `mongodb://localhost:27017`
 3. Click **"Connect"**
-4. Verify you see the replica set topology
+4. Navigate to `insurance_company` database
+5. Verify you can see the existing data collections
 
-## Part B: Transaction Setup and Testing (25 minutes)
+## Part A: Understanding Existing Data for Transactions (10 minutes)
 
-### Step 4: Create Sample Data
-**In MongoDB Compass:**
-1. Navigate to **Databases** → **Create Database**
-2. Database Name: `insurance_company`
-3. Collection Name: `policies`
-
-**Using Compass MongoSH tab:**
+### Step 4: Explore Insurance Data
+**In MongoDB Compass or MongoSH:**
 ```javascript
-// Switch to insurance_company database
+// Switch to insurance_company database (already loaded)
 use insurance_company
 
-// Create policies with coverage limits
-db.policies.insertMany([
-  {
-    _id: "policy1",
-    policyNumber: "AUTO-001",
-    type: "Auto",
-    coverageLimit: 100000.00,
-    premium: 1200.00,
-    status: "Active",
-    customerId: "cust1"
-  },
-  {
-    _id: "policy2",
-    policyNumber: "HOME-001",
-    type: "Property",
-    coverageLimit: 500000.00,
-    premium: 800.00,
-    status: "Active",
-    customerId: "cust2"
-  },
-  {
-    _id: "policy3",
-    policyNumber: "LIFE-001",
-    type: "Life",
-    coverageLimit: 250000.00,
-    premium: 600.00,
-    status: "Active",
-    customerId: "cust3"
-  },
-  {
-    _id: "policy4",
-    policyNumber: "COMM-001",
-    type: "Commercial",
-    coverageLimit: 1000000.00,
-    premium: 2400.00,
-    status: "Active",
-    customerId: "cust1"
-  }
-])
+// Examine existing collections and their structure
+show collections
 
-// Create customers with account balances and policy info
-db.customers.insertMany([
-  {
-    _id: "cust1",
-    name: "John Doe",
-    email: "john@example.com",
-    phone: "555-0101",
-    type: "Individual",
-    accountBalance: 5000.00,
-    totalPremiumsPaid: 15000.00
-  },
-  {
-    _id: "cust2",
-    name: "Jane Smith",
-    email: "jane@example.com",
-    phone: "555-0102",
-    type: "Individual",
-    accountBalance: 2500.00,
-    totalPremiumsPaid: 8000.00
-  },
-  {
-    _id: "cust3",
-    name: "ABC Manufacturing Corp",
-    email: "finance@abcmfg.com",
-    phone: "555-0103",
-    type: "Business",
-    accountBalance: 25000.00,
-    totalPremiumsPaid: 45000.00
-  }
-])
+// Look at sample policy data structure
+db.policies.findOne()
 
-// Create claims collection with index
-db.claims.createIndex({ customerId: 1, incidentDate: 1 })
-db.claims.createIndex({ policyId: 1, status: 1 })
+// Look at sample customer data structure
+db.customers.findOne()
+
+// Count existing documents to understand the dataset
+print("Policies: " + db.policies.countDocuments())
+print("Customers: " + db.customers.countDocuments())
+print("Claims: " + db.claims.countDocuments())
+
+// Find some specific policies and customers we'll use for transactions
+db.policies.find({}).limit(3).pretty()
+db.customers.find({}).limit(2).pretty()
 ```
 
-### Step 5: Implement Claim Settlement Transaction
+## Part B: Basic Transaction Implementation (15 minutes)
 
+### Step 5: Simple Transaction Example
 ```javascript
-// Complete claim settlement processing transaction
-function processClaimSettlement(claimId, settlementAmount, adjusterId) {
-  const session = db.getMongo().startSession();
+// Example 1: Basic transaction syntax using existing data
+// Start a session for transaction
+const session = db.getMongo().startSession();
 
-  try {
+try {
+    // Begin transaction
     session.startTransaction({
-      readConcern: { level: "snapshot" },
-      writeConcern: { w: "majority" }
+        readConcern: { level: "majority" },
+        writeConcern: { w: "majority", wtimeout: 5000 }
     });
 
-    // Use session database reference
+    // Get database handle with session
     const sessionDb = session.getDatabase("insurance_company");
 
-    // Find the claim
-    const claim = sessionDb.claims.findOne({ _id: claimId });
+    // Find an existing customer to work with
+    const customer = sessionDb.customers.findOne({});
+    print("Working with customer: " + customer.customerId);
 
-    if (!claim) {
-      throw new Error("Claim not found");
-    }
-
-    if (claim.status !== "Under Review") {
-      throw new Error("Claim is not in reviewable status");
-    }
-
-    // Find the associated policy
-    const policy = sessionDb.policies.findOne({ _id: claim.policyId });
-
-    if (!policy) {
-      throw new Error("Associated policy not found");
-    }
-
-    // Validate settlement amount doesn't exceed coverage
-    if (settlementAmount > policy.coverageLimit) {
-      throw new Error("Settlement amount exceeds policy coverage limit");
-    }
-
-    // Find customer
-    const customer = sessionDb.customers.findOne({ _id: claim.customerId });
-
-    if (!customer) {
-      throw new Error("Customer not found");
-    }
-
-    // Update claim status and settlement info
-    sessionDb.claims.updateOne(
-      { _id: claimId },
-      {
-        $set: {
-          status: "Settled",
-          settlementAmount: settlementAmount,
-          adjusterId: adjusterId,
-          settlementDate: new Date(),
-          approvedBy: adjusterId
-        }
-      }
+    // Transaction operations on existing data
+    // 1. Update customer's policy count
+    const customerUpdate = sessionDb.customers.updateOne(
+        { customerId: customer.customerId },
+        { $inc: { policyCount: 1 } }
     );
 
-    // Update customer account balance
-    sessionDb.customers.updateOne(
-      { _id: claim.customerId },
-      { $inc: { accountBalance: settlementAmount } }
-    );
-
-    // Create payment record
-    sessionDb.payments.insertOne({
-      _id: new ObjectId(),
-      type: "Claim Settlement",
-      customerId: claim.customerId,
-      claimId: claimId,
-      policyId: claim.policyId,
-      amount: settlementAmount,
-      paymentDate: new Date(),
-      status: "Completed",
-      adjusterId: adjusterId
+    // 2. Insert a new policy for this customer
+    const newPolicyResult = sessionDb.policies.insertOne({
+        policyNumber: "TXN-" + new Date().getTime(),
+        policyType: "Term Life",
+        customerId: customer.customerId,
+        annualPremium: NumberDecimal("600.00"),
+        coverageLimit: 100000,
+        effectiveDate: new Date(),
+        expirationDate: new Date(new Date().getTime() + (365 * 24 * 60 * 60 * 1000)),
+        isActive: true,
+        createdInTransaction: true
     });
-
-    // Update policy claims history
-    sessionDb.policies.updateOne(
-      { _id: claim.policyId },
-      {
-        $inc: { totalClaimsPaid: settlementAmount, claimsCount: 1 },
-        $set: { lastClaimDate: new Date() }
-      }
-    );
 
     // Commit transaction
     session.commitTransaction();
+    print("✅ Transaction committed successfully");
+    print("Customer updated: " + customerUpdate.modifiedCount);
+    print("New policy created: " + newPolicyResult.insertedId);
 
-    print("Claim settlement processed successfully");
-    print("Claim ID: " + claimId);
-    print("Settlement Amount: $" + settlementAmount.toFixed(2));
-    print("Customer: " + customer.name);
-
-    return { success: true, claimId: claimId, settlementAmount: settlementAmount };
-
-  } catch (error) {
-    print("Claim settlement failed: " + error.message);
+} catch (error) {
+    // Rollback on error
     session.abortTransaction();
-    return { success: false, error: error.message };
-
-  } finally {
+    print("❌ Transaction aborted: " + error);
+} finally {
     session.endSession();
-  }
 }
 ```
 
-### Step 6: Test Transactions
-
-**Create test claims first:**
+### Step 6: Error Handling and Rollback Example
 ```javascript
-// Create test claims for transaction testing
-db.claims.insertMany([
-  {
-    _id: "claim1",
-    claimNumber: "CLM-2024-001",
-    customerId: "cust1",
-    policyId: "policy1",
-    incidentDate: new Date("2024-01-15"),
-    claimAmount: 15000.00,
-    status: "Under Review",
-    description: "Vehicle collision on Highway 101",
-    adjusterAssigned: null
-  },
-  {
-    _id: "claim2",
-    claimNumber: "CLM-2024-002",
-    customerId: "cust2",
-    policyId: "policy2",
-    incidentDate: new Date("2024-02-01"),
-    claimAmount: 45000.00,
-    status: "Under Review",
-    description: "House fire damage to kitchen",
-    adjusterAssigned: null
-  }
-])
+// Example 2: Transaction with error handling and rollback
+const session2 = db.getMongo().startSession();
+
+try {
+    session2.startTransaction();
+    const sessionDb = session2.getDatabase("insurance_company");
+
+    // Find a customer and policy to work with
+    const customer = sessionDb.customers.findOne({});
+    const policy = sessionDb.policies.findOne({ customerId: customer.customerId });
+
+    print("Testing rollback scenario...");
+
+    // Operation 1: Create a claim
+    const claimResult = sessionDb.claims.insertOne({
+        claimNumber: "ROLLBACK-TEST-" + new Date().getTime(),
+        customerId: customer.customerId,
+        policyNumber: policy.policyNumber,
+        claimAmount: NumberDecimal("50000.00"),
+        status: "Filed",
+        filedDate: new Date(),
+        description: "Test claim for rollback demonstration"
+    });
+    print("Claim created: " + claimResult.insertedId);
+
+    // Operation 2: Intentionally cause an error to demonstrate rollback
+    // Try to update a non-existent customer (this will not error, so let's force one)
+    throw new Error("Simulated business logic error - claim exceeds policy limit");
+
+    // This commit will never be reached
+    session2.commitTransaction();
+
+} catch (error) {
+    print("❌ Error occurred: " + error.message);
+    print("🔄 Rolling back transaction...");
+    session2.abortTransaction();
+    print("✅ Transaction rolled back successfully");
+} finally {
+    session2.endSession();
+}
+
+// Verify the claim was NOT created due to rollback
+print("\nVerifying rollback - searching for test claim:");
+const testClaim = db.claims.findOne({ claimNumber: /ROLLBACK-TEST/ });
+if (testClaim) {
+    print("❌ ERROR: Claim was found - rollback failed!");
+} else {
+    print("✅ SUCCESS: No test claim found - rollback worked correctly");
+}
 ```
 
-**Test Successful Transaction:**
+## Part C: Advanced Transaction Scenarios (20 minutes)
+
+### Step 7: Multi-Collection Transaction
 ```javascript
-// Test successful claim settlement
-var result1 = processClaimSettlement("claim1", 12000.00, "adjuster1");
-```
+// Example 3: Complex transaction involving multiple collections
+const session3 = db.getMongo().startSession();
 
-**Monitor in Compass:**
-1. Keep `claims`, `customers`, `payments`, and `policies` collections open in separate tabs
-2. Execute the transaction
-3. Refresh collections to see changes:
-   - Claim status updated to "Settled"
-   - Customer balance increased
-   - New payment record created
-   - Policy claims history updated
-
-**Test Failed Transactions:**
-```javascript
-// Test settlement exceeding coverage limit
-var result2 = processClaimSettlement("claim2", 600000.00, "adjuster2");  // Exceeds $500K coverage
-
-// Test settlement for non-existent claim
-var result3 = processClaimSettlement("claim999", 5000.00, "adjuster1");
-
-// Test settlement for already settled claim
-var result4 = processClaimSettlement("claim1", 5000.00, "adjuster2");  // Already settled
-```
-
-**Verify Rollback:**
-- Check that no data changed when transactions failed
-- This demonstrates ACID atomicity in insurance claim processing
-
-## Part C: Premium Payment Processing System (10 minutes)
-
-### Step 7: Implement Premium Payment Processing
-
-```javascript
-// Premium Payment Processing System
-function processPremiumPayment(customerId, policyId, paymentAmount, paymentMethod) {
-  // Create fresh session
-  const session = db.getMongo().startSession();
-
-  try {
-    // Start transaction
-    session.startTransaction({
-      readConcern: { level: "snapshot" },
-      writeConcern: { w: "majority" }
+try {
+    session3.startTransaction({
+        readConcern: { level: "majority" },
+        writeConcern: { w: "majority", wtimeout: 10000 }
     });
 
-    // Use session database
-    const sessionDb = session.getDatabase("insurance_company");
+    const sessionDb = session3.getDatabase("insurance_company");
 
-    // Validate customer exists
-    const customer = sessionDb.customers.findOne({ _id: customerId });
-    if (!customer) {
-      throw new Error("Customer not found");
-    }
+    // Find existing data to work with
+    const customer = sessionDb.customers.findOne({});
+    const policy = sessionDb.policies.findOne({ customerId: customer.customerId });
 
-    // Validate policy exists and belongs to customer
-    const policy = sessionDb.policies.findOne({
-      _id: policyId,
-      customerId: customerId,
-      status: "Active"
+    print("Processing comprehensive insurance transaction...");
+
+    // 1. Create a new claim
+    const newClaim = sessionDb.claims.insertOne({
+        claimNumber: "TXN-CLAIM-" + new Date().getTime(),
+        customerId: customer.customerId,
+        policyNumber: policy.policyNumber,
+        claimAmount: NumberDecimal("5000.00"),
+        status: "Under Review",
+        filedDate: new Date(),
+        description: "Comprehensive transaction test claim"
     });
 
-    if (!policy) {
-      throw new Error("Policy not found or not active for this customer");
-    }
-
-    // Validate payment amount matches premium (for simplicity)
-    if (paymentAmount !== policy.premium) {
-      throw new Error(`Payment amount $${paymentAmount} does not match premium $${policy.premium}`);
-    }
-
-    // Check if customer has sufficient balance for auto-debit
-    if (paymentMethod === "auto-debit" && customer.accountBalance < paymentAmount) {
-      throw new Error("Insufficient account balance for auto-debit");
-    }
-
-    // Process payment based on method
-    if (paymentMethod === "auto-debit") {
-      // Debit from customer account
-      sessionDb.customers.updateOne(
-        { _id: customerId },
-        { $inc: { accountBalance: -paymentAmount } }
-      );
-    }
-
-    // Update customer premium payment history
+    // 2. Update customer's claim count
     sessionDb.customers.updateOne(
-      { _id: customerId },
-      {
-        $inc: { totalPremiumsPaid: paymentAmount },
-        $set: { lastPaymentDate: new Date() }
-      }
-    );
-
-    // Update policy payment info
-    sessionDb.policies.updateOne(
-      { _id: policyId },
-      {
-        $set: {
-          lastPremiumPayment: new Date(),
-          nextDueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days from now
+        { customerId: customer.customerId },
+        {
+            $inc: { claimCount: 1 },
+            $set: { lastClaimDate: new Date() }
         }
-      }
     );
 
-    // Create payment transaction record
-    sessionDb.payments.insertOne({
-      _id: new ObjectId(),
-      type: "Premium Payment",
-      customerId: customerId,
-      policyId: policyId,
-      amount: paymentAmount,
-      paymentMethod: paymentMethod,
-      paymentDate: new Date(),
-      status: "Completed",
-      transactionId: "TXN-" + new ObjectId().toString().substr(-8)
+    // 3. Update policy status to reflect active claim
+    sessionDb.policies.updateOne(
+        { policyNumber: policy.policyNumber },
+        {
+            $set: {
+                hasActiveClaims: true,
+                lastClaimDate: new Date()
+            }
+        }
+    );
+
+    // 4. Create audit log entry
+    sessionDb.audit_logs.insertOne({
+        action: "CLAIM_FILED",
+        entityType: "claim",
+        entityId: newClaim.insertedId,
+        userId: "system",
+        timestamp: new Date(),
+        details: {
+            customerId: customer.customerId,
+            policyNumber: policy.policyNumber,
+            claimAmount: 5000.00
+        }
     });
 
-    session.commitTransaction();
+    // Commit all operations
+    session3.commitTransaction();
+    print("✅ Multi-collection transaction completed successfully");
+    print("Claim ID: " + newClaim.insertedId);
 
-    print(`Premium payment processed successfully`);
-    print(`Customer: ${customer.name}`);
-    print(`Policy: ${policy.policyNumber}`);
-    print(`Amount: $${paymentAmount}`);
-    print(`Method: ${paymentMethod}`);
-
-    return { success: true, customerId, policyId, amount: paymentAmount };
-
-  } catch (error) {
-    print("Premium payment failed: " + error.message);
-    session.abortTransaction();
-    return { success: false, error: error.message };
-
-  } finally {
-    session.endSession();
-  }
+} catch (error) {
+    print("❌ Transaction failed: " + error.message);
+    session3.abortTransaction();
+} finally {
+    session3.endSession();
 }
-
-// Create payments collection with indexes
-db.payments.createIndex({ customerId: 1, paymentDate: -1 });
-db.payments.createIndex({ policyId: 1, status: 1 });
-
-// Test successful premium payment
-processPremiumPayment("cust1", "policy1", 1200.00, "auto-debit");
-
-// Verify customer and policy updates
-db.customers.find({ _id: "cust1" }, { name: 1, accountBalance: 1, totalPremiumsPaid: 1, lastPaymentDate: 1 });
-db.policies.find({ _id: "policy1" }, { policyNumber: 1, lastPremiumPayment: 1, nextDueDate: 1 });
-
-// Test more premium payments
-processPremiumPayment("cust2", "policy2", 800.00, "credit-card");
-processPremiumPayment("cust3", "policy3", 600.00, "bank-transfer");
-
-// Test invalid premium payment
-processPremiumPayment("cust2", "policy2", 1000.00, "auto-debit");  // Should fail - wrong amount
-processPremiumPayment("cust1", "policy1", 1200.00, "auto-debit");  // Should fail - insufficient balance after first payment
 ```
 
-### Step 8: Verify Results in Compass
-1. Check `customers` collection - verify account balance and premium payment history changes
-2. Check `payments` collection - see premium payment records
-3. Check `policies` collection - see updated payment dates and due dates
-4. Check `claims` collection - see settled claims
-5. Observe how invalid transactions don't affect data
+## Cleanup and Environment Teardown
 
-## Lab 1 Deliverables
-✅ **Replica set** configured and verified
-✅ **ACID transactions** implemented for insurance claim settlement and premium payment processing
-✅ **Visual verification** using Compass real-time monitoring
-✅ **Understanding** of transaction isolation and consistency in insurance operations
+### Step 8: Clean Up Test Data (Optional)
+```javascript
+// Remove any test data created during this lab
+db.claims.deleteMany({ claimNumber: /TXN-/ });
+db.policies.deleteMany({ policyNumber: /TXN-/ });
+db.audit_logs.deleteMany({ action: "CLAIM_FILED", userId: "system" });
+
+print("✅ Test data cleaned up");
+```
+
+### Step 9: Environment Teardown
+When finished with the lab, use the standardized teardown script:
+
+**macOS/Linux:**
+```bash
+cd scripts
+./teardown.sh
+```
+
+**Windows PowerShell:**
+```powershell
+cd scripts
+.\teardown.ps1
+```
+
+## Lab 10 Deliverables
+✅ **Transaction Infrastructure**: Verified replica set supports transactions
+✅ **Basic Transactions**: Implemented multi-document ACID transactions
+✅ **Error Handling**: Demonstrated transaction rollback and error recovery
+✅ **Complex Scenarios**: Executed multi-collection transaction workflows
+✅ **Audit Trail**: Created proper transaction logging and monitoring

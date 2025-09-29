@@ -44,7 +44,7 @@ try {
 
 // Test database operations
 print("\n📝 Testing write operations...");
-use test_connection;
+db = db.getSiblingDB('test_connection');
 
 // Test simple insert
 try {

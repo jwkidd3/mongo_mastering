@@ -5,7 +5,7 @@ This document provides a comprehensive summary of all labs in the MongoDB Master
 
 ## Course Structure
 - **Duration**: 3 days
-- **Total Labs**: 13 hands-on lab exercises
+- **Total Labs**: 16 hands-on lab exercises (Labs 1-14c)
 - **Format**: 70% hands-on labs / 30% presentations
 - **Industry Context**: Insurance data model (policies, customers, claims, agents, branches)
 - **Environment**: Docker-based MongoDB deployment
@@ -16,7 +16,7 @@ This document provides a comprehensive summary of all labs in the MongoDB Master
 *Focus: Basic CRUD operations, shell mastery, and foundational concepts*
 
 ### Lab 1: MongoDB Shell Mastery and Server Navigation
-**File**: `day1_lab01_mongodb_shell_mastery.md`
+**File**: `lab01_mongodb_shell_mastery.md`
 **Duration**: 45 minutes
 **Difficulty**: Beginner
 
@@ -38,7 +38,7 @@ This document provides a comprehensive summary of all labs in the MongoDB Master
 ---
 
 ### Lab 2: Database and Collection Management Fundamentals
-**File**: `day1_lab02_database_collection_management.md`
+**File**: `lab02_database_collection_management.md`
 **Duration**: 45 minutes
 **Difficulty**: Beginner
 
@@ -60,7 +60,7 @@ This document provides a comprehensive summary of all labs in the MongoDB Master
 ---
 
 ### Lab 3: CRUD Operations - Create and Insert Mastery
-**File**: `day1_lab03_crud_create_insert.md`
+**File**: `lab03_crud_create_insert.md`
 **Duration**: 45 minutes
 **Difficulty**: Beginner
 
@@ -82,7 +82,7 @@ This document provides a comprehensive summary of all labs in the MongoDB Master
 ---
 
 ### Lab 4: CRUD Operations - Read and Query Mastery
-**File**: `day1_lab04_crud_read_query.md`
+**File**: `lab04_crud_read_query.md`
 **Duration**: 45 minutes
 **Difficulty**: Beginner to Intermediate
 
@@ -104,7 +104,7 @@ This document provides a comprehensive summary of all labs in the MongoDB Master
 ---
 
 ### Lab 5: CRUD Operations - Update and Delete Operations
-**File**: `day1_lab05_crud_update_delete.md`
+**File**: `lab05_crud_update_delete.md`
 **Duration**: 45 minutes
 **Difficulty**: Intermediate
 
@@ -128,8 +128,8 @@ This document provides a comprehensive summary of all labs in the MongoDB Master
 ## Day 2: Advanced Querying & Analytics
 *Focus: Aggregation framework, complex queries, and performance optimization*
 
-### Lab 6: Advanced Querying and Aggregation Framework
-**File**: `day2_lab01_advanced_querying_aggregation.md`
+### Lab 6: Advanced Query Techniques
+**File**: `lab06_advanced_query_techniques.md`
 **Duration**: 45 minutes
 **Difficulty**: Intermediate
 
@@ -150,8 +150,8 @@ This document provides a comprehensive summary of all labs in the MongoDB Master
 
 ---
 
-### Lab 7: Data Modeling and Schema Design
-**File**: `day2_lab02_data_modeling_schema_design.md`
+### Lab 7: Aggregation Framework
+**File**: `lab07_aggregation_framework.md`
 **Duration**: 45 minutes
 **Difficulty**: Intermediate
 
@@ -172,8 +172,8 @@ This document provides a comprehensive summary of all labs in the MongoDB Master
 
 ---
 
-### Lab 8: Indexing Strategies and Performance Optimization
-**File**: `day2_lab03_indexing_performance_optimization.md`
+### Lab 8: Indexing and Performance Optimization
+**File**: `lab08_indexing_performance_optimization.md`
 **Duration**: 45 minutes
 **Difficulty**: Intermediate to Advanced
 
@@ -194,11 +194,30 @@ This document provides a comprehensive summary of all labs in the MongoDB Master
 
 ---
 
-## Day 3: Production Features & Enterprise Integration
-*Focus: Transactions, high availability, real-time features, and application integration*
+### Lab 9: Data Modeling and Schema Design
+**File**: `lab09_data_modeling_schema_design.md`
+**Duration**: 45 minutes
+**Difficulty**: Intermediate
 
-### Lab 9: MongoDB Transactions
-**File**: `day3_lab01_mongodb_transactions.md`
+**Objectives**:
+- Design effective document schemas
+- Practice embedding vs referencing decisions
+- Implement schema validation
+
+**Key Concepts Covered**:
+- Document relationship modeling
+- Embedding vs referencing trade-offs
+- Schema validation rules
+- Design pattern implementation
+
+**Prerequisites**: Understanding of document structure and relationships
+**Insurance Context**: Modeling complex insurance relationships (policies, claims, customers)
+**Presentation Alignment**: Day 1 Section 5 "Data Modeling Basics"
+
+---
+
+### Lab 10: MongoDB Transactions
+**File**: `lab10_mongodb_transactions.md`
 **Duration**: 45 minutes
 **Difficulty**: Advanced
 
@@ -219,8 +238,11 @@ This document provides a comprehensive summary of all labs in the MongoDB Master
 
 ---
 
-### Lab 10: Replica Sets & High Availability
-**File**: `day3_lab02_replica_sets_high_availability.md`
+## Day 3: Production Features & Enterprise Integration
+*Focus: Transactions, high availability, real-time features, and application integration*
+
+### Lab 11: Replica Sets & High Availability
+**File**: `lab11_replica_sets_high_availability.md`
 **Duration**: 45 minutes
 **Difficulty**: Advanced
 
@@ -241,8 +263,8 @@ This document provides a comprehensive summary of all labs in the MongoDB Master
 
 ---
 
-### Lab 11: Sharding & Horizontal Scaling
-**File**: `day3_lab03_sharding_horizontal_scaling.md`
+### Lab 12: Sharding & Horizontal Scaling
+**File**: `lab12_sharding_horizontal_scaling.md`
 **Duration**: 45 minutes
 **Difficulty**: Advanced
 
@@ -263,8 +285,8 @@ This document provides a comprehensive summary of all labs in the MongoDB Master
 
 ---
 
-### Lab 12: Change Streams for Real-time Applications
-**File**: `day3_lab04_change_streams_realtime.md`
+### Lab 13: Change Streams for Real-time Applications
+**File**: `lab13_change_streams_realtime.md`
 **Duration**: 45 minutes
 **Difficulty**: Advanced
 
@@ -285,22 +307,22 @@ This document provides a comprehensive summary of all labs in the MongoDB Master
 
 ---
 
-### Lab 13: MongoDB Application Integration (Multi-Language Options)
+### Labs 14a/14b/14c: MongoDB Application Integration (Multi-Language Options)
 **Duration**: 45 minutes
 **Difficulty**: Advanced
 
 **Choose Your Language:**
 
-#### **Lab 5A: C# MongoDB API Integration**
-**File**: `day3_lab05_csharp_mongodb_integration.md`
+#### **Lab 14A: C# MongoDB API Integration**
+**File**: `lab14a_csharp_mongodb_integration.md`
 **Prerequisites**: C# programming knowledge and .NET SDK
 
-#### **Lab 5B: JavaScript/Node.js MongoDB Integration**
-**File**: `day3_lab05b_javascript_mongodb_integration.md`
+#### **Lab 14B: JavaScript/Node.js MongoDB Integration**
+**File**: `lab14b_javascript_mongodb_integration.md`
 **Prerequisites**: Basic JavaScript knowledge and Node.js
 
-#### **Lab 5C: Python MongoDB Integration**
-**File**: `day3_lab05c_python_mongodb_integration.md`
+#### **Lab 14C: Python MongoDB Integration**
+**File**: `lab14c_python_mongodb_integration.md`
 **Prerequisites**: Basic Python knowledge and pip
 
 **Common Objectives**:
@@ -340,27 +362,28 @@ This document provides a comprehensive summary of all labs in the MongoDB Master
 
 ### Learning Dependencies
 ```
-Day 1: Foundation
+Day 1: Foundation (Labs 1-5)
 ├── Lab 1 (Shell) → Lab 2 (DB Management) → Lab 3 (Create)
 └── Lab 4 (Read/Query) → Lab 5 (Update/Delete)
 
-Day 2: Advanced Operations
-├── Lab 6 (Aggregation) ← requires Day 1 query skills
-├── Lab 7 (Data Modeling) ← requires document understanding
-└── Lab 8 (Indexing) ← requires complex query experience
+Day 2: Advanced Operations (Labs 6-10)
+├── Lab 6 (Advanced Queries) ← requires Day 1 query skills
+├── Lab 7 (Aggregation) ← requires query understanding
+├── Lab 8 (Indexing) ← requires complex query experience
+├── Lab 9 (Data Modeling) ← requires document understanding
+└── Lab 10 (Transactions) ← requires CRUD mastery
 
-Day 3: Production Features
-├── Lab 9 (Transactions) ← requires CRUD mastery
-├── Lab 10 (Replica Sets) ← requires deployment understanding
-├── Lab 11 (Sharding) ← requires replica set knowledge
-├── Lab 12 (Change Streams) ← requires event understanding
-└── Lab 13 (C# Integration) ← requires all previous concepts
+Day 3: Production Features (Labs 11-14c)
+├── Lab 11 (Replica Sets) ← requires deployment understanding
+├── Lab 12 (Sharding) ← requires replica set knowledge
+├── Lab 13 (Change Streams) ← requires event understanding
+└── Labs 14a/14b/14c (Integration) ← requires all previous concepts
 ```
 
 ### Skill Building Progression
 1. **Basic Operations** (Labs 1-5): Shell mastery → CRUD operations
-2. **Data Processing** (Labs 6-8): Analytics → Design → Performance
-3. **Enterprise Features** (Labs 9-13): Transactions → Scaling → Integration
+2. **Advanced Features** (Labs 6-10): Queries → Aggregation → Indexing → Modeling → Transactions
+3. **Enterprise Features** (Labs 11-14c): Replica Sets → Sharding → Change Streams → Application Integration
 
 ---
 

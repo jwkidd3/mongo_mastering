@@ -1195,34 +1195,6 @@ db.products.find().skip(10000).limit(20)  // Slower
                     </div>
                 </section>
 
-                <!-- Lab 10: MongoDB Transactions -->
-                <section class="lab-slide">
-                    <h3>🧪 Lab 10: MongoDB Transactions</h3>
-
-                    <div class="objectives">
-                        <h4>Objectives</h4>
-                        <ul>
-                            <li>Understand ACID properties in MongoDB</li>
-                            <li>Implement multi-document transactions</li>
-                            <li>Handle transaction errors and rollbacks</li>
-                            <li>Configure read and write concerns</li>
-                        </ul>
-                    </div>
-
-                    <div class="highlight-box">
-                        <h4>Lab Activities</h4>
-                        <ul>
-                            <li><strong>Part A:</strong> Basic Transaction Implementation</li>
-                            <li><strong>Part B:</strong> Error Handling and Rollbacks</li>
-                            <li><strong>Part C:</strong> Read/Write Concern Configuration</li>
-                            <li><strong>Part D:</strong> Production Transaction Patterns</li>
-                        </ul>
-                    </div>
-
-                    <div class="info-box">
-                        <strong>Note:</strong> Transactions require replica set configuration. Our environment is pre-configured for transaction support.
-                    </div>
-                </section>
             </section>
 
             <!-- Section 6: MongoDB Transactions -->
@@ -1232,7 +1204,7 @@ db.products.find().skip(10000).limit(20)  // Slower
                 </section>
 
                 <section>
-                    <h3>ACID Properties in MongoDB</h3>
+                    <h3>ACID Properties in MongoDB (Part 1)</h3>
                     <div class="two-column">
                         <div>
                             <h4>Atomicity</h4>
@@ -1241,18 +1213,31 @@ db.products.find().skip(10000).limit(20)  // Slower
                                     <li>All operations succeed or all fail</li>
                                     <li>No partial updates across documents</li>
                                     <li>Transaction boundaries clearly defined</li>
+                                    <li>Either entire transaction commits or rolls back</li>
                                 </ul>
                             </div>
-
+                        </div>
+                        <div>
                             <h4>Consistency</h4>
                             <div class="highlight-box">
                                 <ul>
                                     <li>Data remains valid throughout transaction</li>
                                     <li>Schema validation enforced</li>
                                     <li>Business rules maintained</li>
+                                    <li>Database constraints preserved</li>
                                 </ul>
                             </div>
                         </div>
+                    </div>
+
+                    <div class="info-box">
+                        <strong>Insurance Example:</strong> When creating a new policy, customer record updates and policy creation must both succeed or both fail to maintain data integrity.
+                    </div>
+                </section>
+
+                <section>
+                    <h3>ACID Properties in MongoDB (Part 2)</h3>
+                    <div class="two-column">
                         <div>
                             <h4>Isolation</h4>
                             <div class="highlight-box">
@@ -1260,18 +1245,25 @@ db.products.find().skip(10000).limit(20)  // Slower
                                     <li>Concurrent transactions don't interfere</li>
                                     <li>Read/write concerns control visibility</li>
                                     <li>Snapshot isolation by default</li>
+                                    <li>Prevents dirty reads and write conflicts</li>
                                 </ul>
                             </div>
-
+                        </div>
+                        <div>
                             <h4>Durability</h4>
                             <div class="highlight-box">
                                 <ul>
                                     <li>Committed changes survive system failures</li>
                                     <li>Write concerns ensure replication</li>
                                     <li>Journal guarantees persistence</li>
+                                    <li>Data persists across restarts</li>
                                 </ul>
                             </div>
                         </div>
+                    </div>
+
+                    <div class="warning-box">
+                        <strong>Production Note:</strong> Configure appropriate read and write concerns for your durability and performance requirements.
                     </div>
                 </section>
 
@@ -1384,6 +1376,35 @@ function performTransaction(maxRetries = 3) {
     throw new Error('Transaction failed after maximum retries');
 }
                     </code></pre>
+                </section>
+
+                <!-- Lab 10: MongoDB Transactions -->
+                <section class="lab-slide">
+                    <h3>🧪 Lab 10: MongoDB Transactions</h3>
+
+                    <div class="objectives">
+                        <h4>Objectives</h4>
+                        <ul>
+                            <li>Understand ACID properties in MongoDB</li>
+                            <li>Implement multi-document transactions</li>
+                            <li>Handle transaction errors and rollbacks</li>
+                            <li>Configure read and write concerns</li>
+                        </ul>
+                    </div>
+
+                    <div class="highlight-box">
+                        <h4>Lab Activities</h4>
+                        <ul>
+                            <li><strong>Part A:</strong> Basic Transaction Implementation</li>
+                            <li><strong>Part B:</strong> Error Handling and Rollbacks</li>
+                            <li><strong>Part C:</strong> Read/Write Concern Configuration</li>
+                            <li><strong>Part D:</strong> Production Transaction Patterns</li>
+                        </ul>
+                    </div>
+
+                    <div class="info-box">
+                        <strong>Note:</strong> Transactions require replica set configuration. Our environment is pre-configured for transaction support.
+                    </div>
                 </section>
             </section>
 
