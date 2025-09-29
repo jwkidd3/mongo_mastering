@@ -284,7 +284,26 @@ try {
 # Create Docker network
 Write-Status "Creating Docker network..."
 try {
-    $networkId = docker network create mongodb-net
+    $startInfo = New-Object System.Diagnostics.ProcessStartInfo
+    $startInfo.FileName = "docker"
+    $startInfo.Arguments = "network create mongodb-net"
+    $startInfo.RedirectStandardOutput = $true
+    $startInfo.RedirectStandardError = $true
+    $startInfo.UseShellExecute = $false
+    $startInfo.CreateNoWindow = $true
+
+    $process = New-Object System.Diagnostics.Process
+    $process.StartInfo = $startInfo
+    $process.Start() | Out-Null
+    $process.WaitForExit()
+
+    $networkId = $process.StandardOutput.ReadToEnd().Trim()
+    $errorOutput = $process.StandardError.ReadToEnd().Trim()
+
+    if ($process.ExitCode -ne 0) {
+        throw "Docker network create failed. Exit code: $($process.ExitCode). Error: $errorOutput"
+    }
+
     $shortId = if ($networkId -and $networkId.Length -ge 12) { $networkId.Substring(0,12) } else { $networkId }
     Write-Success "Network 'mongodb-net' created: $shortId"
 } catch {
@@ -297,50 +316,104 @@ Write-Status "Starting MongoDB containers..."
 
 Write-Status "  Starting mongo1 Primary..."
 try {
-    $output = & docker run -d --name mongo1 --network mongodb-net -p 27017:27017 mongo:8.0 --replSet rs0 --bind_ip_all 2>&1
-    if ($LASTEXITCODE -ne 0 -or -not $output) {
-        throw "Docker failed to create mongo1. Exit code: $LASTEXITCODE. Output: $output"
+    # Use Start-Process for better control in PowerShell
+    $startInfo = New-Object System.Diagnostics.ProcessStartInfo
+    $startInfo.FileName = "docker"
+    $startInfo.Arguments = "run -d --name mongo1 --network mongodb-net -p 27017:27017 mongo:8.0 --replSet rs0 --bind_ip_all"
+    $startInfo.RedirectStandardOutput = $true
+    $startInfo.RedirectStandardError = $true
+    $startInfo.UseShellExecute = $false
+    $startInfo.CreateNoWindow = $true
+
+    $process = New-Object System.Diagnostics.Process
+    $process.StartInfo = $startInfo
+    $process.Start() | Out-Null
+    $process.WaitForExit()
+
+    $output = $process.StandardOutput.ReadToEnd().Trim()
+    $errorOutput = $process.StandardError.ReadToEnd().Trim()
+
+    if ($process.ExitCode -ne 0) {
+        throw "Docker failed to create mongo1. Exit code: $($process.ExitCode). Error: $errorOutput"
     }
-    # Check if output looks like a container ID (64 character hex string)
-    if ($output.Length -lt 12) {
-        throw "Invalid container ID returned: $output"
+
+    if (-not $output -or $output.Length -lt 12) {
+        throw "Invalid or empty container ID returned: '$output'"
     }
+
     $shortId = $output.Substring(0,12)
     Write-Success "  mongo1 started: $shortId"
 } catch {
     Write-ScriptError "Failed to start mongo1: $_"
+    Remove-MongoEnvironment
     exit 1
 }
 
 Write-Status "  Starting mongo2 Secondary..."
 try {
-    $output = & docker run -d --name mongo2 --network mongodb-net -p 27018:27017 mongo:8.0 --replSet rs0 --bind_ip_all 2>&1
-    if ($LASTEXITCODE -ne 0 -or -not $output) {
-        throw "Docker failed to create mongo2. Exit code: $LASTEXITCODE. Output: $output"
+    $startInfo = New-Object System.Diagnostics.ProcessStartInfo
+    $startInfo.FileName = "docker"
+    $startInfo.Arguments = "run -d --name mongo2 --network mongodb-net -p 27018:27017 mongo:8.0 --replSet rs0 --bind_ip_all"
+    $startInfo.RedirectStandardOutput = $true
+    $startInfo.RedirectStandardError = $true
+    $startInfo.UseShellExecute = $false
+    $startInfo.CreateNoWindow = $true
+
+    $process = New-Object System.Diagnostics.Process
+    $process.StartInfo = $startInfo
+    $process.Start() | Out-Null
+    $process.WaitForExit()
+
+    $output = $process.StandardOutput.ReadToEnd().Trim()
+    $errorOutput = $process.StandardError.ReadToEnd().Trim()
+
+    if ($process.ExitCode -ne 0) {
+        throw "Docker failed to create mongo2. Exit code: $($process.ExitCode). Error: $errorOutput"
     }
-    if ($output.Length -lt 12) {
-        throw "Invalid container ID returned: $output"
+
+    if (-not $output -or $output.Length -lt 12) {
+        throw "Invalid or empty container ID returned: '$output'"
     }
+
     $shortId = $output.Substring(0,12)
     Write-Success "  mongo2 started: $shortId"
 } catch {
     Write-ScriptError "Failed to start mongo2: $_"
+    Remove-MongoEnvironment
     exit 1
 }
 
 Write-Status "  Starting mongo3 Secondary..."
 try {
-    $output = & docker run -d --name mongo3 --network mongodb-net -p 27019:27017 mongo:8.0 --replSet rs0 --bind_ip_all 2>&1
-    if ($LASTEXITCODE -ne 0 -or -not $output) {
-        throw "Docker failed to create mongo3. Exit code: $LASTEXITCODE. Output: $output"
+    $startInfo = New-Object System.Diagnostics.ProcessStartInfo
+    $startInfo.FileName = "docker"
+    $startInfo.Arguments = "run -d --name mongo3 --network mongodb-net -p 27019:27017 mongo:8.0 --replSet rs0 --bind_ip_all"
+    $startInfo.RedirectStandardOutput = $true
+    $startInfo.RedirectStandardError = $true
+    $startInfo.UseShellExecute = $false
+    $startInfo.CreateNoWindow = $true
+
+    $process = New-Object System.Diagnostics.Process
+    $process.StartInfo = $startInfo
+    $process.Start() | Out-Null
+    $process.WaitForExit()
+
+    $output = $process.StandardOutput.ReadToEnd().Trim()
+    $errorOutput = $process.StandardError.ReadToEnd().Trim()
+
+    if ($process.ExitCode -ne 0) {
+        throw "Docker failed to create mongo3. Exit code: $($process.ExitCode). Error: $errorOutput"
     }
-    if ($output.Length -lt 12) {
-        throw "Invalid container ID returned: $output"
+
+    if (-not $output -or $output.Length -lt 12) {
+        throw "Invalid or empty container ID returned: '$output'"
     }
+
     $shortId = $output.Substring(0,12)
     Write-Success "  mongo3 started: $shortId"
 } catch {
     Write-ScriptError "Failed to start mongo3: $_"
+    Remove-MongoEnvironment
     exit 1
 }
 
@@ -348,14 +421,42 @@ Write-Success "All MongoDB containers started"
 
 # Verify containers are actually running
 Write-Status "Verifying containers are running..."
-$runningContainers = & docker ps --filter "name=mongo" --format "{{.Names}}" 2>&1
-if (-not ($runningContainers -match "mongo1" -and $runningContainers -match "mongo2" -and $runningContainers -match "mongo3")) {
-    Write-ScriptError "Not all containers are running properly"
-    Write-ScriptError "Running containers: $runningContainers"
+try {
+    $startInfo = New-Object System.Diagnostics.ProcessStartInfo
+    $startInfo.FileName = "docker"
+    $startInfo.Arguments = 'ps --filter "name=mongo" --format "{{.Names}}"'
+    $startInfo.RedirectStandardOutput = $true
+    $startInfo.RedirectStandardError = $true
+    $startInfo.UseShellExecute = $false
+    $startInfo.CreateNoWindow = $true
+
+    $process = New-Object System.Diagnostics.Process
+    $process.StartInfo = $startInfo
+    $process.Start() | Out-Null
+    $process.WaitForExit()
+
+    $runningContainers = $process.StandardOutput.ReadToEnd().Trim()
+    $errorOutput = $process.StandardError.ReadToEnd().Trim()
+
+    if ($process.ExitCode -ne 0) {
+        throw "Docker ps failed. Exit code: $($process.ExitCode). Error: $errorOutput"
+    }
+
+    $containerList = $runningContainers -split "`n" | Where-Object { $_.Trim() -ne "" }
+    $hasMongo1 = $containerList -contains "mongo1"
+    $hasMongo2 = $containerList -contains "mongo2"
+    $hasMongo3 = $containerList -contains "mongo3"
+
+    if (-not ($hasMongo1 -and $hasMongo2 -and $hasMongo3)) {
+        throw "Not all containers are running properly. Running containers: $runningContainers"
+    }
+
+    Write-Success "All containers verified as running"
+} catch {
+    Write-ScriptError "Container verification failed: $_"
     Remove-MongoEnvironment
     exit 1
 }
-Write-Success "All containers verified as running"
 
 # Give containers time to initialize MongoDB processes
 Write-Status "Waiting for MongoDB processes to start - 20 seconds..."
