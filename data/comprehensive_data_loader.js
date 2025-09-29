@@ -18,16 +18,29 @@ function loadScript(scriptName) {
     print(`\n🔄 Loading ${scriptName}...`);
     print("━".repeat(60));
 
-    try {
-        // Try to load the individual script file
-        load(scriptName);
-        print(`✅ Successfully loaded ${scriptName}`);
-        return true;
-    } catch (error) {
-        print(`⚠️  Could not load ${scriptName} (${error.message})`);
-        print("🔄 Falling back to inline data loading...");
-        return false; // This triggers the inline fallback which contains all the data
+    // Try multiple path variations for cross-platform compatibility
+    const pathVariations = [
+        scriptName,                    // Direct filename (works from data directory)
+        `data/${scriptName}`,          // From project root
+        `./data/${scriptName}`,        // Explicit relative from project root
+        `../data/${scriptName}`,       // From scripts directory
+        `./${scriptName}`              // Explicit current directory
+    ];
+
+    for (let pathVariation of pathVariations) {
+        try {
+            print(`  Trying: ${pathVariation}`);
+            load(pathVariation);
+            print(`✅ Successfully loaded ${scriptName} from: ${pathVariation}`);
+            return true;
+        } catch (error) {
+            print(`  ❌ Failed: ${pathVariation} (${error.message})`);
+        }
     }
+
+    print(`⚠️  Could not load ${scriptName} from any path variation`);
+    print("🔄 Falling back to inline data loading...");
+    return false; // This triggers the inline fallback which contains all the data
 }
 
 function showProgress(message, step, total) {

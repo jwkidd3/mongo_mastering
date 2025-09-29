@@ -30,6 +30,12 @@ mongosh < data/comprehensive_data_loader.js
 Get-Content data\comprehensive_data_loader.js | mongosh
 ```
 
+**Note for Windows Users**: If the data loader shows "falling back to inline", try running from the `data` directory:
+```powershell
+cd data
+Get-Content comprehensive_data_loader.js | mongosh
+```
+
 **Option B: Load Individual Days**
 
 **macOS/Linux:**
@@ -79,18 +85,36 @@ MongoDB Compass provides a visual interface for working with your data:
 1. **Install MongoDB Compass** (if not already installed)
    - Download from: https://www.mongodb.com/try/download/compass
 
-2. **Connection String**: `mongodb://localhost:27017/?directConnection=true`
-   - The `directConnection=true` parameter bypasses replica set discovery
-   - This prevents Compass from trying to resolve internal Docker hostnames
-   - You'll connect directly to the primary node on `localhost:27017`
+2. **Connection Options** (try in this order):
+
+   **Option A: Direct Connection (Recommended)**
+   ```
+   mongodb://localhost:27017/?directConnection=true
+   ```
+
+   **Option B: Single Node (Windows Fallback)**
+   ```
+   mongodb://127.0.0.1:27017/?directConnection=true&serverSelectionTimeoutMS=2000
+   ```
+
+   **Option C: Manual Configuration (Windows Docker Issues)**
+   - Host: `localhost` (or `127.0.0.1`)
+   - Port: `27017`
+   - Authentication: None
+   - In Advanced Options → Connection → check "Direct Connection"
 
 3. **Connect Steps**:
    - Open MongoDB Compass
-   - Enter connection string: `mongodb://localhost:27017/?directConnection=true`
-   - Click **"Connect"**
+   - Try Option A connection string first
+   - If connection fails with "cannot find mongo2" error, try Option B
+   - If both fail, use Option C with manual configuration
    - You should see the `insurance_company` and other databases after loading course data
 
-**Windows Users**: The `directConnection=true` parameter is especially important on Windows to avoid "cannot find mongo2" errors during replica set discovery.
+**Windows Troubleshooting**:
+- If you see "address not found mongo2", the `directConnection=true` parameter should prevent this
+- If connection still fails, try `127.0.0.1` instead of `localhost`
+- Docker Desktop on Windows may require restart if networking is not working
+- Alternative: Use `mongosh` command line instead of Compass
 
 ### 6. Run Comprehensive Lab Tests
 
