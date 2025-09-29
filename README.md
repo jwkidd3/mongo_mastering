@@ -478,6 +478,7 @@ scripts/
 ├── teardown.sh                   # Cleanup (macOS/Linux)
 ├── teardown.ps1                  # Cleanup (Windows PowerShell)
 ├── comprehensive_test.sh          # Complete end-to-end test (macOS/Linux)
+├── comprehensive_test.ps1         # Complete end-to-end test (Windows PowerShell)
 ├── test_connection.js            # Basic MongoDB connection test
 └── lab_validation_comprehensive.js # Complete lab validation test
 ```
