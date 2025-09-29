@@ -32,10 +32,10 @@ db.audit_logs.drop();
 
 print("✓ Cleaned existing collections");
 
-// Create 50 branches using individual variables (avoiding loops)
+// Create 3 branches using individual variables (avoiding loops)
 print("\n🔍 Loading data for Lab 1: Advanced Querying & Filtering");
 print("--------------------------------------------------------");
-print("Creating comprehensive branch network (50 branches)...");
+print("Creating comprehensive branch network (3 branches)...");
 
 var branch1 = {_id: "BR001", branchCode: "BR-NY-001", name: "New York Financial District", address: {street: "123 Wall Street", city: "New York", state: "NY", zipCode: "10001"}, location: {type: "Point", coordinates: [-73.9857, 40.7484]}, manager: "Sarah Johnson", agentCount: 15, performanceMetrics: {monthlyRevenue: 245000.50, customerSatisfaction: 4.8, claimsProcessed: 125}, specialties: ["Auto", "Property", "Life"], isActive: true, openDate: new Date("2020-01-15")};
 var branch2 = {_id: "BR002", branchCode: "BR-CA-002", name: "Los Angeles West Side", address: {street: "456 Sunset Blvd", city: "Los Angeles", state: "CA", zipCode: "90210"}, location: {type: "Point", coordinates: [-118.2437, 34.0522]}, manager: "Michael Chen", agentCount: 22, performanceMetrics: {monthlyRevenue: 325000.75, customerSatisfaction: 4.6, claimsProcessed: 180}, specialties: ["Auto", "Commercial", "Cyber"], isActive: true, openDate: new Date("2019-05-20")};

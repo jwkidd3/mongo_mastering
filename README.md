@@ -21,18 +21,58 @@ Complete 3-day MongoDB training course with hands-on labs and enterprise-ready c
 - Use "Use the WSL 2 based engine" setting if available
 - If networking issues persist, try restarting Docker Desktop
 
+### Windows-Specific Setup: Hosts File Configuration
+
+**Windows users may need to update the hosts file** to resolve Docker container hostnames. If you encounter "ENOTFOUND mongo1", "mongo2", or "mongo3" errors, follow these steps:
+
+#### Option 1: Automatic Hosts File Update (Run as Administrator)
+```powershell
+# Open PowerShell as Administrator and run:
+Add-Content -Path "$env:windir\System32\drivers\etc\hosts" -Value "`n127.0.0.1 mongo1"
+Add-Content -Path "$env:windir\System32\drivers\etc\hosts" -Value "127.0.0.1 mongo2"
+Add-Content -Path "$env:windir\System32\drivers\etc\hosts" -Value "127.0.0.1 mongo3"
+```
+
+#### Option 2: Manual Hosts File Update
+1. **Open Notepad as Administrator**:
+   - Press `Win + S`, type "notepad"
+   - Right-click "Notepad" → "Run as administrator"
+
+2. **Open the hosts file**:
+   - In Notepad: File → Open
+   - Navigate to: `C:\Windows\System32\drivers\etc\`
+   - Change file type filter to "All Files"
+   - Select and open the `hosts` file
+
+3. **Add the following lines at the end**:
+   ```
+   127.0.0.1 mongo1
+   127.0.0.1 mongo2
+   127.0.0.1 mongo3
+   ```
+
+4. **Save the file** (Ctrl+S)
+
+#### Option 3: Use Direct Connection (Alternative)
+If you prefer not to modify the hosts file, use the `directConnection=true` parameter in all MongoDB connections:
+```bash
+mongosh "mongodb://localhost:27017/?directConnection=true"
+```
+
+**Note**: After updating the hosts file, Windows will resolve mongo1, mongo2, and mongo3 to localhost, allowing normal MongoDB operations without the directConnection parameter.
+
 ### 2. Load Course Data
 
 **Option A: Load All 3 Days at Once (Recommended)**
 
 **macOS/Linux:**
 ```bash
-mongosh < data/comprehensive_data_loader.js
+mongosh "mongodb://localhost:27017/?directConnection=true" < data/comprehensive_data_loader.js
 ```
 
 **Windows PowerShell:**
 ```powershell
-Get-Content data\comprehensive_data_loader.js | mongosh
+Get-Content data\comprehensive_data_loader.js | mongosh "mongodb://localhost:27017/?directConnection=true"
 ```
 
 **Windows Data Loader Issues**:
@@ -63,16 +103,16 @@ The comprehensive loader automatically detects Windows path issues and loads all
 
 **macOS/Linux:**
 ```bash
-mongosh < data/day1_data_loader.js  # Day 1: Fundamentals
-mongosh < data/day2_data_loader.js  # Day 2: Advanced Features
-mongosh < data/day3_data_loader.js  # Day 3: Production
+mongosh "mongodb://localhost:27017/?directConnection=true" < data/day1_data_loader.js  # Day 1: Fundamentals
+mongosh "mongodb://localhost:27017/?directConnection=true" < data/day2_data_loader.js  # Day 2: Advanced Features
+mongosh "mongodb://localhost:27017/?directConnection=true" < data/day3_data_loader.js  # Day 3: Production
 ```
 
 **Windows PowerShell:**
 ```powershell
-Get-Content data\day1_data_loader.js | mongosh  # Day 1: Fundamentals
-Get-Content data\day2_data_loader.js | mongosh  # Day 2: Advanced Features
-Get-Content data\day3_data_loader.js | mongosh  # Day 3: Production
+Get-Content data\day1_data_loader.js | mongosh "mongodb://localhost:27017/?directConnection=true"  # Day 1: Fundamentals
+Get-Content data\day2_data_loader.js | mongosh "mongodb://localhost:27017/?directConnection=true"  # Day 2: Advanced Features
+Get-Content data\day3_data_loader.js | mongosh "mongodb://localhost:27017/?directConnection=true"  # Day 3: Production
 ```
 
 ### 3. Test Everything Works
@@ -87,19 +127,30 @@ Get-Content data\day3_data_loader.js | mongosh  # Day 3: Production
 .\test.ps1
 ```
 
-### 4. Verify Connection (Optional)
+### 4. Verify Connection
 
 Test basic MongoDB connection:
 
-**macOS/Linux:**
+**Use Direct Connection (Recommended):**
 ```bash
-mongosh < scripts/test_connection.js
+mongosh "mongodb://localhost:27017/?directConnection=true"
 ```
 
-**Windows PowerShell:**
-```powershell
-Get-Content scripts\test_connection.js | mongosh
+**If you get "ENOTFOUND mongo1" or "mongo2" errors**, use the direct connection string above, or:
+
+**Alternative Connection Methods:**
+```bash
+# Option A: Direct connection with mongosh
+mongosh "mongodb://localhost:27017/?directConnection=true" --eval "db.hello()"
+
+# Option B: Connection testing script
+mongosh "mongodb://localhost:27017/?directConnection=true" < scripts/test_connection.js
+
+# Option C: Windows PowerShell
+Get-Content scripts\test_connection.js | mongosh "mongodb://localhost:27017/?directConnection=true"
 ```
+
+**Why directConnection=true?** The replica set uses Docker container hostnames (mongo1, mongo2, mongo3) internally. When connecting from outside Docker, use `directConnection=true` to bypass replica set discovery and connect directly to the primary.
 
 ### 5. Connect with MongoDB Compass (Optional)
 
@@ -230,24 +281,65 @@ Get-Content scripts\lab_validation_comprehensive.js | mongosh
 .\teardown.ps1
 ```
 
+## Data Loaders
+
+### Individual Day Data Structure
+
+#### Day 1: Fundamentals (insurance_company database)
+- **5 branches** - Basic insurance branch locations
+- **10 policies** - Auto, Home, Life policies with variations
+- **20 customers** - Individual, family, business customers
+- **10 agents** - Licensed insurance agents
+- **15 claims** - Sample claims for CRUD operations
+- **20 payments** - Premium and settlement payments
+
+#### Day 2: Analytics (insurance_analytics database)
+- **3 branches** - Geospatial branch data with performance metrics
+- **3 policies** - Complex policy structures for aggregation
+- **3 customers** - Risk-segmented customer profiles
+- **3 agents** - Complex agent performance data
+- **3 claims** - Analytics-ready claims with location data
+- **3 reviews** - Customer reviews for text search
+
+#### Day 3: Production (insurance_company database)
+- **4 policies** - Transaction-ready policies
+- **6 customers** - Large-scale customer data for sharding
+- **3 claims** - Production claims data
+- **5 branches** - Geographic distribution for sharding
+- **2 agents** - C# integration models
+- **2 vehicles** - Asset management data
+- **1 property** - Property assets
+- **3 notifications** - Change stream monitoring data
+
+### Data Consistency Features
+- Customer IDs consistent across all labs
+- Policy numbers follow standard format (POL-XXX-XXX)
+- Geographic data uses real coordinates
+- Insurance amounts within realistic ranges
+- Appropriate indexes for each lab's queries
+
 ## Course Structure
 
 ### 📂 Directory Overview
 ```
 mongo_mastering/
 ├── scripts/                  # Automated setup & teardown scripts
-│   ├── setup.sh           # One-command environment setup
-│   ├── teardown.sh        # Complete cleanup
-│   ├── test.sh            # Connection testing
-│   ├── SETUP.md           # Manual setup instructions
-│   └── README.md          # Setup documentation
+│   ├── setup.sh           # One-command environment setup (macOS/Linux)
+│   ├── setup.ps1          # One-command environment setup (Windows)
+│   ├── teardown.sh        # Complete cleanup (macOS/Linux)
+│   ├── teardown.ps1       # Complete cleanup (Windows)
+│   ├── test.sh            # Connection testing (macOS/Linux)
+│   ├── test.ps1           # Connection testing (Windows)
+│   ├── comprehensive_test.sh  # Complete end-to-end test (macOS/Linux)
+│   ├── comprehensive_test.ps1 # Complete end-to-end test (Windows)
+│   ├── test_connection.js # Basic MongoDB connection test
+│   └── lab_validation_comprehensive.js # Complete lab validation test
 ├── data/                   # Course data & loading scripts
 │   ├── comprehensive_data_loader.js # Complete 3-day course data (recommended)
 │   ├── day1_data_loader.js # Day 1 fundamentals data
 │   ├── day2_data_loader.js # Day 2 analytics data
 │   ├── day3_data_loader.js # Day 3 production data
-│   ├── test_connection.js  # Connection verification
-│   └── README.md          # Data loading documentation
+│   └── test_connection.js  # Connection verification
 ├── presentations/          # Course presentations (Day 1-3)
 │   ├── mongodb_day1_presentation.html
 │   ├── mongodb_day2_presentation.html
