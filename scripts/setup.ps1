@@ -285,10 +285,10 @@ Write-Host ""
 # Step 8: Test basic operations
 Write-Status "Testing basic operations..."
 try {
-    # Simplified test for Windows compatibility
-    $testCommand = "use test_setup;db.test.insertOne({message:'Setup test',timestamp:new Date()});var doc=db.test.findOne();if(doc){print('Test passed');}db.test.drop();"
+    # Use docker exec for more reliable connection
+    $testCommand = "use test_setup; db.test.insertOne({message:'Setup test',timestamp:new Date()}); var doc=db.test.findOne(); if(doc){print('Test passed');} db.test.drop();"
 
-    $testResult = mongosh --quiet --eval $testCommand
+    $testResult = docker exec mongo1 mongosh --quiet --eval $testCommand
     if ($LASTEXITCODE -eq 0) {
         Write-Success "Basic operations working"
     } else {
