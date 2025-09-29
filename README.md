@@ -16,6 +16,11 @@ Complete 3-day MongoDB training course with hands-on labs and enterprise-ready c
 .\setup.ps1
 ```
 
+**Windows Docker Desktop Requirements**:
+- Ensure Docker Desktop is running and fully started
+- Use "Use the WSL 2 based engine" setting if available
+- If networking issues persist, try restarting Docker Desktop
+
 ### 2. Load Course Data
 
 **Option A: Load All 3 Days at Once (Recommended)**
@@ -30,11 +35,29 @@ mongosh < data/comprehensive_data_loader.js
 Get-Content data\comprehensive_data_loader.js | mongosh
 ```
 
-**Note for Windows Users**: If the data loader shows "falling back to inline", try running from the `data` directory:
+**Windows Data Loader Issues**:
+If you see "falling back to inline data loading" on Windows, this is a known issue with `mongosh` path resolution on Windows. The inline loading provides the exact same data - this is not an error.
+
+**Alternative Windows Approaches** (if you prefer individual script loading):
+
+**Option 1: Run from data directory**:
 ```powershell
 cd data
 Get-Content comprehensive_data_loader.js | mongosh
 ```
+
+**Option 2: Load individual scripts manually**:
+```powershell
+cd data
+Get-Content day1_data_loader.js | mongosh
+Get-Content day2_data_loader.js | mongosh
+Get-Content day3_data_loader.js | mongosh
+```
+
+**Option 3: Use inline loading (recommended for Windows)**:
+The comprehensive loader automatically detects Windows path issues and loads all data inline. This provides identical results and is actually more reliable than file loading on Windows.
+
+**✅ Important**: Inline loading is not an error - it provides the exact same data as individual file loading. The course will work perfectly with inline loading.
 
 **Option B: Load Individual Days**
 
@@ -115,6 +138,49 @@ MongoDB Compass provides a visual interface for working with your data:
 - If connection still fails, try `127.0.0.1` instead of `localhost`
 - Docker Desktop on Windows may require restart if networking is not working
 - Alternative: Use `mongosh` command line instead of Compass
+
+**Windows Docker Networking Issues**:
+If you cannot connect to `localhost:27018` or `localhost:27019` on Windows:
+
+1. **Check Docker Desktop Status**:
+   ```powershell
+   docker ps
+   ```
+   Verify all 3 containers (mongo1, mongo2, mongo3) are running
+
+2. **Test Port Connectivity**:
+   ```powershell
+   # Test each port individually
+   mongosh --host localhost --port 27017 --eval "db.hello().isWritablePrimary"
+   mongosh --host localhost --port 27018 --eval "db.hello().secondary"
+   mongosh --host localhost --port 27019 --eval "db.hello().secondary"
+   ```
+
+3. **Use 127.0.0.1 Instead of localhost**:
+   ```powershell
+   mongosh --host 127.0.0.1 --port 27018
+   ```
+
+4. **Docker Desktop Restart** (often fixes Windows networking):
+   - Right-click Docker Desktop in system tray
+   - Select "Restart Docker Desktop"
+   - Wait for complete restart
+   - Re-run setup: `.\setup.ps1`
+
+5. **Windows-Specific Connection String**:
+   ```
+   mongodb://127.0.0.1:27017,127.0.0.1:27018,127.0.0.1:27019/?replicaSet=rs0
+   ```
+
+6. **Alternative: Primary-Only Mode for Windows**:
+   If secondary members remain unreachable, you can work with just the primary:
+   ```powershell
+   mongosh --host localhost --port 27017
+   # or
+   mongosh "mongodb://localhost:27017/?directConnection=true"
+   ```
+
+   **Note**: This limits some replica set features but allows all basic MongoDB operations and most course labs to work.
 
 ### 6. Run Comprehensive Lab Tests
 
