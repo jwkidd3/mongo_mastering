@@ -101,14 +101,14 @@ function Wait-MongoReady {
                 Start-Sleep -Seconds 5
                 $elapsed += 5
                 if (($elapsed % 15) -eq 0) {
-                    Write-Status "Still waiting for MongoDB... ($elapsed seconds)"
+                    Write-Status "Still waiting for MongoDB... $elapsed seconds"
                 }
             }
         } catch {
             Start-Sleep -Seconds 5
             $elapsed += 5
             if (($elapsed % 15) -eq 0) {
-                Write-Status "Still waiting for MongoDB... ($elapsed seconds)"
+                Write-Status "Still waiting for MongoDB... $elapsed seconds"
             }
         }
     }
@@ -309,7 +309,7 @@ try {
 Write-Success "All MongoDB containers started"
 
 # Give containers time to initialize MongoDB processes
-Write-Status "Waiting for MongoDB processes to start (20 seconds)..."
+Write-Status "Waiting for MongoDB processes to start - 20 seconds..."
 Start-Sleep -Seconds 20
 
 # Wait for MongoDB to be ready
