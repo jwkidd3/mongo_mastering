@@ -41,7 +41,7 @@ print("\n📋 Creating basic insurance collections for Labs 1 & 2");
 print("----------------------------------------------------");
 
 // Create branches collection with geospatial data (used across all labs)
-print("Creating branches collection (25 branches)...");
+print("Creating branches collection (5 branches)...");
 
 // Insert branches using individual variables to avoid multiline hanging issues
 var branch1 = {_id: "BR001", branchCode: "BR-NY-001", name: "New York Financial District", address: {street: "123 Wall Street", city: "New York", state: "NY", zipCode: "10001"}, location: {type: "Point", coordinates: [-73.9857, 40.7484]}, manager: "Sarah Johnson", agentCount: 15, specialties: ["Auto", "Property", "Life"], isActive: true};
