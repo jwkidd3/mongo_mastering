@@ -68,7 +68,7 @@ function Remove-MongoEnvironment {
     # Remove containers individually to avoid errors if they don't exist
     @('mongo1', 'mongo2', 'mongo3') | ForEach-Object {
         try {
-            docker rm -f $_ 2>$null | Out-Null
+            cmd /c "docker rm -f $_ 2>nul" | Out-Null
         } catch {
             # Silently ignore errors for non-existent containers
         }
@@ -76,7 +76,7 @@ function Remove-MongoEnvironment {
 
     # Remove network
     try {
-        docker network rm mongodb-net 2>$null | Out-Null
+        cmd /c 'docker network rm mongodb-net 2>nul' | Out-Null
     } catch {
         # Silently ignore errors for non-existent network
     }
@@ -278,7 +278,7 @@ try {
     Remove-MongoEnvironment
 } catch {}
 try {
-    docker network rm mongodb-net 2>$null | Out-Null
+    cmd /c 'docker network rm mongodb-net 2>nul' | Out-Null
 } catch {}
 
 # Create Docker network
