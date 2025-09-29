@@ -303,12 +303,12 @@ Get-Content scripts\lab_validation_comprehensive.js | mongosh
 
 #### Day 3: Production (insurance_company database)
 - **4 policies** - Transaction-ready policies
-- **6 customers** - Large-scale customer data for sharding
-- **3 claims** - Production claims data
-- **5 branches** - Geographic distribution for sharding
-- **2 agents** - C# integration models
-- **2 vehicles** - Asset management data
-- **1 property** - Property assets
+- **6 customers** - Customer data for transactions and sharding demos
+- **3 claims** - Claims data for sharding demonstrations
+- **5 branches** - Branch data for geographic distribution demos
+- **2 agents** - Agent data for C# integration
+- **2 vehicles** - Vehicle asset data
+- **1 property** - Property asset data
 - **3 notifications** - Change stream monitoring data
 
 ### Data Consistency Features
