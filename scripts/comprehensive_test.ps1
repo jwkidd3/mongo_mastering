@@ -346,6 +346,17 @@ try {
 
 Write-Success "All MongoDB containers started"
 
+# Verify containers are actually running
+Write-Status "Verifying containers are running..."
+$runningContainers = & docker ps --filter "name=mongo" --format "{{.Names}}" 2>&1
+if (-not ($runningContainers -match "mongo1" -and $runningContainers -match "mongo2" -and $runningContainers -match "mongo3")) {
+    Write-ScriptError "Not all containers are running properly"
+    Write-ScriptError "Running containers: $runningContainers"
+    Remove-MongoEnvironment
+    exit 1
+}
+Write-Success "All containers verified as running"
+
 # Give containers time to initialize MongoDB processes
 Write-Status "Waiting for MongoDB processes to start - 20 seconds..."
 Start-Sleep -Seconds 20
