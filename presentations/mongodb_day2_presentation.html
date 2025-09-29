@@ -446,9 +446,9 @@ db.stores.find({
                     </div>
                 </section>
 
-                <!-- Lab 1: Advanced Query Techniques -->
+                <!-- Lab 6: Advanced Query Techniques -->
                 <section class="lab-slide">
-                    <h3>🧪 Lab 1: Advanced Query Techniques Mastery</h3>
+                    <h3>🧪 Lab 6: Advanced Query Techniques Mastery</h3>
 
                     <div class="objectives">
                         <h4>Objectives</h4>
@@ -651,9 +651,9 @@ db.orders.aggregate([
 ])</code></pre>
                 </section>
 
-                <!-- Lab 2: Aggregation Framework -->
+                <!-- Lab 7: Aggregation Framework -->
                 <section class="lab-slide">
-                    <h3>🧪 Lab 2: MongoDB Aggregation Framework</h3>
+                    <h3>🧪 Lab 7: MongoDB Aggregation Framework</h3>
 
                     <div class="objectives">
                         <h4>Objectives</h4>
@@ -968,9 +968,9 @@ db.products.find().skip(10000).limit(20)  // Slower
                     </div>
                 </section>
 
-                <!-- Lab 3: Indexing and Performance Optimization -->
+                <!-- Lab 8: Indexing and Performance Optimization -->
                 <section class="lab-slide">
-                    <h3>🧪 Lab 3: Indexing Strategies and Performance Optimization</h3>
+                    <h3>🧪 Lab 8: Indexing Strategies and Performance Optimization</h3>
 
                     <div class="objectives">
                         <h4>Objectives</h4>
@@ -1172,9 +1172,9 @@ db.products.find().skip(10000).limit(20)  // Slower
                     </div>
                 </section>
 
-                <!-- Lab 4: Data Modeling and Schema Design -->
+                <!-- Lab 9: Data Modeling and Schema Design -->
                 <section class="lab-slide">
-                    <h3>🧪 Lab 4: Data Modeling and Schema Design</h3>
+                    <h3>🧪 Lab 9: Data Modeling and Schema Design</h3>
 
                     <div class="objectives">
                         <h4>Objectives</h4>
@@ -1193,6 +1193,197 @@ db.products.find().skip(10000).limit(20)  // Slower
                             <li><strong>Part C:</strong> Performance Implications Analysis</li>
                         </ul>
                     </div>
+                </section>
+
+                <!-- Lab 10: MongoDB Transactions -->
+                <section class="lab-slide">
+                    <h3>🧪 Lab 10: MongoDB Transactions</h3>
+
+                    <div class="objectives">
+                        <h4>Objectives</h4>
+                        <ul>
+                            <li>Understand ACID properties in MongoDB</li>
+                            <li>Implement multi-document transactions</li>
+                            <li>Handle transaction errors and rollbacks</li>
+                            <li>Configure read and write concerns</li>
+                        </ul>
+                    </div>
+
+                    <div class="highlight-box">
+                        <h4>Lab Activities</h4>
+                        <ul>
+                            <li><strong>Part A:</strong> Basic Transaction Implementation</li>
+                            <li><strong>Part B:</strong> Error Handling and Rollbacks</li>
+                            <li><strong>Part C:</strong> Read/Write Concern Configuration</li>
+                            <li><strong>Part D:</strong> Production Transaction Patterns</li>
+                        </ul>
+                    </div>
+
+                    <div class="info-box">
+                        <strong>Note:</strong> Transactions require replica set configuration. Our environment is pre-configured for transaction support.
+                    </div>
+                </section>
+            </section>
+
+            <!-- Section 6: MongoDB Transactions -->
+            <section>
+                <section class="section-title">
+                    <h2>6. MongoDB Transactions</h2>
+                </section>
+
+                <section>
+                    <h3>ACID Properties in MongoDB</h3>
+                    <div class="two-column">
+                        <div>
+                            <h4>Atomicity</h4>
+                            <div class="highlight-box">
+                                <ul>
+                                    <li>All operations succeed or all fail</li>
+                                    <li>No partial updates across documents</li>
+                                    <li>Transaction boundaries clearly defined</li>
+                                </ul>
+                            </div>
+
+                            <h4>Consistency</h4>
+                            <div class="highlight-box">
+                                <ul>
+                                    <li>Data remains valid throughout transaction</li>
+                                    <li>Schema validation enforced</li>
+                                    <li>Business rules maintained</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div>
+                            <h4>Isolation</h4>
+                            <div class="highlight-box">
+                                <ul>
+                                    <li>Concurrent transactions don't interfere</li>
+                                    <li>Read/write concerns control visibility</li>
+                                    <li>Snapshot isolation by default</li>
+                                </ul>
+                            </div>
+
+                            <h4>Durability</h4>
+                            <div class="highlight-box">
+                                <ul>
+                                    <li>Committed changes survive system failures</li>
+                                    <li>Write concerns ensure replication</li>
+                                    <li>Journal guarantees persistence</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Transaction Syntax</h3>
+                    <pre><code class="language-javascript">
+// Start a session
+const session = db.getMongo().startSession();
+
+try {
+    // Begin transaction
+    session.startTransaction({
+        readConcern: { level: "majority" },
+        writeConcern: { w: "majority", wtimeout: 5000 }
+    });
+
+    // Perform operations within transaction
+    const sessionDb = session.getDatabase("insurance_company");
+    sessionDb.policies.insertOne({
+        policyNumber: "POL-12345",
+        amount: NumberDecimal("1500.00"),
+        status: "active"
+    });
+
+    sessionDb.customers.updateOne(
+        { customerId: "CUST-001" },
+        { $inc: { policyCount: 1 } }
+    );
+
+    // Commit transaction
+    session.commitTransaction();
+    print("Transaction committed successfully");
+} catch (error) {
+    // Rollback on error
+    session.abortTransaction();
+    print("Transaction aborted: " + error);
+} finally {
+    session.endSession();
+}
+                    </code></pre>
+                </section>
+
+                <section>
+                    <h3>Transaction Best Practices</h3>
+                    <div class="two-column">
+                        <div>
+                            <h4>Design Guidelines</h4>
+                            <div class="highlight-box">
+                                <ul>
+                                    <li>Keep transactions short-lived</li>
+                                    <li>Minimize operations per transaction</li>
+                                    <li>Use appropriate read/write concerns</li>
+                                    <li>Handle retryable errors gracefully</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div>
+                            <h4>Common Patterns</h4>
+                            <div class="highlight-box">
+                                <ul>
+                                    <li>Multi-document updates</li>
+                                    <li>Account transfers</li>
+                                    <li>Order processing workflows</li>
+                                    <li>Data consistency enforcement</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="warning-box">
+                        <strong>Performance Note:</strong> Transactions have overhead. Use them only when ACID properties are required across multiple documents.
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Error Handling and Retry Logic</h3>
+                    <pre><code class="language-javascript">
+function performTransaction(maxRetries = 3) {
+    let retryCount = 0;
+
+    while (retryCount < maxRetries) {
+        const session = db.getMongo().startSession();
+
+        try {
+            session.startTransaction();
+
+            // Your transaction operations here
+            const sessionDb = session.getDatabase("insurance_company");
+            // ... perform operations ...
+
+            session.commitTransaction();
+            session.endSession();
+            return true; // Success
+
+        } catch (error) {
+            session.abortTransaction();
+            session.endSession();
+
+            if (error.hasOwnProperty('errorLabels') &&
+                error.errorLabels.includes('TransientTransactionError')) {
+                retryCount++;
+                print(`Retrying transaction (${retryCount}/${maxRetries})`);
+                continue;
+            } else {
+                throw error; // Non-retryable error
+            }
+        }
+    }
+
+    throw new Error('Transaction failed after maximum retries');
+}
+                    </code></pre>
                 </section>
             </section>
 

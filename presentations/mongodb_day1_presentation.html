@@ -678,16 +678,16 @@ db.users.deleteMany({
                     </div>
                 </section>
 
-                <!-- Lab 1: MongoDB Setup & Basic Operations -->
+                <!-- Lab 1: MongoDB Shell Mastery -->
                 <section class="lab-slide">
-                    <h3>🧪 Lab 1: MongoDB Setup & Basic Operations</h3>
+                    <h3>🧪 Lab 1: MongoDB Shell Mastery</h3>
 
                     <div class="objectives">
                         <h4>Objectives</h4>
                         <ul>
-                            <li>Set up MongoDB environment using Docker</li>
-                            <li>Practice basic CRUD operations</li>
-                            <li>Understand document structure</li>
+                            <li>Master MongoDB shell navigation and commands</li>
+                            <li>Practice database and collection management</li>
+                            <li>Understand MongoDB architecture and data structure</li>
                         </ul>
                     </div>
 
@@ -701,8 +701,9 @@ mongosh < day1_data_loader.js</code></pre>
                     <div class="highlight-box">
                         <h4>Lab Activities</h4>
                         <ul>
-                            <li><strong>Part A:</strong> Environment Setup</li>
-                            <li><strong>Part B:</strong> Library Management System</li>
+                            <li><strong>Part A:</strong> MongoDB Shell Navigation</li>
+                            <li><strong>Part B:</strong> Database and Collection Operations</li>
+                            <li><strong>Part C:</strong> Document Structure Exploration</li>
                         </ul>
                     </div>
                 </section>
@@ -883,25 +884,25 @@ db.users.find({"scores.2": {$exists: true}})
                     </div>
                 </section>
 
-                <!-- Lab 2: Query Mastery Workshop -->
+                <!-- Lab 2: Database & Collection Management -->
                 <section class="lab-slide">
-                    <h3>🧪 Lab 2: Query Mastery Workshop</h3>
+                    <h3>🧪 Lab 2: Database & Collection Management</h3>
 
                     <div class="objectives">
                         <h4>Objectives</h4>
                         <ul>
-                            <li>Master MongoDB query operators</li>
-                            <li>Practice complex query combinations</li>
-                            <li>Work with arrays and nested documents</li>
+                            <li>Create and manage databases and collections</li>
+                            <li>Understand collection options and configurations</li>
+                            <li>Practice database administration commands</li>
                         </ul>
                     </div>
 
                     <div class="highlight-box">
                         <h4>Focus Areas</h4>
                         <ul>
-                            <li>Comparison and logical operators</li>
-                            <li>Array operations and element matching</li>
-                            <li>Complex query combinations</li>
+                            <li>Database creation and deletion</li>
+                            <li>Collection management and options</li>
+                            <li>Data import and export operations</li>
                         </ul>
                     </div>
                 </section>
@@ -1052,25 +1053,25 @@ var productNames = db.products.find({}, {name: 1}).map(function(doc) {
                     </code></pre>
                 </section>
 
-                <!-- Lab 3: Advanced Querying & Projections -->
+                <!-- Lab 3: CRUD Operations - Create & Insert -->
                 <section class="lab-slide">
-                    <h3>🧪 Lab 3: Advanced Querying & Projections</h3>
+                    <h3>🧪 Lab 3: CRUD Operations - Create & Insert</h3>
 
                     <div class="objectives">
                         <h4>Objectives</h4>
                         <ul>
-                            <li>Master projection techniques</li>
-                            <li>Practice regex queries</li>
-                            <li>Implement sorting and pagination</li>
+                            <li>Master document insertion techniques</li>
+                            <li>Practice single and batch insert operations</li>
+                            <li>Understand MongoDB data types and structure</li>
                         </ul>
                     </div>
 
                     <div class="highlight-box">
-                        <h4>E-commerce Product Database</h4>
+                        <h4>Customer Management System</h4>
                         <ul>
-                            <li>Product catalog with specifications</li>
-                            <li>Search and filtering capabilities</li>
-                            <li>Performance optimization techniques</li>
+                            <li>Customer profile creation and data insertion</li>
+                            <li>Multiple document insertion workflows</li>
+                            <li>Data validation and error handling</li>
                         </ul>
                     </div>
                 </section>
@@ -1302,25 +1303,25 @@ db.createCollection("users", {
                     </code></pre>
                 </section>
 
-                <!-- Lab 4: Data Modeling & Schema Design -->
+                <!-- Lab 4: CRUD Operations - Read & Query -->
                 <section class="lab-slide">
-                    <h3>🧪 Lab 4: Data Modeling & Schema Design</h3>
+                    <h3>🧪 Lab 4: CRUD Operations - Read & Query</h3>
 
                     <div class="objectives">
                         <h4>Objectives</h4>
                         <ul>
-                            <li>Design effective document schemas</li>
-                            <li>Practice embedding vs referencing decisions</li>
-                            <li>Implement data validation</li>
+                            <li>Master MongoDB query language</li>
+                            <li>Practice comparison and logical operators</li>
+                            <li>Implement complex query combinations</li>
                         </ul>
                     </div>
 
                     <div class="highlight-box">
-                        <h4>University System Design</h4>
+                        <h4>Policy Search and Analysis</h4>
                         <ul>
-                            <li>Students, courses, and enrollments</li>
-                            <li>Schema validation implementation</li>
-                            <li>Design pattern applications</li>
+                            <li>Complex insurance policy queries</li>
+                            <li>Advanced filtering and search techniques</li>
+                            <li>Data analysis and reporting queries</li>
                         </ul>
                     </div>
                 </section>
@@ -1333,24 +1334,24 @@ db.createCollection("users", {
                 </section>
 
                 <section class="lab-slide">
-                    <h3>🧪 Lab 5: E-commerce Analytics Project</h3>
+                    <h3>🧪 Lab 5: CRUD Operations - Update & Delete</h3>
 
                     <div class="objectives">
                         <h4>Objectives</h4>
                         <ul>
-                            <li>Integrate all Day 1 concepts</li>
-                            <li>Build a complete application database</li>
-                            <li>Practice real-world scenarios</li>
+                            <li>Master update and delete operations</li>
+                            <li>Practice update operators and modifiers</li>
+                            <li>Implement safe deletion strategies</li>
                         </ul>
                     </div>
 
                     <div class="highlight-box">
-                        <h4>Complete E-commerce System</h4>
+                        <h4>Customer Data Management</h4>
                         <ul>
-                            <li>Product catalog with categories and reviews</li>
-                            <li>Customer profiles and order management</li>
-                            <li>Analytics queries and business intelligence</li>
-                            <li>Performance optimization strategies</li>
+                            <li>Customer profile updates and modifications</li>
+                            <li>Bulk update operations for data maintenance</li>
+                            <li>Safe deletion practices and data archival</li>
+                            <li>Data integrity and consistency maintenance</li>
                         </ul>
                     </div>
                 </section>

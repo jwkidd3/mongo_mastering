@@ -17,9 +17,19 @@ Complete 3-day MongoDB training course with hands-on labs and enterprise-ready c
 ```
 
 ### 2. Load Course Data
+
+**Option A: Load All 3 Days at Once (Recommended)**
 ```bash
 cd ../data
-mongosh < day1_data_loader.js
+mongosh < comprehensive_data_loader.js
+```
+
+**Option B: Load Individual Days**
+```bash
+cd ../data
+mongosh < day1_data_loader.js  # Day 1: Fundamentals
+mongosh < day2_data_loader.js  # Day 2: Advanced Features
+mongosh < day3_data_loader.js  # Day 3: Production
 ```
 
 ### 3. Test Everything Works
@@ -108,6 +118,7 @@ mongo_mastering/
 │   ├── SETUP.md           # Manual setup instructions
 │   └── README.md          # Setup documentation
 ├── data/                   # Course data & loading scripts
+│   ├── comprehensive_data_loader.js # Complete 3-day course data (recommended)
 │   ├── day1_data_loader.js # Day 1 fundamentals data
 │   ├── day2_data_loader.js # Day 2 analytics data
 │   ├── day3_data_loader.js # Day 3 production data
@@ -275,7 +286,8 @@ cd scripts && ./setup.sh
 
 # Load data for the day
 cd ../data
-mongosh < day1_data_loader.js  # or day2/day3
+mongosh < comprehensive_data_loader.js  # All 3 days (recommended)
+# OR load individual days: day1_data_loader.js, day2_data_loader.js, day3_data_loader.js
 
 # Work through presentations and labs
 open ../presentations/mongodb_day1_presentation.html
@@ -299,11 +311,13 @@ cd ../scripts && ./teardown.sh
 # Morning setup
 ./setup.sh
 
-# Load data for the day you're working on
+# Load data for the course
 cd ../data
-mongosh < day1_data_loader.js  # Day 1
-mongosh < day2_data_loader.js  # Day 2
-mongosh < day3_data_loader.js  # Day 3
+mongosh < comprehensive_data_loader.js  # All 3 days (recommended)
+# OR load individual days:
+# mongosh < day1_data_loader.js  # Day 1: Fundamentals
+# mongosh < day2_data_loader.js  # Day 2: Advanced Features
+# mongosh < day3_data_loader.js  # Day 3: Production
 
 # Work on labs...
 mongosh  # Connect and work

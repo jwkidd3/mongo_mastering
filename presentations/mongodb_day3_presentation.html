@@ -184,7 +184,7 @@
                 <h1>MongoDB Mastering Course</h1>
                 <h2>Day 3: Advanced Features & Production</h2>
                 <p>
-                    <strong>Topics:</strong> Transactions • Replication • Sharding • Change Streams • Production Deployment
+                    <strong>Topics:</strong> Replication • Sharding • Change Streams • Production Deployment
                 </p>
                 <p class="small-text">
                     Docker-based Environment
@@ -195,7 +195,6 @@
             <section>
                 <h2>Day 3 Learning Objectives</h2>
                 <ul>
-                    <li class="fragment">🔄 Master ACID transactions in MongoDB</li>
                     <li class="fragment">🔧 Implement replica sets for high availability</li>
                     <li class="fragment">⚡ Design sharding strategies for horizontal scaling</li>
                     <li class="fragment">📡 Build real-time applications with change streams</li>
@@ -211,7 +210,6 @@
                     <div class="column">
                         <h3>Morning Session</h3>
                         <ul class="small-text">
-                            <li><strong>Transactions & ACID</strong></li>
                             <li><strong>Replica Sets & HA</strong></li>
                         </ul>
                     </div>
@@ -226,227 +224,11 @@
                 </div>
             </section>
 
-            <!-- Part 1: Transactions -->
+
+            <!-- Part 1: Replica Sets -->
             <section>
                 <section>
-                    <h1>Part 1: Transactions & ACID</h1>
-                    <p class="large-text">Ensuring Data Consistency in MongoDB</p>
-                </section>
-
-                <section>
-                    <h2>What are MongoDB Transactions?</h2>
-                    <div class="fragment">
-                        <p><strong>Definition:</strong> Multi-document operations that execute atomically</p>
-                        <div class="architecture-diagram">
-                            <h3>ACID Properties</h3>
-                            <ul class="small-text">
-                                <li><span class="highlight">Atomicity:</span> All-or-nothing execution</li>
-                                <li><span class="highlight">Consistency:</span> Data remains valid</li>
-                                <li><span class="highlight">Isolation:</span> Concurrent operations don't interfere</li>
-                                <li><span class="highlight">Durability:</span> Changes persist after commit</li>
-                            </ul>
-                        </div>
-                    </div>
-                </section>
-
-                <section>
-                    <h2>When to Use Transactions</h2>
-                    <div class="pros-cons">
-                        <div class="pros">
-                            <h3>✅ Use When:</h3>
-                            <ul>
-                                <li>Multi-document updates needed</li>
-                                <li>Financial operations</li>
-                                <li>Complex business logic</li>
-                                <li>Data integrity critical</li>
-                                <li>Rollback capability required</li>
-                            </ul>
-                        </div>
-                        <div class="cons">
-                            <h3>❌ Avoid When:</h3>
-                            <ul>
-                                <li>Single document operations</li>
-                                <li>High-throughput scenarios</li>
-                                <li>Simple read operations</li>
-                                <li>Performance is critical</li>
-                                <li>Eventually consistent is OK</li>
-                            </ul>
-                        </div>
-                    </div>
-                </section>
-
-                <section>
-                    <h2>Basic Transaction Pattern</h2>
-                    <div class="code-container">
-                        <div class="code-title">JavaScript Transaction Syntax</div>
-                        <pre><code class="javascript">// Start a session
-const session = client.startSession();
-
-try {
-  // Start transaction
-  session.startTransaction();
-  
-  // Perform operations within transaction
-  await db.accounts.updateOne(
-    { _id: "account1" },
-    { $inc: { balance: -100 } },
-    { session }
-  );
-  
-  await db.accounts.updateOne(
-    { _id: "account2" },
-    { $inc: { balance: 100 } },
-    { session }
-  );
-  
-  // Commit transaction
-  await session.commitTransaction();
-  
-} catch (error) {
-  // Rollback on error
-  await session.abortTransaction();
-  throw error;
-} finally {
-  await session.endSession();
-}</code></pre>
-                    </div>
-                </section>
-
-                <section>
-                    <h2>E-commerce Order Example</h2>
-                    <div class="code-container">
-                        <div class="code-title">Order Processing Transaction</div>
-                        <pre><code class="javascript">async function processOrder(orderId, items) {
-  const session = client.startSession();
-  
-  try {
-    session.startTransaction({
-      readConcern: { level: "snapshot" },
-      writeConcern: { w: "majority" }
-    });
-    
-    // 1. Check inventory
-    for (const item of items) {
-      const product = await db.products.findOne(
-        { _id: item.productId, stock: { $gte: item.quantity } },
-        { session }
-      );
-      if (!product) throw new Error(`Insufficient stock`);
-    }
-    
-    // 2. Update inventory
-    for (const item of items) {
-      await db.products.updateOne(
-        { _id: item.productId },
-        { $inc: { stock: -item.quantity } },
-        { session }
-      );
-    }
-    
-    // 3. Create order
-    await db.orders.insertOne({
-      _id: orderId, items: items, status: "confirmed"
-    }, { session });
-    
-    await session.commitTransaction();
-    return { success: true, orderId };
-    
-  } catch (error) {
-    await session.abortTransaction();
-    return { success: false, error: error.message };
-  } finally {
-    await session.endSession();
-  }
-}</code></pre>
-                    </div>
-                </section>
-
-                <section>
-                    <h2>Transaction Performance</h2>
-                    <div class="fragment">
-                        <h3>Performance Impact</h3>
-                        <ul class="small-text">
-                            <li><strong>Latency:</strong> +10-30ms overhead per transaction</li>
-                            <li><strong>Throughput:</strong> ~10-50% reduction depending on workload</li>
-                            <li><strong>Lock contention:</strong> Can affect concurrent operations</li>
-                        </ul>
-                    </div>
-                    <div class="fragment">
-                        <h3>Optimization Tips</h3>
-                        <ul class="small-text">
-                            <li>Keep transactions short-lived (&lt;60 seconds)</li>
-                            <li>Use appropriate read/write concerns</li>
-                            <li>Minimize cross-shard transactions</li>
-                            <li>Use retryable writes for resilience</li>
-                        </ul>
-                    </div>
-                </section>
-
-                <section>
-                    <h2>Docker Setup for Transactions</h2>
-                    <div class="code-container">
-                        <div class="code-title">Replica Set Required</div>
-                        <pre><code class="yaml"># docker-compose.yml for transactions
-version: '3.8'
-services:
-  mongo1:
-    image: mongo:7.0
-    container_name: mongo1
-    command: mongod --replSet myReplicaSet --bind_ip_all
-    ports: ["27017:27017"]
-    
-  mongo2:
-    image: mongo:7.0
-    container_name: mongo2
-    command: mongod --replSet myReplicaSet --bind_ip_all
-    ports: ["27018:27017"]
-    
-  mongo3:
-    image: mongo:7.0
-    container_name: mongo3
-    command: mongod --replSet myReplicaSet --bind_ip_all
-    ports: ["27019:27017"]</code></pre>
-                    </div>
-                    <div class="fragment small-text">
-                        <p><strong>Note:</strong> Transactions require replica sets or sharded clusters</p>
-                    </div>
-                </section>
-
-                <!-- Lab 1: MongoDB Transactions -->
-                <section class="lab-slide">
-                    <h3>🧪 Lab 1: MongoDB Transactions</h3>
-
-                    <div class="objectives">
-                        <h4>Objectives</h4>
-                        <ul>
-                            <li>Implement ACID transactions in MongoDB</li>
-                            <li>Practice multi-document operations</li>
-                            <li>Understand transaction performance implications</li>
-                        </ul>
-                    </div>
-
-                    <div class="highlight-box">
-                        <h4>📊 Before Starting - Load Course Data</h4>
-                        <pre style="font-size: 0.7em; margin: 0.2em 0;"><code class="bash">cd data
-mongosh < day3_data_loader.js</code></pre>
-                        <p style="font-size: 0.6em; margin: 0.2em 0;">✅ Wait for "DAY 3 PRODUCTION DATA LOADING COMPLETE!" message</p>
-                    </div>
-
-                    <div class="highlight-box">
-                        <h4>Lab Activities</h4>
-                        <ul>
-                            <li><strong>Part A:</strong> Setup Replica Set for Transactions</li>
-                            <li><strong>Part B:</strong> E-commerce Order Processing with Transactions</li>
-                            <li><strong>Part C:</strong> Error Handling and Performance Analysis</li>
-                        </ul>
-                    </div>
-                </section>
-            </section>
-
-            <!-- Part 2: Replica Sets -->
-            <section>
-                <section>
-                    <h1>Part 2: Replica Sets & High Availability</h1>
+                    <h1>Part 1: Replica Sets & High Availability</h1>
                     <p class="large-text">Building Resilient MongoDB Deployments</p>
                 </section>
 
@@ -671,9 +453,9 @@ rs.reconfig(config, { force: true })</code></pre>
                     </div>
                 </section>
 
-                <!-- Lab 2: Replica Sets & High Availability -->
+                <!-- Lab 11: Replica Sets & High Availability -->
                 <section class="lab-slide">
-                    <h3>🧪 Lab 2: Replica Sets & High Availability</h3>
+                    <h3>🧪 Lab 11: Replica Sets & High Availability</h3>
 
                     <div class="objectives">
                         <h4>Objectives</h4>
@@ -695,10 +477,10 @@ rs.reconfig(config, { force: true })</code></pre>
                 </section>
             </section>
 
-            <!-- Part 3: Sharding -->
+            <!-- Part 2: Sharding -->
             <section>
                 <section>
-                    <h1>Part 3: Sharding & Horizontal Scaling</h1>
+                    <h1>Part 2: Sharding & Horizontal Scaling</h1>
                     <p class="large-text">Scaling MongoDB Beyond Single Machines</p>
                 </section>
 
@@ -933,9 +715,9 @@ sh.addTagRange("ecommerce.users",
                     </div>
                 </section>
 
-                <!-- Lab 3: Sharding & Horizontal Scaling -->
+                <!-- Lab 12: Sharding & Horizontal Scaling -->
                 <section class="lab-slide">
-                    <h3>🧪 Lab 3: Sharding & Horizontal Scaling</h3>
+                    <h3>🧪 Lab 12: Sharding & Horizontal Scaling</h3>
 
                     <div class="objectives">
                         <h4>Objectives</h4>
@@ -957,10 +739,10 @@ sh.addTagRange("ecommerce.users",
                 </section>
             </section>
 
-            <!-- Part 4: Change Streams -->
+            <!-- Part 3: Change Streams -->
             <section>
                 <section>
-                    <h1>Part 4: Change Streams</h1>
+                    <h1>Part 3: Change Streams</h1>
                     <p class="large-text">Real-time Applications with MongoDB</p>
                 </section>
 
@@ -1184,9 +966,9 @@ class OrderProcessor {
                     </div>
                 </section>
 
-                <!-- Lab 4: Change Streams & Real-time Applications -->
+                <!-- Lab 13: Change Streams & Real-time Applications -->
                 <section class="lab-slide">
-                    <h3>🧪 Lab 4: Change Streams & Real-time Applications</h3>
+                    <h3>🧪 Lab 13: Change Streams & Real-time Applications</h3>
 
                     <div class="objectives">
                         <h4>Objectives</h4>
@@ -1208,10 +990,10 @@ class OrderProcessor {
                 </section>
             </section>
 
-            <!-- Part 5: Production Deployment -->
+            <!-- Part 4: Production Deployment -->
             <section>
                 <section>
-                    <h1>Part 5: Production Deployment</h1>
+                    <h1>Part 4: Production Deployment</h1>
                     <p class="large-text">MongoDB in Production Environments</p>
                 </section>
 
@@ -1453,9 +1235,9 @@ secrets:
                     </div>
                 </section>
 
-                <!-- Lab 5: Application Integration -->
+                <!-- Lab 14a/14b/14c: Application Integration -->
                 <section class="lab-slide">
-                    <h3>🧪 Lab 5: Application Integration Project</h3>
+                    <h3>🧪 Labs 14a/14b/14c: Application Integration Project</h3>
 
                     <div class="objectives">
                         <h4>Objectives</h4>
@@ -1469,9 +1251,9 @@ secrets:
                     <div class="highlight-box">
                         <h4>Choose Your Technology Stack</h4>
                         <ul>
-                            <li><strong>Option A:</strong> C# .NET Core Application Integration</li>
-                            <li><strong>Option B:</strong> JavaScript/Node.js Application Integration</li>
-                            <li><strong>Option C:</strong> Python Application Integration</li>
+                            <li><strong>Lab 14a:</strong> C# .NET Core Application Integration</li>
+                            <li><strong>Lab 14b:</strong> JavaScript/Node.js Application Integration</li>
+                            <li><strong>Lab 14c:</strong> Python Application Integration</li>
                         </ul>
                     </div>
                 </section>
@@ -1486,14 +1268,6 @@ secrets:
 
                 <section>
                     <h2>What We've Accomplished</h2>
-                    <div class="fragment">
-                        <h3>🔄 Transactions</h3>
-                        <ul class="small-text">
-                            <li>ACID properties implementation</li>
-                            <li>Multi-document transaction patterns</li>
-                            <li>Error handling and retry logic</li>
-                        </ul>
-                    </div>
                     <div class="fragment">
                         <h3>🔧 High Availability</h3>
                         <ul class="small-text">
