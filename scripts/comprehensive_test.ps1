@@ -118,6 +118,41 @@ function Wait-MongoReady {
     }
 }
 
+# Function to wait for replica set to have a PRIMARY
+function Wait-ReplicaSetReady {
+    param([int]$MaxWaitSeconds = 90)
+
+    Write-Status "Waiting for replica set to establish PRIMARY..."
+    $elapsed = 0
+    $hasPrimary = $false
+
+    while ($elapsed -lt $MaxWaitSeconds -and -not $hasPrimary) {
+        try {
+            $result = & docker exec mongo1 mongosh --quiet --eval "rs.status().members.find(m => m.stateStr === 'PRIMARY')" 2>&1
+            if ($LASTEXITCODE -eq 0 -and $result -and $result.ToString().Contains("PRIMARY")) {
+                $hasPrimary = $true
+                Write-Success "Replica set has PRIMARY node"
+            } else {
+                Start-Sleep -Seconds 5
+                $elapsed += 5
+                if (($elapsed % 15) -eq 0) {
+                    Write-Status "Still waiting for PRIMARY node... $elapsed seconds"
+                }
+            }
+        } catch {
+            Start-Sleep -Seconds 5
+            $elapsed += 5
+            if (($elapsed % 15) -eq 0) {
+                Write-Status "Still waiting for PRIMARY node... $elapsed seconds"
+            }
+        }
+    }
+
+    if (-not $hasPrimary) {
+        throw "Replica set failed to establish PRIMARY within $MaxWaitSeconds seconds"
+    }
+}
+
 # Function to execute MongoDB data loading with retry logic
 function Invoke-MongoDataLoad {
     param(
@@ -336,6 +371,9 @@ try {
 # Wait for replica set to stabilize
 Write-Status "Waiting for replica set to stabilize - 30 seconds..."
 Start-Sleep -Seconds 30
+
+# Wait for replica set to have PRIMARY
+Wait-ReplicaSetReady -MaxWaitSeconds 90
 
 # Set write concern with retry logic
 Write-Status "Setting write concern..."
