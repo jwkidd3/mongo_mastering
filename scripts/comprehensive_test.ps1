@@ -132,7 +132,10 @@ function Invoke-MongoDataLoad {
     while ($retryCount -lt $MaxRetries -and -not $success) {
         try {
             Write-Status "Loading $Description..."
-            $result = Get-Content $DataFile | mongosh --quiet
+            # Copy file to container and execute it there to avoid connection issues
+            & docker cp $DataFile mongo1:/tmp/
+            $fileName = Split-Path $DataFile -Leaf
+            $result = & docker exec mongo1 mongosh --quiet /tmp/$fileName
             if ($LASTEXITCODE -eq 0) {
                 $success = $true
                 Write-Success "$Description loaded successfully"
@@ -142,7 +145,7 @@ function Invoke-MongoDataLoad {
         } catch {
             $retryCount++
             if ($retryCount -lt $MaxRetries) {
-                Write-Status "$Description loading failed (attempt $retryCount), retrying in 10 seconds..."
+                Write-Status "$Description loading failed - attempt $retryCount, retrying in 10 seconds..."
                 Start-Sleep -Seconds 10
             } else {
                 throw "Failed to load $Description after $MaxRetries attempts: $_"
@@ -343,7 +346,7 @@ $writeConcernSet = $false
 while ($retryCount -lt $maxRetries -and -not $writeConcernSet) {
     try {
         $writeConcernCommand = 'db.adminCommand({setDefaultRWConcern:1,defaultWriteConcern:{w:"majority",wtimeout:5000}});'
-        $result = mongosh --quiet --eval $writeConcernCommand
+        $result = & docker exec mongo1 mongosh --quiet --eval $writeConcernCommand
         if ($LASTEXITCODE -eq 0) {
             $writeConcernSet = $true
             Write-Success "Write concern configured"
@@ -367,7 +370,7 @@ Write-Status "Verifying replica set status..."
 try {
     # Wait a bit more for replica set to be fully ready
     Start-Sleep -Seconds 10
-    $statusResult = mongosh --quiet --eval 'rs.status().members.forEach(function(m){print("  "+m.name+": "+m.stateStr);});'
+    $statusResult = & docker exec mongo1 mongosh --quiet --eval 'rs.status().members.forEach(function(m){print("  "+m.name+": "+m.stateStr);});'
     if ($statusResult) {
         # Safely display the output without PowerShell interpreting it
         $statusResult | ForEach-Object { Write-Host $_ -ForegroundColor Cyan }
@@ -438,7 +441,7 @@ Pop-Location
 
 try {
     $dataCommand = "print('insurance_company database:'); db = db.getSiblingDB('insurance_company'); print('  Policies: ' + db.policies.countDocuments()); print('  Customers: ' + db.customers.countDocuments()); print('  Claims: ' + db.claims.countDocuments()); print('  Branches: ' + db.branches.countDocuments()); print(''); print('insurance_analytics database:'); db = db.getSiblingDB('insurance_analytics'); print('  Policy Analytics: ' + db.policy_analytics.countDocuments()); print('  Customer Analytics: ' + db.customer_analytics.countDocuments()); print('  Claims Analytics: ' + db.claims_analytics.countDocuments());"
-    $dataSummary = mongosh --quiet --eval $dataCommand
+    $dataSummary = & docker exec mongo1 mongosh --quiet --eval $dataCommand
 
     Write-Host $dataSummary -ForegroundColor Cyan
     Write-Success "All course data loaded and verified"
@@ -454,7 +457,9 @@ Write-Host ""
 
 # Run the comprehensive lab validation and capture results
 try {
-    $labResults = Get-Content lab_validation_comprehensive.js | mongosh --quiet 2>&1
+    # Copy lab validation file to container and execute it there
+    & docker cp lab_validation_comprehensive.js mongo1:/tmp/
+    $labResults = & docker exec mongo1 mongosh --quiet /tmp/lab_validation_comprehensive.js 2>&1
 
     # Extract key metrics from results
     $passedTests = ""
