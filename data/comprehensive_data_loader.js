@@ -18,10 +18,16 @@ function loadScript(scriptName) {
     print(`\n🔄 Loading ${scriptName}...`);
     print("━".repeat(60));
 
-    // Always use inline execution for cross-platform compatibility
-    // This avoids path issues on Windows and different working directories
-    print("⚠️  Using inline data loading for cross-platform compatibility...");
-    return false; // This triggers the inline fallback which contains all the data
+    try {
+        // Try to load the individual script file
+        load(scriptName);
+        print(`✅ Successfully loaded ${scriptName}`);
+        return true;
+    } catch (error) {
+        print(`⚠️  Could not load ${scriptName} (${error.message})`);
+        print("🔄 Falling back to inline data loading...");
+        return false; // This triggers the inline fallback which contains all the data
+    }
 }
 
 function showProgress(message, step, total) {

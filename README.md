@@ -72,7 +72,27 @@ mongosh < scripts/test_connection.js
 Get-Content scripts\test_connection.js | mongosh
 ```
 
-### 5. Run Comprehensive Lab Tests
+### 5. Connect with MongoDB Compass (Optional)
+
+MongoDB Compass provides a visual interface for working with your data:
+
+1. **Install MongoDB Compass** (if not already installed)
+   - Download from: https://www.mongodb.com/try/download/compass
+
+2. **Connection String**: `mongodb://localhost:27017/?directConnection=true`
+   - The `directConnection=true` parameter bypasses replica set discovery
+   - This prevents Compass from trying to resolve internal Docker hostnames
+   - You'll connect directly to the primary node on `localhost:27017`
+
+3. **Connect Steps**:
+   - Open MongoDB Compass
+   - Enter connection string: `mongodb://localhost:27017/?directConnection=true`
+   - Click **"Connect"**
+   - You should see the `insurance_company` and other databases after loading course data
+
+**Windows Users**: The `directConnection=true` parameter is especially important on Windows to avoid "cannot find mongo2" errors during replica set discovery.
+
+### 6. Run Comprehensive Lab Tests
 
 **Option A: Complete End-to-End Test (Recommended)**
 Tests entire environment setup, data loading, and lab validation:
@@ -108,7 +128,7 @@ mongosh < scripts/lab_validation_comprehensive.js
 Get-Content scripts\lab_validation_comprehensive.js | mongosh
 ```
 
-### 6. Clean Up When Done
+### 7. Clean Up When Done
 
 **macOS/Linux:**
 ```bash
