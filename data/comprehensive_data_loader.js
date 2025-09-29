@@ -18,21 +18,10 @@ function loadScript(scriptName) {
     print(`\n🔄 Loading ${scriptName}...`);
     print("━".repeat(60));
 
-    try {
-        if (scriptName.includes('day1')) {
-            load('./day1_data_loader.js');
-        } else if (scriptName.includes('day2')) {
-            load('./day2_data_loader.js');
-        } else if (scriptName.includes('day3')) {
-            load('./day3_data_loader.js');
-        }
-        print(`✅ Successfully loaded ${scriptName}`);
-    } catch (error) {
-        print(`❌ Error loading ${scriptName}: ${error}`);
-        print("⚠️  Attempting inline execution...");
-        return false;
-    }
-    return true;
+    // Always use inline execution for cross-platform compatibility
+    // This avoids path issues on Windows and different working directories
+    print("⚠️  Using inline data loading for cross-platform compatibility...");
+    return false; // This triggers the inline fallback which contains all the data
 }
 
 function showProgress(message, step, total) {

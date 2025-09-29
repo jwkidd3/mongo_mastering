@@ -19,17 +19,31 @@ Complete 3-day MongoDB training course with hands-on labs and enterprise-ready c
 ### 2. Load Course Data
 
 **Option A: Load All 3 Days at Once (Recommended)**
+
+**macOS/Linux:**
 ```bash
-cd ../data
-mongosh < comprehensive_data_loader.js
+mongosh < data/comprehensive_data_loader.js
+```
+
+**Windows PowerShell:**
+```powershell
+Get-Content data\comprehensive_data_loader.js | mongosh
 ```
 
 **Option B: Load Individual Days**
+
+**macOS/Linux:**
 ```bash
-cd ../data
-mongosh < day1_data_loader.js  # Day 1: Fundamentals
-mongosh < day2_data_loader.js  # Day 2: Advanced Features
-mongosh < day3_data_loader.js  # Day 3: Production
+mongosh < data/day1_data_loader.js  # Day 1: Fundamentals
+mongosh < data/day2_data_loader.js  # Day 2: Advanced Features
+mongosh < data/day3_data_loader.js  # Day 3: Production
+```
+
+**Windows PowerShell:**
+```powershell
+Get-Content data\day1_data_loader.js | mongosh  # Day 1: Fundamentals
+Get-Content data\day2_data_loader.js | mongosh  # Day 2: Advanced Features
+Get-Content data\day3_data_loader.js | mongosh  # Day 3: Production
 ```
 
 ### 3. Test Everything Works
@@ -50,12 +64,12 @@ Test basic MongoDB connection:
 
 **macOS/Linux:**
 ```bash
-mongosh < test_connection.js
+mongosh < scripts/test_connection.js
 ```
 
 **Windows PowerShell:**
 ```powershell
-Get-Content test_connection.js | mongosh
+Get-Content scripts\test_connection.js | mongosh
 ```
 
 ### 5. Run Comprehensive Lab Tests
@@ -86,12 +100,12 @@ Validates every operation from all 12 labs:
 
 **macOS/Linux:**
 ```bash
-mongosh < lab_validation_comprehensive.js
+mongosh < scripts/lab_validation_comprehensive.js
 ```
 
 **Windows PowerShell:**
 ```powershell
-Get-Content lab_validation_comprehensive.js | mongosh
+Get-Content scripts\lab_validation_comprehensive.js | mongosh
 ```
 
 ### 6. Clean Up When Done
@@ -284,10 +298,9 @@ cd scripts
 # Morning setup
 cd scripts && ./setup.sh
 
-# Load data for the day
-cd ../data
-mongosh < comprehensive_data_loader.js  # All 3 days (recommended)
-# OR load individual days: day1_data_loader.js, day2_data_loader.js, day3_data_loader.js
+# Load data for the day (from project root)
+mongosh < data/comprehensive_data_loader.js  # All 3 days (recommended)
+# OR load individual days: data/day1_data_loader.js, data/day2_data_loader.js, data/day3_data_loader.js
 
 # Work through presentations and labs
 open ../presentations/mongodb_day1_presentation.html
@@ -311,13 +324,12 @@ cd ../scripts && ./teardown.sh
 # Morning setup
 ./setup.sh
 
-# Load data for the course
-cd ../data
-mongosh < comprehensive_data_loader.js  # All 3 days (recommended)
+# Load data for the course (from project root)
+mongosh < data/comprehensive_data_loader.js  # All 3 days (recommended)
 # OR load individual days:
-# mongosh < day1_data_loader.js  # Day 1: Fundamentals
-# mongosh < day2_data_loader.js  # Day 2: Advanced Features
-# mongosh < day3_data_loader.js  # Day 3: Production
+# mongosh < data/day1_data_loader.js  # Day 1: Fundamentals
+# mongosh < data/day2_data_loader.js  # Day 2: Advanced Features
+# mongosh < data/day3_data_loader.js  # Day 3: Production
 
 # Work on labs...
 mongosh  # Connect and work
@@ -332,7 +344,7 @@ cd ../scripts
 # If you need to reset data during labs
 ./teardown.sh
 ./setup.sh
-cd ../data && mongosh < day1_data_loader.js
+cd .. && mongosh < data/day1_data_loader.js
 ```
 
 ### Troubleshooting
