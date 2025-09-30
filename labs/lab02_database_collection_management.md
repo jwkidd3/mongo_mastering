@@ -68,8 +68,8 @@
    ```javascript
    use insurance_company
 
-   // Basic collection creation
-   db.createCollection("customers")
+   // Basic collection creation (using new name to avoid conflicts with existing data)
+   db.createCollection("lab2_customers")
 
    // Capped collection (fixed size)
    db.createCollection("audit_logs", {
@@ -78,8 +78,8 @@
      max: 5000       // Max 5000 documents
    })
 
-   // Collection with validation
-   db.createCollection("policies", {
+   // Collection with validation (using new collection name to avoid conflicts)
+   db.createCollection("new_policies", {
      validator: {
        $jsonSchema: {
          bsonType: "object",
