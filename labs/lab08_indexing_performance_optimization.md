@@ -8,7 +8,29 @@
 ## Tasks
 
 ### Part A: Index Creation and Analysis (25 minutes)
-1. **Compound Indexes**
+1. **Examine Existing Indexes**
+   ```javascript
+   // First, examine what indexes already exist
+   use insurance_company
+
+   print("=== Existing Indexes ===")
+   print("Policies collection indexes:")
+   db.policies.getIndexes().forEach(function(index) {
+     print("  - " + index.name + ": " + JSON.stringify(index.key))
+   })
+
+   print("\nCustomers collection indexes:")
+   db.customers.getIndexes().forEach(function(index) {
+     print("  - " + index.name + ": " + JSON.stringify(index.key))
+   })
+
+   print("\nClaims collection indexes:")
+   db.claims.getIndexes().forEach(function(index) {
+     print("  - " + index.name + ": " + JSON.stringify(index.key))
+   })
+   ```
+
+2. **Compound Indexes**
    ```javascript
    // Create compound index for common query pattern
    db.claims.createIndex({
@@ -26,8 +48,8 @@
 
 2. **Text Indexes**
    ```javascript
-   // Create text index with weights
-   db.policies.createIndex({
+   // Create text index with weights on different fields to avoid conflicts
+   db.test_policies.createIndex({
      "policyType": "text",
      "coverageDescription": "text",
      "coverageTypes": "text"
@@ -39,6 +61,9 @@
      },
      name: "policy_text_index"
    })
+
+   // Or examine existing text index
+   db.policies.getIndexes().filter(idx => idx.textIndexVersion)
    ```
 
 3. **Partial Indexes**
@@ -53,27 +78,50 @@
 ### Part B: Performance Analysis (20 minutes)
 1. **Query Performance Comparison**
    ```javascript
+   // Use test collection to avoid conflicts
+   db.test_claims.drop()
+
+   // Insert some test data
+   db.test_claims.insertMany([
+     {claimNumber: "CLM-TEST-001", policyId: "pol1", claimAmount: 1500},
+     {claimNumber: "CLM-TEST-002", policyId: "pol2", claimAmount: 2500},
+     {claimNumber: "CLM-TEST-003", policyId: "pol1", claimAmount: 3500}
+   ])
+
    // Before index
-   db.claims.find({ policyId: ObjectId("...") }).explain("executionStats")
+   db.test_claims.find({ policyId: "pol1" }).explain("executionStats")
 
    // Create index
-   db.claims.createIndex({ policyId: 1 })
+   db.test_claims.createIndex({ policyId: 1 })
 
    // After index
-   db.claims.find({ policyId: ObjectId("...") }).explain("executionStats")
+   db.test_claims.find({ policyId: "pol1" }).explain("executionStats")
    ```
 
 2. **Index Intersection**
    ```javascript
-   // Create separate single-field indexes
-   db.policies.createIndex({ policyType: 1 })
-   db.policies.createIndex({ annualPremium: 1 })
+   // Use existing indexes or create on test collections
+   print("Examining existing indexes on policies:")
+   db.policies.getIndexes().forEach(function(idx) {
+     print("  " + idx.name + ": " + JSON.stringify(idx.key))
+   })
 
-   // Query using both fields
+   // Query using existing indexed fields
    db.policies.find({
-     policyType: "Auto Insurance",
+     policyType: "Auto",
      annualPremium: { $gte: 1000, $lte: 3000 }
    }).explain("executionStats")
+
+   // Alternative: Use test collection for new indexes
+   db.test_policies.drop()
+   db.test_policies.insertMany([
+     {policyType: "Auto", annualPremium: 1200, policyNumber: "POL-001"},
+     {policyType: "Home", annualPremium: 1800, policyNumber: "POL-002"},
+     {policyType: "Auto", annualPremium: 2500, policyNumber: "POL-003"}
+   ])
+
+   db.test_policies.createIndex({ policyType: 1 })
+   db.test_policies.createIndex({ annualPremium: 1 })
    ```
 
 ## Challenge Exercise

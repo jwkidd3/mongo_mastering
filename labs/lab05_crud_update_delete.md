@@ -19,6 +19,9 @@
      {$set: {premiumAmount: 949.99, lastUpdated: new Date()}}
    )
 
+   // Verify the update worked
+   db.policies.findOne({policyNumber: "POL-AUTO-001"}, {premiumAmount: 1, lastUpdated: 1})
+
    // Update nested fields
    db.policies.updateOne(
      {policyNumber: "POL-LIFE-001"},
@@ -29,6 +32,9 @@
        }
      }
    )
+
+   // Verify the nested field update
+   db.policies.findOne({policyNumber: "POL-LIFE-001"}, {coverage: 1})
 
    // Unset (remove) fields
    db.policies.updateOne(
@@ -41,6 +47,9 @@
      {policyNumber: "POL-AUTO-001"},
      {$inc: {claimCount: 1, renewalCount: 1}}
    )
+
+   // Verify the increment worked
+   db.policies.findOne({policyNumber: "POL-AUTO-001"}, {claimCount: 1, renewalCount: 1})
    ```
 
 2. **Multiple Document Updates**
@@ -55,6 +64,9 @@
        }
      }
    )
+
+   // Verify the bulk update worked
+   db.policies.find({policyType: "Auto"}, {lastTypeUpdate: 1, featured: 1}).limit(3)
 
    // Conditional updates with complex criteria
    db.policies.updateMany(
@@ -73,6 +85,9 @@
      {policyType: "Auto"},
      {$mul: {premiumAmount: 0.95}}  // 5% discount
    )
+
+   // Verify the 5% discount was applied
+   db.policies.find({policyType: "Auto"}, {policyNumber: 1, premiumAmount: 1}).limit(3)
    ```
 
 3. **Array Update Operations**
@@ -133,6 +148,9 @@
      },
      {upsert: true}
    )
+
+   // Verify the upsert created the new document
+   db.policies.findOne({policyNumber: "POL-NEW-001"})
 
    // Conditional upsert with complex logic
    db.claims.updateOne(
@@ -219,8 +237,14 @@
    // Delete single document
    db.policies.deleteOne({premiumAmount: {$lt: 100}})
 
+   // Verify the deletion worked
+   db.policies.find({premiumAmount: {$lt: 100}}).count()
+
    // Delete with specific _id for safety
    db.policies.deleteOne({_id: "POL-HOME-001"})
+
+   // Verify specific document was deleted
+   db.policies.findOne({_id: "POL-HOME-001"})
    ```
 
 2. **Bulk Deletion Operations**

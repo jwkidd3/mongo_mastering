@@ -307,31 +307,44 @@ simulateQueryRouting()
 
 ## Part B: Sharding Strategy Deep Dive (15 minutes)
 
-### Step 5: Enable Sharding and Create Collections
+### Step 5: Sharding Command Simulation (Current Environment: Replica Set)
 
 ```javascript
-// Enable sharding on insurance database
-sh.enableSharding("insurance_company")
+// NOTE: Our current environment is a replica set, not a sharded cluster
+// The following commands would be used in a sharded environment
 
-use insurance_company
+print("=== Sharding Commands Simulation ===")
+print("Current environment: Replica Set")
+print("In a sharded cluster, you would run:")
+print("")
 
-// 1. Hashed sharding for even distribution of customers
-sh.shardCollection("insurance_company.customers", { _id: "hashed" })
+print("1. Enable sharding on database:")
+print("   sh.enableSharding('insurance_company')")
+print("")
 
-// 2. Range-based sharding for policy data by region and type
-sh.shardCollection("insurance_company.policies", { region: 1, policyType: 1 })
+print("2. Shard collections with different strategies:")
+print("   // Hashed sharding for customers")
+print("   sh.shardCollection('insurance_company.customers', { _id: 'hashed' })")
+print("")
 
-// 3. Geographic sharding for claims by state/region
-sh.shardCollection("insurance_company.claims", { state: 1, incidentDate: 1 })
+print("   // Range sharding for policies")
+print("   sh.shardCollection('insurance_company.policies', { region: 1, policyType: 1 })")
+print("")
 
-// 4. Agent performance data by territory
-sh.shardCollection("insurance_company.agents", { territory: 1, agentId: 1 })
+print("   // Geographic sharding for claims")
+print("   sh.shardCollection('insurance_company.claims', { state: 1, incidentDate: 1 })")
+print("")
 
-// 5. Branch operations by geographic location
-sh.shardCollection("insurance_company.branches", { region: 1, branchCode: 1 })
+print("3. Check sharding status:")
+print("   sh.status()")
+print("")
 
-// Check sharding status
-sh.status()
+// Demonstrate what we can do in current environment
+print("=== What we can do in our replica set environment ===")
+print("1. Analyze data distribution patterns")
+print("2. Plan shard key strategies")
+print("3. Simulate query routing")
+print("4. Test index strategies for sharded queries")
 ```
 
 ### Step 6: Load Test Data
@@ -480,175 +493,111 @@ for (let i = 1; i <= 150; i++) {
 }
 ```
 
-### Step 7: Analyze Distribution
+### Step 7: Analyze Distribution (Simulation for Replica Set)
 
-**Monitor Data Distribution in Compass:**
-1. Navigate to `config` database
-2. View `chunks` collection with filters:
-   - `{"ns": "insurance_company.customers"}` - see customer chunks
-   - `{"ns": "insurance_company.policies"}` - see policy chunks
-   - `{"ns": "insurance_company.claims"}` - see claim chunks
+**In a Sharded Environment, You Would:**
+1. Navigate to `config` database in Compass
+2. View `chunks` collection with filters
+3. Monitor chunk distribution across shards
 
-**Analyze via MongoSH:**
+**Replica Set Analysis (What We Can Do Now):**
 ```javascript
-// Check chunk distribution for insurance collections
-use config
-print("Chunk counts by insurance collection:");
-print("Customers: " + db.chunks.find({ ns: "insurance_company.customers" }).count());
-print("Policies: " + db.chunks.find({ ns: "insurance_company.policies" }).count());
-print("Claims: " + db.chunks.find({ ns: "insurance_company.claims" }).count());
-print("Agents: " + db.chunks.find({ ns: "insurance_company.agents" }).count());
+// Analyze actual data distribution patterns
+use insurance_company
 
-// Check chunks per shard for insurance data
-print("\nChunks per shard:");
-db.chunks.aggregate([
-  { $group: { _id: "$shard", count: { $sum: 1 } } },
+print("=== Current Data Distribution Analysis ===")
+print("(In a sharded environment, this would be spread across multiple shards)")
+print("")
+
+// Analyze customers by region/state
+print("Customer Distribution by State:")
+var customersByState = db.customers.aggregate([
+  { $group: { _id: "$address.state", count: { $sum: 1 } } },
   { $sort: { count: -1 } }
-]).forEach(printjson);
+]).toArray()
 
-// Insurance-specific chunk analysis
-print("\nPolicy chunks by region:");
-db.chunks.aggregate([
-  { $match: { ns: "insurance_company.policies" } },
-  { $group: { _id: "$shard", policies: { $sum: 1 } } },
-  { $sort: { policies: -1 } }
-]).forEach(printjson);
+customersByState.forEach(function(result) {
+  print("  " + (result._id || "Unknown") + ": " + result.count + " customers")
+})
 
-print("\nClaims chunks by geography:");
-db.chunks.aggregate([
-  { $match: { ns: "insurance_company.claims" } },
-  { $group: { _id: "$shard", claims: { $sum: 1 } } },
-  { $sort: { claims: -1 } }
-]).forEach(printjson);
+// Analyze policies by type
+print("\nPolicy Distribution by Type:")
+var policiesByType = db.policies.aggregate([
+  { $group: { _id: "$policyType", count: { $sum: 1 } } },
+  { $sort: { count: -1 } }
+]).toArray()
 
-// Check balancer status
-print("\nBalancer status:");
-print("Enabled: " + sh.getBalancerState());
-print("Running: " + sh.isBalancerRunning());
+policiesByType.forEach(function(result) {
+  print("  " + (result._id || "Unknown") + ": " + result.count + " policies")
+})
+
+// Simulate shard distribution
+print("\n=== Simulated Shard Distribution ===")
+print("If this were sharded with 3 shards:")
+var totalDocs = db.customers.countDocuments()
+var docsPerShard = Math.ceil(totalDocs / 3)
+print("  Estimated docs per shard: " + docsPerShard)
+print("  Shard 0: ~" + Math.min(docsPerShard, totalDocs) + " documents")
+print("  Shard 1: ~" + Math.min(docsPerShard, Math.max(0, totalDocs - docsPerShard)) + " documents")
+print("  Shard 2: ~" + Math.max(0, totalDocs - (2 * docsPerShard)) + " documents")
 ```
 
 ## Part C: Zone Sharding and Management (5 minutes)
 
-### Step 8: Zone Sharding for Geographic Distribution
+### Step 8: Zone Sharding Concepts (Simulation)
 
 ```javascript
-// Add tags to shards for insurance geographic zones
-sh.addShardTag("shard1rs", "EASTERN-REGION")
-sh.addShardTag("shard2rs", "WESTERN-REGION")
+// Zone sharding commands that would be used in a sharded environment
+print("=== Zone Sharding Simulation ===")
+print("In a sharded cluster, you would configure zones like this:")
+print("")
 
-// Create zone ranges for insurance policy data
-// Eastern regions (Northeast, Southeast)
-sh.addTagRange(
-  "insurance_company.policies",
-  { region: "Northeast", policyType: MinKey },
-  { region: "Northeast", policyType: MaxKey },
-  "EASTERN-REGION"
-)
+print("1. Add shard tags for geographic regions:")
+print("   sh.addShardTag('shard1rs', 'EASTERN-REGION')")
+print("   sh.addShardTag('shard2rs', 'WESTERN-REGION')")
+print("")
 
-sh.addTagRange(
-  "insurance_company.policies",
-  { region: "Southeast", policyType: MinKey },
-  { region: "Southeast", policyType: MaxKey },
-  "EASTERN-REGION"
-)
+print("2. Create zone ranges for policies by region:")
+print("   sh.addTagRange('insurance_company.policies',")
+print("     { region: 'Northeast', policyType: MinKey },")
+print("     { region: 'Northeast', policyType: MaxKey },")
+print("     'EASTERN-REGION')")
+print("")
 
-// Western regions (West, Southwest, Midwest)
-sh.addTagRange(
-  "insurance_company.policies",
-  { region: "West", policyType: MinKey },
-  { region: "West", policyType: MaxKey },
-  "WESTERN-REGION"
-)
+print("3. Create zone ranges for claims by state:")
+print("   sh.addTagRange('insurance_company.claims',")
+print("     { state: 'NY', incidentDate: MinKey },")
+print("     { state: 'NY', incidentDate: MaxKey },")
+print("     'EASTERN-REGION')")
+print("")
 
-sh.addTagRange(
-  "insurance_company.policies",
-  { region: "Southwest", policyType: MinKey },
-  { region: "Southwest", policyType: MaxKey },
-  "WESTERN-REGION"
-)
+// Analyze what zone distribution would look like
+print("=== Analyzing Geographic Distribution for Zone Planning ===")
+print("Current data distribution by state (for zone planning):")
 
-sh.addTagRange(
-  "insurance_company.policies",
-  { region: "Midwest", policyType: MinKey },
-  { region: "Midwest", policyType: MaxKey },
-  "WESTERN-REGION"
-)
+var stateDistribution = db.customers.aggregate([
+  { $group: {
+      _id: "$address.state",
+      customers: { $sum: 1 }
+    }
+  },
+  { $addFields: {
+      suggestedZone: {
+        $cond: {
+          if: { $in: ["$_id", ["NY", "FL", "GA", "NC", "PA"]] },
+          then: "EASTERN-REGION",
+          else: "WESTERN-REGION"
+        }
+      }
+    }
+  },
+  { $sort: { customers: -1 } }
+]).toArray()
 
-// Create zone ranges for claims by state groups
-// Eastern states
-sh.addTagRange(
-  "insurance_company.claims",
-  { state: "FL", incidentDate: MinKey },
-  { state: "FL", incidentDate: MaxKey },
-  "EASTERN-REGION"
-)
-
-sh.addTagRange(
-  "insurance_company.claims",
-  { state: "GA", incidentDate: MinKey },
-  { state: "GA", incidentDate: MaxKey },
-  "EASTERN-REGION"
-)
-
-sh.addTagRange(
-  "insurance_company.claims",
-  { state: "NC", incidentDate: MinKey },
-  { state: "NC", incidentDate: MaxKey },
-  "EASTERN-REGION"
-)
-
-sh.addTagRange(
-  "insurance_company.claims",
-  { state: "NY", incidentDate: MinKey },
-  { state: "NY", incidentDate: MaxKey },
-  "EASTERN-REGION"
-)
-
-sh.addTagRange(
-  "insurance_company.claims",
-  { state: "PA", incidentDate: MinKey },
-  { state: "PA", incidentDate: MaxKey },
-  "EASTERN-REGION"
-)
-
-// Western states
-sh.addTagRange(
-  "insurance_company.claims",
-  { state: "CA", incidentDate: MinKey },
-  { state: "CA", incidentDate: MaxKey },
-  "WESTERN-REGION"
-)
-
-sh.addTagRange(
-  "insurance_company.claims",
-  { state: "TX", incidentDate: MinKey },
-  { state: "TX", incidentDate: MaxKey },
-  "WESTERN-REGION"
-)
-
-sh.addTagRange(
-  "insurance_company.claims",
-  { state: "IL", incidentDate: MinKey },
-  { state: "IL", incidentDate: MaxKey },
-  "WESTERN-REGION"
-)
-
-sh.addTagRange(
-  "insurance_company.claims",
-  { state: "MI", incidentDate: MinKey },
-  { state: "MI", incidentDate: MaxKey },
-  "WESTERN-REGION"
-)
-
-sh.addTagRange(
-  "insurance_company.claims",
-  { state: "OH", incidentDate: MinKey },
-  { state: "OH", incidentDate: MaxKey },
-  "WESTERN-REGION"
-)
-
-// Check zone configuration
-sh.status()
+print("\nState distribution with suggested zones:")
+stateDistribution.forEach(function(result) {
+  print("  " + (result._id || "Unknown") + ": " + result.customers + " customers → " + result.suggestedZone)
+})
 ```
 
 **Monitor in Compass:**
@@ -656,40 +605,62 @@ sh.status()
 2. View `shards` collection to see shard tags
 3. View `tags` collection to see zone ranges
 
-### Step 9: Manual Chunk Operations
+### Step 9: Chunk Management Concepts (Simulation)
 
 ```javascript
-// Split chunks manually for better insurance data distribution
-sh.splitAt("insurance_company.policies", { region: "Midwest", policyType: "Auto" })
-sh.splitAt("insurance_company.claims", { state: "CA", incidentDate: new Date("2024-06-01") })
+// Manual chunk operations that would be used in a sharded environment
+print("=== Chunk Management Simulation ===")
+print("In a sharded cluster, you would manage chunks like this:")
+print("")
 
-// Move chunks between shards for better geographic distribution
-sh.moveChunk(
-  "insurance_company.policies",
-  { region: "Northeast", policyType: MinKey },
-  "shard1rs"  // Move to Eastern region shard
-)
+print("1. Split chunks manually:")
+print("   sh.splitAt('insurance_company.policies', { region: 'Midwest', policyType: 'Auto' })")
+print("   sh.splitAt('insurance_company.claims', { state: 'CA', incidentDate: new Date('2024-06-01') })")
+print("")
 
-sh.moveChunk(
-  "insurance_company.claims",
-  { state: "CA", incidentDate: MinKey },
-  "shard2rs"  // Move California claims to Western region shard
-)
+print("2. Move chunks between shards:")
+print("   sh.moveChunk('insurance_company.policies',")
+print("     { region: 'Northeast', policyType: MinKey },")
+print("     'shard1rs')")
+print("")
 
-// Balancer management for insurance operations
-sh.stopBalancer()   // Temporarily disable during maintenance windows
-print("Balancer stopped for maintenance window");
+print("3. Balancer management:")
+print("   sh.stopBalancer()   // Stop during maintenance")
+print("   sh.startBalancer()  // Resume after maintenance")
+print("")
 
-// Check chunk distribution during maintenance
+// Analyze current data distribution that would benefit from chunk management
 use insurance_company
-print("\nData distribution check:");
-print("CA Policies: " + db.policies.countDocuments({ state: "CA" }));
-print("NY Policies: " + db.policies.countDocuments({ state: "NY" }));
-print("TX Claims: " + db.claims.countDocuments({ state: "TX" }));
-print("FL Claims: " + db.claims.countDocuments({ state: "FL" }));
+print("=== Current Data Distribution Analysis ===")
+print("(This shows how data would be distributed across chunks)")
+print("")
 
-sh.startBalancer()  // Re-enable after maintenance
-print("Balancer restarted");
+// Check actual data distribution by fields that would be shard keys
+if (db.policies.countDocuments() > 0) {
+  print("Policy distribution by type:")
+  var policyTypes = db.policies.aggregate([
+    { $group: { _id: "$policyType", count: { $sum: 1 } } },
+    { $sort: { count: -1 } }
+  ]).toArray()
+
+  policyTypes.forEach(function(result) {
+    print("  " + (result._id || "Unknown") + ": " + result.count + " policies")
+  })
+}
+
+if (db.claims.countDocuments() > 0) {
+  print("\nClaims that would need chunk management:")
+  var totalClaims = db.claims.countDocuments()
+  print("  Total claims: " + totalClaims)
+  print("  Estimated chunks (64MB each): " + Math.ceil(totalClaims / 1000))
+}
+
+print("\n=== Maintenance Window Simulation ===")
+print("During maintenance, you would:")
+print("1. Stop the balancer to prevent chunk migrations")
+print("2. Perform maintenance operations")
+print("3. Restart the balancer")
+print("4. Monitor for proper chunk distribution")
 ```
 
 ## Lab 3 Deliverables
