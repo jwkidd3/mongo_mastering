@@ -45,11 +45,11 @@
 
 3. **Database Administration**
    ```javascript
-   // Create database with specific locale
+   // Create database with specific locale (using 'en' locale for compatibility)
    use international_insurance
-   db.createCollection("policies", {
+   db.createCollection("international_policies", {
      collation: {
-       locale: "en_US",
+       locale: "en",
        strength: 1
      }
    })
