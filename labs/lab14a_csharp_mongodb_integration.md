@@ -2,6 +2,32 @@
 **Duration:** 30 minutes
 **Objective:** Integrate MongoDB with C# applications for insurance management system
 
+## Prerequisites: MongoDB Environment Setup
+
+**⚠️ Only run if MongoDB environment is not already running**
+
+From the project root directory, use the course's standardized setup scripts:
+
+**macOS/Linux:**
+```bash
+./setup/setup.sh
+```
+
+**Windows PowerShell:**
+```powershell
+.\setup\setup.ps1
+```
+
+To check if MongoDB is already running:
+```bash
+mongosh --eval "db.runCommand('ping')"
+```
+
+**Load Course Data:**
+```bash
+mongosh < data/day3_data_loader.js
+```
+
 ## Part A: Project Setup (10 minutes)
 
 ### Step 1: Open VS Code and Create C# Project

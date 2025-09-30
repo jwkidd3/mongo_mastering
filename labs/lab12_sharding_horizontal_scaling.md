@@ -15,16 +15,7 @@ docker run -d --name config3 --network mongodb-net -p 27102:27017 mongo:8.0 --co
 sleep 15
 
 # Initialize config server replica set
-docker exec -it config1 mongosh --eval "
-rs.initiate({
-  _id: 'configrs',
-  members: [
-    { _id: 0, host: 'config1:27017' },
-    { _id: 1, host: 'config2:27017' },
-    { _id: 2, host: 'config3:27017' }
-  ]
-})
-"
+docker exec -it config1 mongosh --eval "rs.initiate({_id:'configrs',members:[{_id:0,host:'config1:27017'},{_id:1,host:'config2:27017'},{_id:2,host:'config3:27017'}]})"
 ```
 
 ### Step 2: Start Shard Replica Sets
@@ -43,28 +34,10 @@ docker run -d --name shard2-3 --network mongodb-net -p 27303:27017 mongo:8.0 --s
 sleep 15
 
 # Initialize shard 1 replica set
-docker exec -it shard1-1 mongosh --eval "
-rs.initiate({
-  _id: 'shard1rs',
-  members: [
-    { _id: 0, host: 'shard1-1:27017' },
-    { _id: 1, host: 'shard1-2:27017' },
-    { _id: 2, host: 'shard1-3:27017' }
-  ]
-})
-"
+docker exec -it shard1-1 mongosh --eval "rs.initiate({_id:'shard1rs',members:[{_id:0,host:'shard1-1:27017'},{_id:1,host:'shard1-2:27017'},{_id:2,host:'shard1-3:27017'}]})"
 
 # Initialize shard 2 replica set
-docker exec -it shard2-1 mongosh --eval "
-rs.initiate({
-  _id: 'shard2rs',
-  members: [
-    { _id: 0, host: 'shard2-1:27017' },
-    { _id: 1, host: 'shard2-2:27017' },
-    { _id: 2, host: 'shard2-3:27017' }
-  ]
-})
-"
+docker exec -it shard2-1 mongosh --eval "rs.initiate({_id:'shard2rs',members:[{_id:0,host:'shard2-1:27017'},{_id:1,host:'shard2-2:27017'},{_id:2,host:'shard2-3:27017'}]})"
 ```
 
 ### Step 3: Start Query Routers (mongos)

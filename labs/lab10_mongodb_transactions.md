@@ -5,24 +5,29 @@
 ## Prerequisites: Environment Setup
 
 ### Step 1: Set Up MongoDB Environment
-Use the course's standardized setup scripts:
+
+**⚠️ Only run if MongoDB environment is not already running**
+
+From the project root directory, use the course's standardized setup scripts:
 
 **macOS/Linux:**
 ```bash
-cd scripts
-./setup.sh
+./setup/setup.sh
 ```
 
 **Windows PowerShell:**
 ```powershell
-cd scripts
-.\setup.ps1
+.\setup\setup.ps1
+```
+
+To check if MongoDB is already running:
+```bash
+mongosh --eval "db.runCommand('ping')"
 ```
 
 **Load Course Data:**
 ```bash
-cd data
-mongosh < comprehensive_data_loader.js
+mongosh < data/comprehensive_data_loader.js
 ```
 
 ### Step 2: Verify Replica Set Ready for Transactions

@@ -64,10 +64,7 @@ rs.status();
 **Monitor Current Primary:**
 ```bash
 # Check current primary
-docker exec -it mongo1 mongosh --eval "
-var primary = rs.status().members.filter(m => m.state === 1)[0];
-print('Current primary: ' + primary.name);
-"
+docker exec -it mongo1 mongosh --eval "var primary = rs.status().members.filter(m => m.state === 1)[0]; print('Current primary: ' + primary.name);"
 ```
 
 **In MongoDB Compass:**

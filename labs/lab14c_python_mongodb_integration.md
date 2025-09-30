@@ -5,6 +5,32 @@
 ## Overview
 This lab demonstrates how to build a complete insurance management application using Python and PyMongo in Jupyter Notebook. You'll create an interactive insurance system that handles policies, customers, and claims using modern Python patterns with live code execution and data visualization.
 
+## Prerequisites: MongoDB Environment Setup
+
+**⚠️ Only run if MongoDB environment is not already running**
+
+From the project root directory, use the course's standardized setup scripts:
+
+**macOS/Linux:**
+```bash
+./setup/setup.sh
+```
+
+**Windows PowerShell:**
+```powershell
+.\setup\setup.ps1
+```
+
+To check if MongoDB is already running:
+```bash
+mongosh --eval "db.runCommand('ping')"
+```
+
+**Load Course Data:**
+```bash
+mongosh < data/day3_data_loader.js
+```
+
 ## Part A: Jupyter Notebook Setup (5 minutes)
 
 ### Step 1: Launch Jupyter Notebook

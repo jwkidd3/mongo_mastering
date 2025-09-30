@@ -16,8 +16,7 @@
 **Before starting this lab, load the Day 1 course data:**
 
 ```bash
-cd data
-mongosh < day1_data_loader.js
+mongosh < data/day1_data_loader.js
 ```
 
 **Wait for this success message:**
@@ -27,14 +26,11 @@ mongosh < day1_data_loader.js
 
 **Test data loaded correctly:**
 ```bash
-mongosh --eval "
-use insurance_company;
-print('Branches: ' + db.branches.countDocuments());
-print('Policies: ' + db.policies.countDocuments());
-"
+mongosh --eval "db.getSiblingDB('insurance_company').branches.countDocuments()"
+mongosh --eval "db.getSiblingDB('insurance_company').policies.countDocuments()"
 ```
 
-**Expected output:** Branches: 2, Policies: 6
+**Expected output:** Branches: 5, Policies: 10
 
 💡 **See [LOAD_DATA.md](../LOAD_DATA.md) for detailed instructions and troubleshooting**
 

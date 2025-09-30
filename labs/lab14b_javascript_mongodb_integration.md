@@ -5,6 +5,32 @@
 ## Overview
 This lab demonstrates how to build a complete insurance management application using Node.js and the MongoDB driver. You'll create a professional insurance system that handles policies, customers, and claims using modern JavaScript patterns.
 
+## Prerequisites: MongoDB Environment Setup
+
+**⚠️ Only run if MongoDB environment is not already running**
+
+From the project root directory, use the course's standardized setup scripts:
+
+**macOS/Linux:**
+```bash
+./setup/setup.sh
+```
+
+**Windows PowerShell:**
+```powershell
+.\setup\setup.ps1
+```
+
+To check if MongoDB is already running:
+```bash
+mongosh --eval "db.runCommand('ping')"
+```
+
+**Load Course Data:**
+```bash
+mongosh < data/day3_data_loader.js
+```
+
 ## Part A: Project Setup (10 minutes)
 
 ### Step 1: Create Node.js Project in VS Code
