@@ -169,48 +169,79 @@ explainElectionProcess()
 ```
 
 **Simulated Failover Analysis:**
+
 ```javascript
-// Analyze current replica set health
-function analyzeReplicaSetHealth() {
-  print("=== Replica Set Health Analysis ===")
-  var status = rs.status()
-  var config = rs.conf()
+// Step 1: Get replica set status and configuration
+print("=== Replica Set Health Analysis ===");
+```
 
-  print("Set name: " + status.set)
-  print("Total members: " + status.members.length)
-  print("Majority needed for elections: " + Math.floor(status.members.length / 2) + 1)
-  print("")
+```javascript
+// Step 2: Gather status information
+var status = rs.status();
+var config = rs.conf();
+```
 
-  // Check each member's role and health
-  status.members.forEach(function(member) {
-    var memberConfig = config.members.find(function(m) { return m.host === member.name })
-    print("Member: " + member.name)
-    print("  State: " + member.stateStr)
-    print("  Health: " + member.health)
-    print("  Can become primary: " + (memberConfig.priority > 0 ? "Yes" : "No"))
-    print("  Can vote: " + (memberConfig.votes > 0 ? "Yes" : "No"))
-    if (member.state === 1) {
-      print("  *** CURRENT PRIMARY ***")
-    }
-    print("")
-  })
+```javascript
+// Step 3: Display basic set information
+print("Set name: " + status.set);
+print("Total members: " + status.members.length);
+print("Majority needed for elections: " + (Math.floor(status.members.length / 2) + 1));
+print("");
+```
 
-  // Simulate failover scenarios
-  print("=== Failover Scenarios ===")
-  print("If primary fails:")
-  print("- Remaining 2 members form majority")
-  print("- Election triggered automatically")
-  print("- New primary elected within seconds")
-  print("- Applications reconnect to new primary")
-  print("")
-  print("If 2 members fail:")
-  print("- Remaining 1 member cannot form majority")
-  print("- Replica set becomes read-only")
-  print("- No new primary can be elected")
-  print("- Service degraded until members recover")
-}
+```javascript
+// Step 4: Check member 1 status and configuration
+var member1 = status.members[0];
+var member1Config = config.members[0];
+print("Member: " + member1.name);
+print("  State: " + member1.stateStr);
+print("  Health: " + member1.health);
+print("  Can become primary: " + (member1Config.priority > 0 ? "Yes" : "No"));
+print("  Can vote: " + (member1Config.votes > 0 ? "Yes" : "No"));
+if (member1.state === 1) print("  *** CURRENT PRIMARY ***");
+print("");
+```
 
-analyzeReplicaSetHealth()
+```javascript
+// Step 5: Check member 2 status and configuration
+var member2 = status.members[1];
+var member2Config = config.members[1];
+print("Member: " + member2.name);
+print("  State: " + member2.stateStr);
+print("  Health: " + member2.health);
+print("  Can become primary: " + (member2Config.priority > 0 ? "Yes" : "No"));
+print("  Can vote: " + (member2Config.votes > 0 ? "Yes" : "No"));
+if (member2.state === 1) print("  *** CURRENT PRIMARY ***");
+print("");
+```
+
+```javascript
+// Step 6: Check member 3 status and configuration
+var member3 = status.members[2];
+var member3Config = config.members[2];
+print("Member: " + member3.name);
+print("  State: " + member3.stateStr);
+print("  Health: " + member3.health);
+print("  Can become primary: " + (member3Config.priority > 0 ? "Yes" : "No"));
+print("  Can vote: " + (member3Config.votes > 0 ? "Yes" : "No"));
+if (member3.state === 1) print("  *** CURRENT PRIMARY ***");
+print("");
+```
+
+```javascript
+// Step 7: Explain failover scenarios
+print("=== Failover Scenarios ===");
+print("If primary fails:");
+print("- Remaining 2 members form majority");
+print("- Election triggered automatically");
+print("- New primary elected within seconds");
+print("- Applications reconnect to new primary");
+print("");
+print("If 2 members fail:");
+print("- Remaining 1 member cannot form majority");
+print("- Replica set becomes read-only");
+print("- No new primary can be elected");
+print("- Service degraded until members recover");
 ```
 
 **In MongoDB Compass:**
@@ -357,67 +388,108 @@ print("- Real-time dashboards: Use local read concern for speed")
 3. **Topology View:** Visual cluster health representation
 
 **MongoSH Monitoring Script for Insurance Operations:**
+
 ```javascript
-// Comprehensive replica set monitoring for insurance company
-function monitorInsuranceReplicaSet() {
-  print("=== Insurance Company Replica Set Monitoring ===");
+// Step 1: Initialize monitoring display
+print("=== Insurance Company Replica Set Monitoring ===");
+```
 
-  var status = rs.status();
-  print("Replica Set: " + status.set);
-  print("Date: " + status.date);
+```javascript
+// Step 2: Get replica set status and display basic info
+var status = rs.status();
+print("Replica Set: " + status.set);
+print("Date: " + status.date);
+```
 
-  // Member status with branch context
-  print("\n--- Branch Data Center Status ---");
-  status.members.forEach(function(member) {
-    var role = "";
-    if (member.state === 1) role = "[PRIMARY - Main Operations]";
-    else if (member.state === 2) role = "[SECONDARY - Branch/Analytics]";
-    else if (member.state === 7) role = "[ARBITER - Voting Only]";
+```javascript
+// Step 3: Display branch data center status header
+print("\n--- Branch Data Center Status ---");
+```
 
-    print(member.name + ": " + member.stateStr + " " + role + " (Health: " + member.health + ")");
-    if (member.optimeDate) {
-      print("  Last Optime: " + member.optimeDate);
+```javascript
+// Step 4: Check member 1 status with business context
+var member1 = status.members[0];
+var role1 = "";
+if (member1.state === 1) role1 = "[PRIMARY - Main Operations]";
+else if (member1.state === 2) role1 = "[SECONDARY - Branch/Analytics]";
+else if (member1.state === 7) role1 = "[ARBITER - Voting Only]";
+print(member1.name + ": " + member1.stateStr + " " + role1 + " (Health: " + member1.health + ")");
+if (member1.optimeDate) print("  Last Optime: " + member1.optimeDate);
+if (member1.lastHeartbeat) print("  Last Heartbeat: " + member1.lastHeartbeat);
+```
+
+```javascript
+// Step 5: Check member 2 status with business context
+var member2 = status.members[1];
+var role2 = "";
+if (member2.state === 1) role2 = "[PRIMARY - Main Operations]";
+else if (member2.state === 2) role2 = "[SECONDARY - Branch/Analytics]";
+else if (member2.state === 7) role2 = "[ARBITER - Voting Only]";
+print(member2.name + ": " + member2.stateStr + " " + role2 + " (Health: " + member2.health + ")");
+if (member2.optimeDate) print("  Last Optime: " + member2.optimeDate);
+if (member2.lastHeartbeat) print("  Last Heartbeat: " + member2.lastHeartbeat);
+```
+
+```javascript
+// Step 6: Check member 3 status with business context
+var member3 = status.members[2];
+var role3 = "";
+if (member3.state === 1) role3 = "[PRIMARY - Main Operations]";
+else if (member3.state === 2) role3 = "[SECONDARY - Branch/Analytics]";
+else if (member3.state === 7) role3 = "[ARBITER - Voting Only]";
+print(member3.name + ": " + member3.stateStr + " " + role3 + " (Health: " + member3.health + ")");
+if (member3.optimeDate) print("  Last Optime: " + member3.optimeDate);
+if (member3.lastHeartbeat) print("  Last Heartbeat: " + member3.lastHeartbeat);
+```
+
+```javascript
+// Step 7: Analyze replication lag for insurance data consistency
+print("\n--- Branch Data Replication Lag ---");
+var primary = status.members.find(function(m) { return m.state === 1; });
+```
+
+```javascript
+// Step 8: Check lag for secondary members (if primary exists)
+if (primary) {
+    var secondaries = status.members.filter(function(m) { return m.state === 2; });
+    if (secondaries.length > 0) {
+        var secondary1 = secondaries[0];
+        var lag1 = (primary.optimeDate - secondary1.optimeDate) / 1000;
+        var lagStatus1 = lag1 < 5 ? "[OK]" : lag1 < 15 ? "[WARNING]" : "[CRITICAL]";
+        print(secondary1.name + ": " + lag1.toFixed(2) + " seconds behind primary " + lagStatus1);
     }
-    if (member.lastHeartbeat) {
-      print("  Last Heartbeat: " + member.lastHeartbeat);
+    if (secondaries.length > 1) {
+        var secondary2 = secondaries[1];
+        var lag2 = (primary.optimeDate - secondary2.optimeDate) / 1000;
+        var lagStatus2 = lag2 < 5 ? "[OK]" : lag2 < 15 ? "[WARNING]" : "[CRITICAL]";
+        print(secondary2.name + ": " + lag2.toFixed(2) + " seconds behind primary " + lagStatus2);
     }
-  });
-
-  // Replication lag - critical for insurance data consistency
-  print("\n--- Branch Data Replication Lag ---");
-  var primary = status.members.filter(function(m) { return m.state === 1; })[0];
-  if (primary) {
-    status.members.filter(function(m) { return m.state === 2; }).forEach(function(secondary) {
-      var lag = (primary.optimeDate - secondary.optimeDate) / 1000;
-      var lagStatus = lag < 5 ? "[OK]" : lag < 15 ? "[WARNING]" : "[CRITICAL]";
-      print(secondary.name + ": " + lag.toFixed(2) + " seconds behind primary " + lagStatus);
-    });
-  }
-
-  // Oplog information
-  print("\n--- Oplog Information ---");
-  var oplogStats = db.getSiblingDB("local").oplog.rs.stats();
-  print("Oplog Size: " + (oplogStats.size / 1024 / 1024).toFixed(2) + " MB");
-  print("Oplog Used: " + (oplogStats.storageSize / 1024 / 1024).toFixed(2) + " MB");
-
-  var firstOp = db.getSiblingDB("local").oplog.rs.find().sort({ ts: 1 }).limit(1).next();
-  var lastOp = db.getSiblingDB("local").oplog.rs.find().sort({ ts: -1 }).limit(1).next();
-
-  var oplogWindow = (lastOp.ts.t - firstOp.ts.t) / 3600;
-  print("Oplog Window: " + oplogWindow.toFixed(2) + " hours");
-
-  // Insurance-specific data monitoring
-  print("\n--- Insurance Data Volume ---");
-  use insurance_company;
-  print("Active Policies: " + db.policies.countDocuments({ status: "Active" }));
-  print("Open Claims: " + db.claims.countDocuments({ status: { $in: ["Filed", "Under Review"] } }));
-  print("Today's Payments: " + db.payments.countDocuments({
-    paymentDate: { $gte: new Date(new Date().setHours(0,0,0,0)) }
-  }));
 }
+```
 
-// Run insurance-focused monitoring
-monitorInsuranceReplicaSet();
+```javascript
+// Step 9: Display oplog information
+print("\n--- Oplog Information ---");
+var oplogStats = db.getSiblingDB("local").oplog.rs.stats();
+print("Oplog Size: " + (oplogStats.size / 1024 / 1024).toFixed(2) + " MB");
+print("Oplog Used: " + (oplogStats.storageSize / 1024 / 1024).toFixed(2) + " MB");
+```
+
+```javascript
+// Step 10: Calculate oplog window
+var firstOp = db.getSiblingDB("local").oplog.rs.find().sort({ ts: 1 }).limit(1).next();
+var lastOp = db.getSiblingDB("local").oplog.rs.find().sort({ ts: -1 }).limit(1).next();
+var oplogWindow = (lastOp.ts.t - firstOp.ts.t) / 3600;
+print("Oplog Window: " + oplogWindow.toFixed(2) + " hours");
+```
+
+```javascript
+// Step 11: Monitor insurance-specific data volumes
+print("\n--- Insurance Data Volume ---");
+use insurance_company;
+print("Active Policies: " + db.policies.countDocuments({ status: "Active" }));
+print("Open Claims: " + db.claims.countDocuments({ status: { $in: ["Filed", "Under Review"] } }));
+print("Today's Payments: " + db.payments.countDocuments({ paymentDate: { $gte: new Date(new Date().setHours(0,0,0,0)) } }));
 ```
 
 ### Step 7: Maintenance Operations (Demonstration)

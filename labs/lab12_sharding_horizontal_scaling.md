@@ -87,9 +87,11 @@ var customersByState = db.customers.aggregate([
   { $sort: { count: -1 } }
 ]).toArray()
 
-customersByState.forEach(function(state) {
-  print("  " + (state._id || "Unknown") + ": " + state.count + " customers")
-})
+// Display customer distribution by state (step-by-step approach)
+for (var i = 0; i < customersByState.length; i++) {
+  var state = customersByState[i];
+  print("  " + (state._id || "Unknown") + ": " + state.count + " customers");
+}
 print("")
 
 // Analyze policy distribution
@@ -99,9 +101,11 @@ var policiesByType = db.policies.aggregate([
   { $sort: { count: -1 } }
 ]).toArray()
 
-policiesByType.forEach(function(type) {
-  print("  " + (type._id || "Unknown") + ": " + type.count + " policies")
-})
+// Display policy distribution by type (step-by-step approach)
+for (var j = 0; j < policiesByType.length; j++) {
+  var type = policiesByType[j];
+  print("  " + (type._id || "Unknown") + ": " + type.count + " policies");
+}
 print("")
 
 // Analyze claims by geography
@@ -112,9 +116,11 @@ if (db.claims.countDocuments() > 0) {
     { $sort: { count: -1 } }
   ]).toArray()
 
-  claimsByLocation.forEach(function(location) {
-    print("  " + (location._id || "Unknown") + ": " + location.count + " claims")
-  })
+  // Display claims distribution by location (step-by-step approach)
+  for (var k = 0; k < claimsByLocation.length; k++) {
+    var location = claimsByLocation[k];
+    print("  " + (location._id || "Unknown") + ": " + location.count + " claims");
+  }
 } else {
   print("  No claims data available for analysis")
 }
@@ -142,71 +148,112 @@ print("   Use Case: Policy type-specific analytics")
 ### Step 3: Sharding Strategy Simulation
 
 **Simulate Different Sharding Approaches:**
+
 ```javascript
-// Simulate how our data would be distributed across shards
-function simulateShardDistribution() {
-  print("=== Sharding Distribution Simulation ===")
-  print("")
+// Step 1: Initialize sharding distribution simulation
+print("=== Sharding Distribution Simulation ===");
+print("");
+```
 
-  // Simulate geographic sharding
-  print("1. GEOGRAPHIC SHARDING SIMULATION")
-  print("   Imaginary shard allocation by state:")
+```javascript
+// Step 2: Set up geographic sharding simulation
+print("1. GEOGRAPHIC SHARDING SIMULATION");
+print("   Imaginary shard allocation by state:");
+```
 
-  var stateToShard = {
-    "CA": "shard-west",
-    "NY": "shard-east",
-    "TX": "shard-central",
-    "FL": "shard-east",
-    "IL": "shard-central"
-  }
+```javascript
+// Step 3: Define state to shard mapping
+var stateToShard = {
+  "CA": "shard-west",
+  "NY": "shard-east",
+  "TX": "shard-central",
+  "FL": "shard-east",
+  "IL": "shard-central"
+};
+```
 
-  // Count customers by hypothetical shard
-  var shardCounts = {}
-  db.customers.find({}).forEach(function(customer) {
-    var state = customer.address ? customer.address.state : "Unknown"
-    var shard = stateToShard[state] || "shard-other"
-    shardCounts[shard] = (shardCounts[shard] || 0) + 1
-  })
+```javascript
+// Step 4: Count customers by geographic shard using aggregation (safer approach)
+var customersByGeographicShard = db.customers.aggregate([
+  { $addFields: {
+      assignedShard: {
+        $switch: {
+          branches: [
+            { case: { $eq: ["$address.state", "CA"] }, then: "shard-west" },
+            { case: { $eq: ["$address.state", "NY"] }, then: "shard-east" },
+            { case: { $eq: ["$address.state", "TX"] }, then: "shard-central" },
+            { case: { $eq: ["$address.state", "FL"] }, then: "shard-east" },
+            { case: { $eq: ["$address.state", "IL"] }, then: "shard-central" }
+          ],
+          default: "shard-other"
+        }
+      }
+    }
+  },
+  { $group: { _id: "$assignedShard", count: { $sum: 1 } } },
+  { $sort: { _id: 1 } }
+]).toArray();
+```
 
-  Object.keys(shardCounts).forEach(function(shard) {
-    print("   " + shard + ": " + shardCounts[shard] + " customers")
-  })
-  print("")
-
-  // Simulate hash sharding
-  print("2. HASH SHARDING SIMULATION")
-  print("   Even distribution across 3 hypothetical shards:")
-
-  var customerCount = db.customers.countDocuments()
-  var shardSize = Math.ceil(customerCount / 3)
-  print("   shard-0: ~" + shardSize + " customers")
-  print("   shard-1: ~" + shardSize + " customers")
-  print("   shard-2: ~" + shardSize + " customers")
-  print("")
-
-  // Simulate range sharding by policy type
-  print("3. RANGE SHARDING BY POLICY TYPE")
-  print("   Shard allocation by policy type:")
-
-  var policyTypeToShard = {
-    "Auto": "shard-auto",
-    "Property": "shard-property",
-    "Life": "shard-life",
-    "Commercial": "shard-commercial"
-  }
-
-  var policyShardCounts = {}
-  db.policies.find({}).forEach(function(policy) {
-    var shard = policyTypeToShard[policy.policyType] || "shard-other"
-    policyShardCounts[shard] = (policyShardCounts[shard] || 0) + 1
-  })
-
-  Object.keys(policyShardCounts).forEach(function(shard) {
-    print("   " + shard + ": " + policyShardCounts[shard] + " policies")
-  })
+```javascript
+// Step 5: Display geographic shard distribution
+for (var i = 0; i < customersByGeographicShard.length; i++) {
+  var shard = customersByGeographicShard[i];
+  print("   " + shard._id + ": " + shard.count + " customers");
 }
+print("");
+```
 
-simulateShardDistribution()
+```javascript
+// Step 6: Simulate hash sharding
+print("2. HASH SHARDING SIMULATION");
+print("   Even distribution across 3 hypothetical shards:");
+```
+
+```javascript
+// Step 7: Calculate hash shard distribution
+var customerCount = db.customers.countDocuments();
+var shardSize = Math.ceil(customerCount / 3);
+print("   shard-0: ~" + shardSize + " customers");
+print("   shard-1: ~" + shardSize + " customers");
+print("   shard-2: ~" + shardSize + " customers");
+print("");
+```
+
+```javascript
+// Step 8: Set up range sharding by policy type
+print("3. RANGE SHARDING BY POLICY TYPE");
+print("   Shard allocation by policy type:");
+```
+
+```javascript
+// Step 9: Count policies by type shard using aggregation (safer approach)
+var policiesByTypeShard = db.policies.aggregate([
+  { $addFields: {
+      assignedShard: {
+        $switch: {
+          branches: [
+            { case: { $eq: ["$policyType", "Auto"] }, then: "shard-auto" },
+            { case: { $eq: ["$policyType", "Property"] }, then: "shard-property" },
+            { case: { $eq: ["$policyType", "Life"] }, then: "shard-life" },
+            { case: { $eq: ["$policyType", "Commercial"] }, then: "shard-commercial" }
+          ],
+          default: "shard-other"
+        }
+      }
+    }
+  },
+  { $group: { _id: "$assignedShard", count: { $sum: 1 } } },
+  { $sort: { _id: 1 } }
+]).toArray();
+```
+
+```javascript
+// Step 10: Display policy type shard distribution
+for (var j = 0; j < policiesByTypeShard.length; j++) {
+  var policyShard = policiesByTypeShard[j];
+  print("   " + policyShard._id + ": " + policyShard.count + " policies");
+}
 ```
 
 ### Step 4: Query Routing Simulation
