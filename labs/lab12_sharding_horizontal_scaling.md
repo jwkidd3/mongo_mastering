@@ -1,77 +1,264 @@
-# Lab 3: Sharding & Horizontal Scaling
+# Lab 12: Sharding & Horizontal Scaling
 **Duration:** 45 minutes
-**Objective:** Build and manage a sharded MongoDB cluster for insurance company geographic distribution
+**Objective:** Understand MongoDB sharding concepts and strategies for insurance company geographic distribution
 
-## Part A: Sharded Cluster Setup (25 minutes)
+## Prerequisites: Environment Setup
 
-### Step 1: Start Config Server Replica Set
+### Step 1: Verify MongoDB Environment
+
+**⚠️ Only run if MongoDB environment is not already running**
+
+From the project root directory, use the course's standardized setup scripts:
+
+**macOS/Linux:**
 ```bash
-# Config servers (store cluster metadata)
-docker run -d --name config1 --network mongodb-net -p 27100:27017 mongo:8.0 --configsvr --replSet configrs --bind_ip_all
-docker run -d --name config2 --network mongodb-net -p 27101:27017 mongo:8.0 --configsvr --replSet configrs --bind_ip_all
-docker run -d --name config3 --network mongodb-net -p 27102:27017 mongo:8.0 --configsvr --replSet configrs --bind_ip_all
-
-# Wait for startup
-sleep 15
-
-# Initialize config server replica set
-docker exec -it config1 mongosh --eval "rs.initiate({_id:'configrs',members:[{_id:0,host:'config1:27017'},{_id:1,host:'config2:27017'},{_id:2,host:'config3:27017'}]})"
+./setup/setup.sh
 ```
 
-### Step 2: Start Shard Replica Sets
-```bash
-# Shard 1 replica set
-docker run -d --name shard1-1 --network mongodb-net -p 27201:27017 mongo:8.0 --shardsvr --replSet shard1rs --bind_ip_all
-docker run -d --name shard1-2 --network mongodb-net -p 27202:27017 mongo:8.0 --shardsvr --replSet shard1rs --bind_ip_all
-docker run -d --name shard1-3 --network mongodb-net -p 27203:27017 mongo:8.0 --shardsvr --replSet shard1rs --bind_ip_all
-
-# Shard 2 replica set
-docker run -d --name shard2-1 --network mongodb-net -p 27301:27017 mongo:8.0 --shardsvr --replSet shard2rs --bind_ip_all
-docker run -d --name shard2-2 --network mongodb-net -p 27302:27017 mongo:8.0 --shardsvr --replSet shard2rs --bind_ip_all
-docker run -d --name shard2-3 --network mongodb-net -p 27303:27017 mongo:8.0 --shardsvr --replSet shard2rs --bind_ip_all
-
-# Wait for startup
-sleep 15
-
-# Initialize shard 1 replica set
-docker exec -it shard1-1 mongosh --eval "rs.initiate({_id:'shard1rs',members:[{_id:0,host:'shard1-1:27017'},{_id:1,host:'shard1-2:27017'},{_id:2,host:'shard1-3:27017'}]})"
-
-# Initialize shard 2 replica set
-docker exec -it shard2-1 mongosh --eval "rs.initiate({_id:'shard2rs',members:[{_id:0,host:'shard2-1:27017'},{_id:1,host:'shard2-2:27017'},{_id:2,host:'shard2-3:27017'}]})"
+**Windows PowerShell:**
+```powershell
+.\setup\setup.ps1
 ```
 
-### Step 3: Start Query Routers (mongos)
+To check if MongoDB is already running:
 ```bash
-# Query routers
-docker run -d --name mongos1 --network mongodb-net -p 27017:27017 mongo:8.0 mongos --configdb configrs/config1:27017,config2:27017,config3:27017 --bind_ip_all
-docker run -d --name mongos2 --network mongodb-net -p 27018:27017 mongo:8.0 mongos --configdb configrs/config1:27017,config2:27017,config3:27017 --bind_ip_all
-
-# Wait for mongos startup
-sleep 15
+mongosh --eval "db.runCommand('ping')"
 ```
 
-### Step 4: Configure Sharded Cluster
+**Load Course Data:**
+```bash
+mongosh < data/comprehensive_data_loader.js
+```
 
-**Connect to Sharded Cluster with Compass:**
-1. Connection String: `mongodb://localhost:27017`
-2. This connects to mongos (query router)
+## Part A: Understanding Sharding Architecture (25 minutes)
 
-**Add Shards via Compass MongoSH:**
+### Step 1: Sharded Cluster Components Overview
+
+**Understanding Sharding Components:**
 ```javascript
-// Add shards to the cluster
-sh.addShard("shard1rs/shard1-1:27017,shard1-2:27017,shard1-3:27017")
-sh.addShard("shard2rs/shard2-1:27017,shard2-2:27017,shard2-3:27017")
+// Connect to our replica set to understand sharding concepts
+use insurance_company
 
-// Check cluster status
-sh.status()
+print("=== MongoDB Sharding Architecture Overview ===")
+print("")
+
+print("1. SHARDS (Data Storage)")
+print("   Purpose: Store subset of collection data")
+print("   Implementation: Replica sets for high availability")
+print("   Example: Shard1 (Eastern US), Shard2 (Western US), Shard3 (International)")
+print("")
+
+print("2. CONFIG SERVERS (Metadata Storage)")
+print("   Purpose: Store cluster configuration and chunk metadata")
+print("   Implementation: Replica set of config servers")
+print("   Contains: Shard mappings, chunk ranges, balancer settings")
+print("")
+
+print("3. QUERY ROUTERS (mongos)")
+print("   Purpose: Route queries to appropriate shards")
+print("   Implementation: Stateless routing processes")
+print("   Function: Query optimization and result aggregation")
+print("")
+
+print("4. CHUNKS")
+print("   Purpose: Logical units of data distribution")
+print("   Size: Default 128MB, configurable")
+print("   Migration: Automatic balancing between shards")
+print("")
+
+print("=== Current Setup Analysis ===")
+print("Our current environment uses a 3-member replica set.")
+print("This provides high availability but not horizontal scaling.")
+print("Let's explore how our insurance data would benefit from sharding.")
 ```
 
-**Monitor in Compass:**
-1. Navigate to `config` database
-2. Explore collections: `shards`, `chunks`, `databases`
-3. View the sharding configuration
+### Step 2: Analyze Insurance Data for Sharding
 
-## Part B: Sharding Strategy Implementation (15 minutes)
+**Examine Current Data Distribution:**
+```javascript
+// Analyze our insurance data for sharding opportunities
+print("=== Insurance Data Analysis for Sharding ===")
+print("")
+
+// Analyze customer distribution
+print("Customer Distribution Analysis:")
+var customersByState = db.customers.aggregate([
+  { $group: { _id: "$address.state", count: { $sum: 1 } } },
+  { $sort: { count: -1 } }
+]).toArray()
+
+customersByState.forEach(function(state) {
+  print("  " + (state._id || "Unknown") + ": " + state.count + " customers")
+})
+print("")
+
+// Analyze policy distribution
+print("Policy Distribution Analysis:")
+var policiesByType = db.policies.aggregate([
+  { $group: { _id: "$policyType", count: { $sum: 1 } } },
+  { $sort: { count: -1 } }
+]).toArray()
+
+policiesByType.forEach(function(type) {
+  print("  " + (type._id || "Unknown") + ": " + type.count + " policies")
+})
+print("")
+
+// Analyze claims by geography
+print("Claims Geographic Distribution:")
+if (db.claims.countDocuments() > 0) {
+  var claimsByLocation = db.claims.aggregate([
+    { $group: { _id: "$state", count: { $sum: 1 } } },
+    { $sort: { count: -1 } }
+  ]).toArray()
+
+  claimsByLocation.forEach(function(location) {
+    print("  " + (location._id || "Unknown") + ": " + location.count + " claims")
+  })
+} else {
+  print("  No claims data available for analysis")
+}
+print("")
+
+print("=== Sharding Strategy Recommendations ===")
+print("Based on the data analysis above:")
+print("")
+print("1. GEOGRAPHIC SHARDING")
+print("   Shard Key: { state: 1, customerId: 1 }")
+print("   Benefits: Locality for regional operations")
+print("   Use Case: Branch-specific queries and compliance")
+print("")
+print("2. HASH SHARDING")
+print("   Shard Key: { _id: 'hashed' }")
+print("   Benefits: Even distribution of write load")
+print("   Use Case: High-volume, evenly distributed writes")
+print("")
+print("3. RANGE SHARDING")
+print("   Shard Key: { policyType: 1, effectiveDate: 1 }")
+print("   Benefits: Efficient queries by policy type")
+print("   Use Case: Policy type-specific analytics")
+```
+
+### Step 3: Sharding Strategy Simulation
+
+**Simulate Different Sharding Approaches:**
+```javascript
+// Simulate how our data would be distributed across shards
+function simulateShardDistribution() {
+  print("=== Sharding Distribution Simulation ===")
+  print("")
+
+  // Simulate geographic sharding
+  print("1. GEOGRAPHIC SHARDING SIMULATION")
+  print("   Imaginary shard allocation by state:")
+
+  var stateToShard = {
+    "CA": "shard-west",
+    "NY": "shard-east",
+    "TX": "shard-central",
+    "FL": "shard-east",
+    "IL": "shard-central"
+  }
+
+  // Count customers by hypothetical shard
+  var shardCounts = {}
+  db.customers.find({}).forEach(function(customer) {
+    var state = customer.address ? customer.address.state : "Unknown"
+    var shard = stateToShard[state] || "shard-other"
+    shardCounts[shard] = (shardCounts[shard] || 0) + 1
+  })
+
+  Object.keys(shardCounts).forEach(function(shard) {
+    print("   " + shard + ": " + shardCounts[shard] + " customers")
+  })
+  print("")
+
+  // Simulate hash sharding
+  print("2. HASH SHARDING SIMULATION")
+  print("   Even distribution across 3 hypothetical shards:")
+
+  var customerCount = db.customers.countDocuments()
+  var shardSize = Math.ceil(customerCount / 3)
+  print("   shard-0: ~" + shardSize + " customers")
+  print("   shard-1: ~" + shardSize + " customers")
+  print("   shard-2: ~" + shardSize + " customers")
+  print("")
+
+  // Simulate range sharding by policy type
+  print("3. RANGE SHARDING BY POLICY TYPE")
+  print("   Shard allocation by policy type:")
+
+  var policyTypeToShard = {
+    "Auto": "shard-auto",
+    "Property": "shard-property",
+    "Life": "shard-life",
+    "Commercial": "shard-commercial"
+  }
+
+  var policyShardCounts = {}
+  db.policies.find({}).forEach(function(policy) {
+    var shard = policyTypeToShard[policy.policyType] || "shard-other"
+    policyShardCounts[shard] = (policyShardCounts[shard] || 0) + 1
+  })
+
+  Object.keys(policyShardCounts).forEach(function(shard) {
+    print("   " + shard + ": " + policyShardCounts[shard] + " policies")
+  })
+}
+
+simulateShardDistribution()
+```
+
+### Step 4: Query Routing Simulation
+
+**Understand How Queries Would Route:**
+```javascript
+// Simulate query routing in a sharded environment
+function simulateQueryRouting() {
+  print("=== Query Routing Simulation ===")
+  print("")
+
+  print("Query 1: Find customers in California")
+  print("  Query: db.customers.find({ 'address.state': 'CA' })")
+  print("  Sharding: Geographic by state")
+  print("  Route: Would target shard-west only")
+  print("  Efficiency: High (single shard)")
+  print("")
+
+  print("Query 2: Find all auto policies")
+  print("  Query: db.policies.find({ policyType: 'Auto' })")
+  print("  Sharding: Range by policy type")
+  print("  Route: Would target shard-auto only")
+  print("  Efficiency: High (single shard)")
+  print("")
+
+  print("Query 3: Count all customers")
+  print("  Query: db.customers.countDocuments({})")
+  print("  Sharding: Any strategy")
+  print("  Route: Must query all shards and aggregate")
+  print("  Efficiency: Lower (requires scatter-gather)")
+  print("")
+
+  print("Query 4: Find customer by ID")
+  print("  Query: db.customers.findOne({ _id: 'specific_id' })")
+  print("  Sharding: Hash on _id")
+  print("  Route: Deterministic single shard")
+  print("  Efficiency: High (direct routing)")
+  print("")
+
+  // Demonstrate query analysis
+  print("=== Query Performance Analysis ===")
+  var start = new Date()
+  var customerCount = db.customers.countDocuments({ "address.state": "CA" })
+  var end = new Date()
+  print("Current (non-sharded): " + customerCount + " CA customers found in " + (end - start) + "ms")
+  print("Sharded scenario: Would be faster with geographic sharding")
+}
+
+simulateQueryRouting()
+```
+
+## Part B: Sharding Strategy Deep Dive (15 minutes)
 
 ### Step 5: Enable Sharding and Create Collections
 

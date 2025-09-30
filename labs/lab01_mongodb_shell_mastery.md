@@ -119,8 +119,8 @@ mongosh --eval "db.getSiblingDB('insurance_company').policies.countDocuments()"
 
    // Profiling commands
    db.setProfilingLevel(2)
-   db.getProfilingLevel()
-   db.getProfilingStatus()
+   db.getProfilingStatus()  // Modern replacement for getProfilingLevel()
+   db.setProfilingLevel(0)  // Turn off profiling after demo
 
    // Current operations
    db.currentOp()

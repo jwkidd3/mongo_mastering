@@ -1,99 +1,220 @@
-# Lab 2: Replica Sets & High Availability
+# Lab 11: Replica Sets & High Availability
 **Duration:** 45 minutes
-**Objective:** Configure replica sets for insurance branch data replication and test failover scenarios
+**Objective:** Explore replica set concepts and test high availability features using the existing 3-member replica set
 
-## Part A: Advanced Replica Set Configuration (20 minutes)
+## Prerequisites: Environment Setup
 
-### Step 1: Add Special Members
+### Step 1: Verify MongoDB Environment
+
+**⚠️ Only run if MongoDB environment is not already running**
+
+From the project root directory, use the course's standardized setup scripts:
+
+**macOS/Linux:**
 ```bash
-# Add arbiter node (voting only, no data)
-docker run -d --name mongo-arbiter --network mongodb-net -p 27020:27017 mongo:8.0 --replSet rs0 --bind_ip_all
-
-# Add hidden member (data replication, no client reads)
-docker run -d --name mongo-hidden --network mongodb-net -p 27021:27017 mongo:8.0 --replSet rs0 --bind_ip_all
-
-# Wait for containers to start
-sleep 10
+./setup/setup.sh
 ```
 
-### Step 2: Configure Replica Set in Compass
+**Windows PowerShell:**
+```powershell
+.\setup\setup.ps1
+```
 
-**Using Compass MongoSH:**
+To check if MongoDB is already running:
+```bash
+mongosh --eval "db.runCommand('ping')"
+```
+
+**Load Course Data:**
+```bash
+mongosh < data/comprehensive_data_loader.js
+```
+
+## Part A: Understanding Replica Set Architecture (20 minutes)
+
+### Step 1: Examine Current Replica Set Configuration
+
+**Using MongoDB Compass:**
+1. Connection String: `mongodb://localhost:27017/?replicaSet=rs0`
+2. Click **"Connect"**
+3. Navigate to `admin` database → `system.replset` collection
+4. View the current replica set configuration document
+
+**Using MongoSH to explore the existing setup:**
 ```javascript
-// Lab 2 Step 2 - Fix for replica set reconfiguration
+// Connect to the replica set and examine configuration
+rs.status()
 
-// First, set the default write concern to avoid the error
-// Remove all extra members first
-rs.remove("mongo-arbiter:27017");
-rs.remove("mongo-hidden:27017");
+// View detailed configuration
+rs.conf()
 
-// Set write concern
-db.adminCommand({
-  "setDefaultRWConcern": 1,
-  "defaultWriteConcern": { "w": "majority" }
-});
+// Check current primary
+db.hello()
 
-// Add arbiter
-rs.add({
-  _id: 3,
-  host: "mongo-arbiter:27017",
-  arbiterOnly: true
-});
-
-// Add hidden member
-rs.add({
-  _id: 4,
-  host: "mongo-hidden:27017",
-  priority: 0,
-  hidden: true,
-  votes: 0
-});
-
-rs.status();
+// See replication lag information
+rs.printReplicationInfo()
+rs.printSecondaryReplicationInfo()
 ```
 
-**Monitor in Compass:**
-1. Navigate to `admin` database → `system.replset` collection
-2. View the configuration document
-3. Use Compass's JSON view to see member configuration
+### Step 2: Understanding Member Types (Demonstration)
+
+**Current Setup Analysis:**
+Our replica set has 3 data-bearing members. Let's understand different member types:
+
+```javascript
+// Examine our current 3-member setup
+print("=== Current Replica Set Members ===")
+var status = rs.status()
+status.members.forEach(function(member) {
+  print("Member: " + member.name)
+  print("  State: " + member.stateStr + " (" + member.state + ")")
+  print("  Health: " + member.health)
+  print("  Priority: " + (rs.conf().members.find(m => m.host === member.name) || {}).priority)
+  print("  Votes: " + (rs.conf().members.find(m => m.host === member.name) || {}).votes)
+  print("  Hidden: " + ((rs.conf().members.find(m => m.host === member.name) || {}).hidden || false))
+  print("")
+})
+
+print("=== Member Types Explanation ===")
+print("PRIMARY: Receives all writes, can serve reads")
+print("SECONDARY: Replicates data from primary, can serve reads with read preference")
+print("ARBITER: Votes in elections but stores no data (not in our current setup)")
+print("HIDDEN: Replicates data but doesn't serve client reads (not in our current setup)")
+print("DELAYED: Maintains historical snapshot of data (not in our current setup)")
+```
+
+**Replica Set Member Types Demo:**
+```javascript
+// Demonstrate different member configurations (conceptual)
+function demonstrateMemberTypes() {
+  print("=== Replica Set Member Types Demo ===")
+  print("")
+
+  print("1. ARBITER MEMBER (Voting Only)")
+  print("   Configuration: { _id: 3, host: 'arbiter:27017', arbiterOnly: true }")
+  print("   Purpose: Provides voting in elections without storing data")
+  print("   Use case: Odd number of votes in geographically distributed deployments")
+  print("")
+
+  print("2. HIDDEN MEMBER (Data but No Client Reads)")
+  print("   Configuration: { _id: 4, host: 'hidden:27017', priority: 0, hidden: true, votes: 0 }")
+  print("   Purpose: Analytics, backups, or reporting without affecting client traffic")
+  print("   Use case: Dedicated analytics replica that doesn't impact production reads")
+  print("")
+
+  print("3. DELAYED MEMBER (Historical Data)")
+  print("   Configuration: { _id: 5, host: 'delayed:27017', priority: 0, hidden: true, secondaryDelaySecs: 3600 }")
+  print("   Purpose: Maintains historical view for disaster recovery")
+  print("   Use case: Protection against accidental data deletion or corruption")
+  print("")
+
+  print("4. HIGH PRIORITY MEMBER (Preferred Primary)")
+  print("   Configuration: { _id: 0, host: 'primary:27017', priority: 2 }")
+  print("   Purpose: Prefers to be primary when available")
+  print("   Use case: Ensuring primary runs in preferred data center")
+  print("")
+}
+
+demonstreateMemberTypes()
+```
 
 ## Part B: Failover Testing and Read Preferences (15 minutes)
 
-### Step 4: Test Automatic Failover
+### Step 3: Understanding Automatic Failover (Controlled Demo)
 
 **Monitor Current Primary:**
-```bash
-# Check current primary
-docker exec -it mongo1 mongosh --eval "var primary = rs.status().members.filter(m => m.state === 1)[0]; print('Current primary: ' + primary.name);"
+```javascript
+// Check which member is currently primary
+function getCurrentPrimary() {
+  var status = rs.status()
+  var primary = status.members.filter(function(m) { return m.state === 1 })[0]
+  if (primary) {
+    print("Current primary: " + primary.name)
+    print("Primary since: " + primary.electionDate)
+    return primary
+  } else {
+    print("No primary found!")
+    return null
+  }
+}
+
+getCurrentPrimary()
+```
+
+**Election Process Demo:**
+```javascript
+// Demonstrate election mechanics (informational)
+function explainElectionProcess() {
+  print("=== MongoDB Election Process ===")
+  print("")
+  print("1. Heartbeat Failure: Secondaries detect primary unavailability")
+  print("2. Candidacy: Eligible secondary calls for election")
+  print("3. Voting: Members vote for new primary based on:")
+  print("   - Data recency (higher optime wins)")
+  print("   - Priority settings")
+  print("   - Member availability")
+  print("4. Majority Required: Candidate needs majority of votes")
+  print("5. New Primary: Winner becomes primary and starts accepting writes")
+  print("")
+  print("Election timeout: " + rs.conf().settings.electionTimeoutMillis + "ms")
+  print("Heartbeat interval: " + rs.conf().settings.heartbeatIntervalMillis + "ms")
+}
+
+explainElectionProcess()
+```
+
+**Simulated Failover Analysis:**
+```javascript
+// Analyze current replica set health
+function analyzeReplicaSetHealth() {
+  print("=== Replica Set Health Analysis ===")
+  var status = rs.status()
+  var config = rs.conf()
+
+  print("Set name: " + status.set)
+  print("Total members: " + status.members.length)
+  print("Majority needed for elections: " + Math.floor(status.members.length / 2) + 1)
+  print("")
+
+  // Check each member's role and health
+  status.members.forEach(function(member) {
+    var memberConfig = config.members.find(function(m) { return m.host === member.name })
+    print("Member: " + member.name)
+    print("  State: " + member.stateStr)
+    print("  Health: " + member.health)
+    print("  Can become primary: " + (memberConfig.priority > 0 ? "Yes" : "No"))
+    print("  Can vote: " + (memberConfig.votes > 0 ? "Yes" : "No"))
+    if (member.state === 1) {
+      print("  *** CURRENT PRIMARY ***")
+    }
+    print("")
+  })
+
+  // Simulate failover scenarios
+  print("=== Failover Scenarios ===")
+  print("If primary fails:")
+  print("- Remaining 2 members form majority")
+  print("- Election triggered automatically")
+  print("- New primary elected within seconds")
+  print("- Applications reconnect to new primary")
+  print("")
+  print("If 2 members fail:")
+  print("- Remaining 1 member cannot form majority")
+  print("- Replica set becomes read-only")
+  print("- No new primary can be elected")
+  print("- Service degraded until members recover")
+}
+
+analyzeReplicaSetHealth()
 ```
 
 **In MongoDB Compass:**
 1. Keep Compass connected to the replica set
-2. Note which server shows as "Primary" in the connection status
+2. Watch the topology view for member status
+3. Use Performance tab to monitor replication metrics
+4. Note how connection status shows current primary
 
-**Simulate Failover:**
-```bash
-# Stop the primary node
-docker stop mongo1
-
-# Wait 30 seconds and observe in Compass
-# Watch the primary indicator change to another server
-```
-
-**Monitor in Compass:**
-- Watch real-time status changes in connection indicator
-- Use Performance tab to see election metrics
-- Note automatic promotion of secondary to primary
-
-**Restart Failed Node:**
-```bash
-# Restart the original primary
-docker start mongo1
-# It will rejoin as a secondary
-sleep 10
-```
-
-### Step 5: Read Preferences Configuration
+### Step 4: Read Preferences Configuration
 
 **Create Multiple Connections in Compass:**
 
@@ -133,59 +254,97 @@ db.claims.find().readPref("secondary", [
 ]);
 ```
 
-### Step 6: Write and Read Concerns for Insurance Operations
+### Step 5: Write and Read Concerns for Insurance Operations
 
 ```javascript
 use insurance_company
 
-// Critical policy updates require majority write concern
-db.policies.updateOne(
-  { _id: "policy1" },
-  { $set: { status: "Active", lastModified: new Date() } },
-  { writeConcern: { w: "majority", j: true } }
-);
+print("=== Write Concerns for Insurance Operations ===")
+print("")
 
-// Claim settlements require strict durability
-db.claims.insertOne(
-  {
-    claimNumber: "CLM-2024-TEST",
-    customerId: "cust1",
-    policyId: "policy1",
-    amount: 5000.00,
-    status: "Filed",
-    incidentDate: new Date(),
-    filedDate: new Date()
-  },
-  { writeConcern: { w: "majority", wtimeout: 10000, j: true } }
-);
+// Demonstrate different write concerns
+print("1. MAJORITY WRITE CONCERN (Recommended for critical data)")
+print("   Purpose: Ensures writes are acknowledged by majority of replica set")
+print("   Example: Policy updates, claim settlements")
+print("   Configuration: { w: 'majority', j: true, wtimeout: 10000 }")
+print("")
 
-// Audit trail entries with journal guarantee
-db.audit_log.insertOne(
+// Test majority write concern with actual data
+print("Testing majority write concern...")
+var result = db.policies.updateOne(
+  { _id: { $exists: true } },
+  { $set: { lastReviewDate: new Date(), reviewedBy: "system" } },
+  { writeConcern: { w: "majority", j: true, wtimeout: 5000 } }
+)
+print("Write result: " + (result.acknowledged ? "SUCCESS" : "FAILED"))
+print("Documents modified: " + result.modifiedCount)
+print("")
+
+print("2. SINGLE NODE WRITE CONCERN (Faster but less durable)")
+print("   Purpose: Immediate acknowledgment from primary only")
+print("   Example: Logging, temporary data")
+print("   Configuration: { w: 1, j: true }")
+print("")
+
+// Test single node write concern
+print("Testing single node write concern...")
+var logResult = db.activity_log.insertOne(
   {
-    operation: "claim_filed",
-    userId: "agent1",
+    operation: "demo_write_concern",
     timestamp: new Date(),
-    details: "New claim filed for auto accident"
+    description: "Testing write concern behavior"
   },
   { writeConcern: { w: 1, j: true } }
-);
+)
+print("Log write result: " + (logResult.acknowledged ? "SUCCESS" : "FAILED"))
+print("")
 
-// Read concerns for different use cases
-// Local read for real-time dashboard (faster, may see uncommitted data)
-db.claims.find({ status: "Under Review" }).readConcern("local");
+print("=== Read Concerns for Insurance Operations ===")
+print("")
+print("1. LOCAL READ CONCERN (Default - fastest)")
+print("   Purpose: Reads most recent data from the member")
+print("   Use case: Real-time dashboards, non-critical queries")
+print("")
 
-// Majority read for financial reports (consistent across majority)
-db.payments.find({ type: "Claim Settlement" }).readConcern("majority");
+print("2. MAJORITY READ CONCERN (Consistent across majority)")
+print("   Purpose: Only returns data acknowledged by majority")
+print("   Use case: Financial reports, compliance queries")
+print("")
+
+// Demonstrate read concerns
+print("Testing local read concern...")
+var localCount = db.claims.countDocuments(
+  { status: { $exists: true } },
+  { readConcern: { level: "local" } }
+)
+print("Claims found with local read: " + localCount)
+
+print("Testing majority read concern...")
+var majorityCount = db.claims.countDocuments(
+  { status: { $exists: true } },
+  { readConcern: { level: "majority" } }
+)
+print("Claims found with majority read: " + majorityCount)
+print("")
+
+print("=== Insurance Data Durability Best Practices ===")
+print("- Policy changes: Use majority + journal for regulatory compliance")
+print("- Claim settlements: Use majority + timeout for financial accuracy")
+print("- Customer updates: Use majority to ensure data consistency")
+print("- Audit logs: Use single node + journal for performance")
+print("- Financial reports: Use majority read concern for accuracy")
+print("- Real-time dashboards: Use local read concern for speed")
 ```
 
 **Monitor in Compass:**
-- Watch insurance data write propagation across replica set members
-- Use Performance tab to see write acknowledgment timing for critical insurance operations
-- Observe consistency behavior with different concerns for policy and claim data
+- Watch the Performance tab during write operations
+- Observe connection status showing replica set health
+- Use the Real Time tab to see operation timing
+- Note how write acknowledgment timing varies with different concerns
 
 ## Part C: Monitoring and Maintenance (10 minutes)
 
-### Step 7: Comprehensive Monitoring
+### Step 6: Comprehensive Monitoring
 
 **Compass Monitoring Features:**
 1. **Performance Tab:** Operations/sec, read/write distribution, replication lag
@@ -256,26 +415,62 @@ function monitorInsuranceReplicaSet() {
 monitorInsuranceReplicaSet();
 ```
 
-### Step 8: Maintenance Operations
+### Step 7: Maintenance Operations (Demonstration)
 
 ```javascript
-// Step down primary for maintenance
-rs.stepDown(60);  // Step down for 60 seconds
+// Demonstrate maintenance operations (informational - don't run in production)
+print("=== Replica Set Maintenance Operations ===")
+print("")
 
-// Freeze a secondary (prevent it from becoming primary)
-rs.freeze(300);   // Freeze for 5 minutes
+print("1. PRIMARY STEP DOWN")
+print("   Command: rs.stepDown(60)")
+print("   Purpose: Gracefully step down primary for maintenance")
+print("   Effect: Primary becomes secondary, triggers election")
+print("   Use case: Rolling maintenance, planned failover")
+print("")
 
-// Reconfigure replica set settings
-var config = rs.conf();
-config.settings = config.settings || {};
-config.settings.electionTimeoutMillis = 15000;  // 15 seconds
-config.settings.heartbeatIntervalMillis = 3000;  // 3 seconds
-rs.reconfig(config);
+print("2. FREEZE SECONDARY")
+print("   Command: rs.freeze(300)")
+print("   Purpose: Prevent secondary from becoming primary")
+print("   Effect: Member won't participate in elections")
+print("   Use case: Maintenance on specific member")
+print("")
+
+print("3. RECONFIGURE REPLICA SET")
+print("   Command: rs.reconfig(newConfig)")
+print("   Purpose: Update replica set configuration")
+print("   Examples: Change priorities, add/remove members")
+print("   Use case: Topology changes, performance tuning")
+print("")
+
+print("4. COMMON CONFIGURATION CHANGES")
+print("   Election timeout: controls how quickly elections happen")
+print("   Heartbeat interval: how often members check each other")
+print("   Priority values: influence primary selection")
+print("   Tag sets: enable zone-aware operations")
+print("")
+
+// Show current configuration safely
+print("Current replica set configuration:")
+var config = rs.conf()
+print("Members: " + config.members.length)
+print("Election timeout: " + (config.settings ? config.settings.electionTimeoutMillis : "default (10000ms)"))
+print("Heartbeat interval: " + (config.settings ? config.settings.heartbeatIntervalMillis : "default (2000ms)"))
+print("")
+
+print("=== Best Practices for Insurance Operations ===")
+print("- Schedule maintenance during low-traffic hours")
+print("- Use rolling maintenance to maintain availability")
+print("- Monitor replication lag during operations")
+print("- Test failover procedures regularly")
+print("- Document emergency procedures")
+print("- Use connection string with multiple hosts")
 ```
 
-## Lab 2 Deliverables
-✅ **Advanced replica set** with arbiter and hidden members for insurance branch operations
-✅ **Failover testing** with visual monitoring to ensure insurance data availability
+## Lab 11 Deliverables
+✅ **Replica set architecture understanding** with comprehensive member type knowledge
+✅ **Failover concepts** with election process and health analysis
 ✅ **Read preferences** configured for different insurance operations (real-time vs. analytics)
 ✅ **Comprehensive monitoring** setup for insurance data replication and branch connectivity
 ✅ **Write/read concerns** optimized for insurance compliance and data consistency requirements
+✅ **Maintenance procedures** understanding for production replica set operations
