@@ -34,83 +34,84 @@ mongosh < data/comprehensive_data_loader.js
 
 ### Step 1: Sharded Cluster Components Overview
 
-**Understanding Sharding Components:**
+MongoDB sharding distributes data across multiple machines for horizontal scaling. A sharded cluster consists of four main components:
+
+#### **1. SHARDS (Data Storage)**
+- **Purpose**: Store subset of collection data
+- **Implementation**: Replica sets for high availability
+- **Example**: Shard1 (Eastern US), Shard2 (Western US), Shard3 (International)
+
+#### **2. CONFIG SERVERS (Metadata Storage)**
+- **Purpose**: Store cluster configuration and chunk metadata
+- **Implementation**: Replica set of config servers
+- **Contains**: Shard mappings, chunk ranges, balancer settings
+
+#### **3. QUERY ROUTERS (mongos)**
+- **Purpose**: Route queries to appropriate shards
+- **Implementation**: Stateless routing processes
+- **Function**: Query optimization and result aggregation
+
+#### **4. CHUNKS**
+- **Purpose**: Logical units of data distribution
+- **Size**: Default 128MB, configurable
+- **Migration**: Automatic balancing between shards
+
+#### **Current Environment Analysis**
+Our current environment uses a 3-member replica set, which provides high availability but not horizontal scaling. Let's explore how our insurance data would benefit from sharding.
+
 ```javascript
-// Connect to our replica set to understand sharding concepts
+// Connect to our replica set
 use insurance_company
-
-print("=== MongoDB Sharding Architecture Overview ===")
-print("")
-
-print("1. SHARDS (Data Storage)")
-print("   Purpose: Store subset of collection data")
-print("   Implementation: Replica sets for high availability")
-print("   Example: Shard1 (Eastern US), Shard2 (Western US), Shard3 (International)")
-print("")
-
-print("2. CONFIG SERVERS (Metadata Storage)")
-print("   Purpose: Store cluster configuration and chunk metadata")
-print("   Implementation: Replica set of config servers")
-print("   Contains: Shard mappings, chunk ranges, balancer settings")
-print("")
-
-print("3. QUERY ROUTERS (mongos)")
-print("   Purpose: Route queries to appropriate shards")
-print("   Implementation: Stateless routing processes")
-print("   Function: Query optimization and result aggregation")
-print("")
-
-print("4. CHUNKS")
-print("   Purpose: Logical units of data distribution")
-print("   Size: Default 128MB, configurable")
-print("   Migration: Automatic balancing between shards")
-print("")
-
-print("=== Current Setup Analysis ===")
-print("Our current environment uses a 3-member replica set.")
-print("This provides high availability but not horizontal scaling.")
-print("Let's explore how our insurance data would benefit from sharding.")
 ```
 
 ### Step 2: Analyze Insurance Data for Sharding
 
-**Examine Current Data Distribution:**
-```javascript
-// Analyze our insurance data for sharding opportunities
-print("=== Insurance Data Analysis for Sharding ===")
-print("")
+Understanding your current data distribution is crucial for designing an effective sharding strategy.
 
-// Analyze customer distribution
-print("Customer Distribution Analysis:")
+**Analyze Customer Geographic Distribution:**
+```javascript
+// Analyze customer distribution by state for geographic sharding
 var customersByState = db.customers.aggregate([
   { $group: { _id: "$address.state", count: { $sum: 1 } } },
   { $sort: { count: -1 } }
 ]).toArray()
 
-// Display customer distribution by state (step-by-step approach)
-for (var i = 0; i < customersByState.length; i++) {
-  var state = customersByState[i];
-  print("  " + (state._id || "Unknown") + ": " + state.count + " customers");
-}
-print("")
+customersByState
+```
 
-// Analyze policy distribution
-print("Policy Distribution Analysis:")
+**Analyze Policy Type Distribution:**
+```javascript
+// Analyze policy types for business-logic sharding
 var policiesByType = db.policies.aggregate([
   { $group: { _id: "$policyType", count: { $sum: 1 } } },
   { $sort: { count: -1 } }
 ]).toArray()
 
-// Display policy distribution by type (step-by-step approach)
-for (var j = 0; j < policiesByType.length; j++) {
-  var type = policiesByType[j];
-  print("  " + (type._id || "Unknown") + ": " + type.count + " policies");
-}
-print("")
+policiesByType
+```
 
-// Analyze claims by geography
-print("Claims Geographic Distribution:")
-if (db.claims.countDocuments() > 0) {
+**Simulate Shard Distribution:**
+```javascript
+// Calculate how data would be distributed across shards
+var totalDocs = db.customers.countDocuments()
+var docsPerShard = Math.ceil(totalDocs / 3)
+
+print("Total customers: " + totalDocs)
+print("Documents per shard (3 shards): " + docsPerShard)
+```
+
+#### **Sharding Strategy Recommendations**
+
+Based on this data analysis, insurance companies typically benefit from:
+
+1. **Geographic Sharding**: Distribute customers by state/region for data locality
+2. **Product Sharding**: Separate policy types (Auto, Home, Life) for specialized processing
+3. **Hash-based Sharding**: Use `_id` field for guaranteed even distribution
+4. **Range-based Sharding**: Optimize time-series queries using date fields
+
+### Step 3: Sharding Commands Simulation
+
+In a real sharded environment, you would use these commands:
   var claimsByLocation = db.claims.aggregate([
     { $group: { _id: "$state", count: { $sum: 1 } } },
     { $sort: { count: -1 } }

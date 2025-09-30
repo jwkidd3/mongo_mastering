@@ -1,6 +1,6 @@
 #!/usr/bin/env mongosh
 
-print("🧪 COMPREHENSIVE LABS 1-12 VALIDATION - EVERY COMMAND");
+print("🧪 COMPREHENSIVE LABS 1-13 VALIDATION - EVERY COMMAND");
 print("=" .repeat(80));
 
 var totalCommands = 0;
@@ -133,6 +133,19 @@ print("\n🔬 TESTING LAB 12: Sharding Simulation");
 totalCommands++; try { db = db.getSiblingDB('insurance_company'); var customersByState = db.customers.aggregate([{$group: {_id: "$address.state", count: {$sum: 1}}}, {$sort: {count: -1}}]).toArray(); print("✅ Analyze customer distribution"); passedCommands++; } catch (error) { print("❌ Analyze customer distribution - ERROR: " + error.message); errors.push("Lab12 customerAnalysis: " + error.message); failedCommands++; }
 totalCommands++; try { var policiesByType = db.policies.aggregate([{$group: {_id: "$policyType", count: {$sum: 1}}}, {$sort: {count: -1}}]).toArray(); print("✅ Analyze policy distribution"); passedCommands++; } catch (error) { print("❌ Analyze policy distribution - ERROR: " + error.message); errors.push("Lab12 policyAnalysis: " + error.message); failedCommands++; }
 totalCommands++; try { var totalDocs = db.customers.countDocuments(); var docsPerShard = Math.ceil(totalDocs / 3); print("✅ Simulate shard distribution"); passedCommands++; } catch (error) { print("❌ Simulate shard distribution - ERROR: " + error.message); errors.push("Lab12 shardSimulation: " + error.message); failedCommands++; }
+
+// LAB 13: Change Streams
+print("\n🔬 TESTING LAB 13: Change Streams");
+totalCommands++; try { db.notifications.createIndex({ recipientId: 1, timestamp: -1 }); print("✅ Create notifications index"); passedCommands++; } catch (error) { print("❌ Create notifications index - ERROR: " + error.message); errors.push("Lab13 notificationsIndex: " + error.message); failedCommands++; }
+totalCommands++; try { db.activity_log.createIndex({ timestamp: -1 }); print("✅ Create activity log index"); passedCommands++; } catch (error) { print("❌ Create activity log index - ERROR: " + error.message); errors.push("Lab13 activityIndex: " + error.message); failedCommands++; }
+totalCommands++; try { var testClaim = {_id: "claim_cs_test1", claimNumber: "CLM-2024-CS001", customerId: "cust1", claimType: "Auto Accident", claimAmount: NumberDecimal("15000.00"), status: "Filed", incidentDate: new Date(), createdAt: new Date()}; db.claims.insertOne(testClaim); print("✅ Insert test claim for change streams"); passedCommands++; } catch (error) { print("❌ Insert test claim for change streams - ERROR: " + error.message); errors.push("Lab13 testClaim: " + error.message); failedCommands++; }
+totalCommands++; try { db.notifications.insertOne({ recipientId: "cust1", type: "claim_filed", priority: "medium", message: "Test notification", claimId: "claim_cs_test1", timestamp: new Date(), read: false, status: "active" }); print("✅ Create test notification"); passedCommands++; } catch (error) { print("❌ Create test notification - ERROR: " + error.message); errors.push("Lab13 testNotification: " + error.message); failedCommands++; }
+totalCommands++; try { var notifications = db.notifications.find({ claimId: "claim_cs_test1" }).toArray(); print("✅ Query notifications by claim"); passedCommands++; } catch (error) { print("❌ Query notifications by claim - ERROR: " + error.message); errors.push("Lab13 queryNotifications: " + error.message); failedCommands++; }
+totalCommands++; try { db.claims.updateOne({ _id: "claim_cs_test1" }, { $set: { status: "Under Review", reviewDate: new Date() } }); print("✅ Update claim status"); passedCommands++; } catch (error) { print("❌ Update claim status - ERROR: " + error.message); errors.push("Lab13 updateClaim: " + error.message); failedCommands++; }
+totalCommands++; try { db.activity_log.insertOne({ operation: "claim_processed", collection: "claims", documentId: "claim_cs_test1", timestamp: new Date(), userId: "system" }); print("✅ Log activity"); passedCommands++; } catch (error) { print("❌ Log activity - ERROR: " + error.message); errors.push("Lab13 logActivity: " + error.message); failedCommands++; }
+totalCommands++; try { var recentActivity = db.activity_log.find().sort({ timestamp: -1 }).limit(5).toArray(); print("✅ Query recent activity"); passedCommands++; } catch (error) { print("❌ Query recent activity - ERROR: " + error.message); errors.push("Lab13 queryActivity: " + error.message); failedCommands++; }
+totalCommands++; try { db.claims.deleteMany({ _id: "claim_cs_test1" }); db.notifications.deleteMany({ claimId: "claim_cs_test1" }); db.activity_log.deleteMany({ userId: "system" }); print("✅ Cleanup test data"); passedCommands++; } catch (error) { print("❌ Cleanup test data - ERROR: " + error.message); errors.push("Lab13 cleanup: " + error.message); failedCommands++; }
+
 
 // RESULTS
 print("\n" + "=".repeat(80));
