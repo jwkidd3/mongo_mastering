@@ -240,7 +240,7 @@
    var cursor = db.policies.find()
    print("Cursor has next: " + cursor.hasNext())
    print("Cursor size: " + cursor.size())
-   print("Cursor count: " + cursor.count())
+   print("Document count: " + db.policies.countDocuments())
    ```
 
 ## Challenge Exercise

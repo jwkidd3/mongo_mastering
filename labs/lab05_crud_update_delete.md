@@ -238,7 +238,7 @@
    db.policies.deleteOne({premiumAmount: {$lt: 100}})
 
    // Verify the deletion worked
-   db.policies.find({premiumAmount: {$lt: 100}}).count()
+   db.policies.countDocuments({premiumAmount: {$lt: 100}})
 
    // Delete with specific _id for safety
    db.policies.deleteOne({_id: "POL-HOME-001"})
@@ -266,9 +266,9 @@
    })
 
    // Conditional deletion with verification
-   var oldPolicies = db.policies.find({
+   var oldPolicies = db.policies.countDocuments({
      effectiveDate: {$lt: new Date("2020-01-01")}
-   }).count()
+   })
 
    if (oldPolicies > 0) {
      print("Found " + oldPolicies + " old policies to delete")
@@ -296,10 +296,10 @@
    })
 
    // Archive before delete pattern
-   var archiveCount = db.policies.find({
+   var archiveCount = db.policies.countDocuments({
      status: "archived",
      archivedDate: {$lt: new Date(Date.now() - 365*24*60*60*1000)}
-   }).count()
+   })
 
    if (archiveCount > 0) {
      // First copy to archive collection
