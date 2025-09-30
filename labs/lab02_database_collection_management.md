@@ -47,12 +47,7 @@
    ```javascript
    // Create database with specific locale (using 'en' locale for compatibility)
    use international_insurance
-   db.createCollection("international_policies", {
-     collation: {
-       locale: "en",
-       strength: 1
-     }
-   })
+   db.createCollection("international_policies", { collation: { locale: "en", strength: 1 } })
 
    // Database profiling setup
    use insurance_company
@@ -72,33 +67,10 @@
    db.createCollection("lab2_customers")
 
    // Capped collection (fixed size)
-   db.createCollection("audit_logs", {
-     capped: true,
-     size: 1000000,  // 1MB
-     max: 5000       // Max 5000 documents
-   })
+   db.createCollection("audit_logs", { capped: true, size: 1000000, max: 5000 })
 
    // Collection with validation (using new collection name to avoid conflicts)
-   db.createCollection("new_policies", {
-     validator: {
-       $jsonSchema: {
-         bsonType: "object",
-         required: ["policyNumber", "premiumAmount"],
-         properties: {
-           policyNumber: {
-             bsonType: "string",
-             description: "Policy number is required"
-           },
-           premiumAmount: {
-             bsonType: "number",
-             minimum: 0,
-             description: "Premium amount must be a positive number"
-           }
-         }
-       }
-     },
-     validationAction: "error"
-   })
+   db.createCollection("new_policies", { validator: { $jsonSchema: { bsonType: "object", required: ["policyNumber", "premiumAmount"], properties: { policyNumber: { bsonType: "string", description: "Policy number is required" }, premiumAmount: { bsonType: "number", minimum: 0, description: "Premium amount must be a positive number" } } } }, validationAction: "error" })
    ```
 
 2. **Collection Information and Metadata**
@@ -127,26 +99,10 @@
    db.customers.renameCollection("policyholders")
 
    // Convert to capped collection
-   db.runCommand({
-     convertToCapped: "policyholders",
-     size: 100000
-   })
+   db.runCommand({ convertToCapped: "policyholders", size: 100000 })
 
    // Modify collection validation
-   db.runCommand({
-     collMod: "policies",
-     validator: {
-       $jsonSchema: {
-         bsonType: "object",
-         required: ["policyNumber", "premiumAmount", "policyType"],
-         properties: {
-           policyNumber: {bsonType: "string"},
-           premiumAmount: {bsonType: "number", minimum: 0},
-           policyType: {bsonType: "string"}
-         }
-       }
-     }
-   })
+   db.runCommand({ collMod: "new_policies", validator: { $jsonSchema: { bsonType: "object", required: ["policyNumber", "premiumAmount", "policyType"], properties: { policyNumber: {bsonType: "string"}, premiumAmount: {bsonType: "number", minimum: 0}, policyType: {bsonType: "string"} } } } })
    ```
 
 ### Part C: Naming Conventions and Best Practices (5 minutes)
