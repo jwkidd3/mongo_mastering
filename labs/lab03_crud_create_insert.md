@@ -15,15 +15,15 @@
 
    // Simple document insertion
    db.policies.insertOne({
-     policyNumber: "POL-AUTO-001",
+     policyNumber: "POL-AUTO-101",
      premiumAmount: 899.99,
      policyType: "Auto"
    })
 
    // Document with explicit _id
    db.policies.insertOne({
-     _id: "POL-HOME-001",
-     policyNumber: "POL-HOME-001",
+     _id: "POL-HOME-101",
+     policyNumber: "POL-HOME-101",
      premiumAmount: 1299.99,
      policyType: "Home",
      insuranceCarrier: "SafeGuard Insurance"
@@ -31,7 +31,7 @@
 
    // Document with nested structure
    db.policies.insertOne({
-     policyNumber: "POL-LIFE-001",
+     policyNumber: "POL-LIFE-101",
      premiumAmount: 2499.99,
      policyType: "Life",
      coverage: {
@@ -57,13 +57,13 @@
    db.policies.insertOne({
      _id: customId,
      policyType: "Commercial",
-     policyNumber: "POL-COM-001",
+     policyNumber: "POL-COM-101",
      premiumAmount: 4999.99
    })
 
    // Verify insertion with different data types
    db.policies.insertOne({
-     policyNumber: "POL-MULTI-001",
+     policyNumber: "POL-MULTI-101",
      policyType: "Auto",
      premiumAmount: NumberDecimal("1299.99"),
      deductible: NumberInt(500),
@@ -114,17 +114,17 @@
    ```javascript
    // Ordered insertion (stops on first error)
    db.claims.insertMany([
-     {claimNumber: "CLM-001", policyId: "POL-AUTO-001", claimAmount: 3500.00},
-     {claimNumber: "CLM-002", policyId: "POL-HOME-001", claimAmount: 8750.00},
-     {claimNumber: "CLM-003", policyId: "POL-AUTO-001", claimAmount: 1250.00}
+     {claimNumber: "CLM-101", policyId: "POL-AUTO-101", claimAmount: 3500.00},
+     {claimNumber: "CLM-102", policyId: "POL-HOME-101", claimAmount: 8750.00},
+     {claimNumber: "CLM-103", policyId: "POL-AUTO-101", claimAmount: 1250.00}
    ], {ordered: true})
 
    // Unordered insertion (continues despite errors)
    try {
      db.claims.insertMany([
-       {claimNumber: "CLM-004", policyId: "POL-LIFE-001", claimAmount: 15000.00},
-       {claimNumber: "CLM-002", policyId: "POL-COM-001", claimAmount: 25000.00}, // Duplicate key
-       {claimNumber: "CLM-005", policyId: "POL-HOME-001", claimAmount: 4500.00}
+       {claimNumber: "CLM-104", policyId: "POL-LIFE-101", claimAmount: 15000.00},
+       {claimNumber: "CLM-102", policyId: "POL-COM-101", claimAmount: 25000.00}, // Duplicate key
+       {claimNumber: "CLM-105", policyId: "POL-HOME-101", claimAmount: 4500.00}
      ], {ordered: false})
    } catch (e) {
      print("Bulk insert completed with errors: " + e)
@@ -161,14 +161,14 @@
    ```javascript
    // Duplicate key error
    try {
-     db.policies.insertOne({_id: "POL-HOME-001", policyNumber: "Duplicate Policy"})
+     db.policies.insertOne({_id: "POL-HOME-101", policyNumber: "Duplicate Policy"})
    } catch (e) {
      print("Duplicate key error: " + e.message)
    }
 
    // Document too large error simulation
    var largeDoc = {
-     policyNumber: "POL-LARGE-001",
+     policyNumber: "POL-LARGE-101",
      attachments: "x".repeat(16777216)  // 16MB+ string
    }
    try {
@@ -192,14 +192,14 @@
    ```javascript
    // Insert with write concern
    db.policies.insertOne(
-     {policyNumber: "POL-ACK-001", premiumAmount: 1599.99, policyType: "Auto"},
+     {policyNumber: "POL-ACK-101", premiumAmount: 1599.99, policyType: "Auto"},
      {writeConcern: {w: 1, j: true}}
    )
 
    // Batch insert with write concern
    db.policies.insertMany([
-     {policyNumber: "POL-BATCH-001", premiumAmount: 899.99, policyType: "Home"},
-     {policyNumber: "POL-BATCH-002", premiumAmount: 1199.99, policyType: "Auto"}
+     {policyNumber: "POL-BATCH-101", premiumAmount: 899.99, policyType: "Home"},
+     {policyNumber: "POL-BATCH-102", premiumAmount: 1199.99, policyType: "Auto"}
    ], {writeConcern: {w: "majority"}})
    ```
 
