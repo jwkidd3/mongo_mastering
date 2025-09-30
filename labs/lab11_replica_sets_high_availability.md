@@ -62,60 +62,65 @@ rs.printSecondaryReplicationInfo()
 Our replica set has 3 data-bearing members. Let's understand different member types:
 
 ```javascript
-// Examine our current 3-member setup
-print("=== Current Replica Set Members ===")
-var status = rs.status()
-status.members.forEach(function(member) {
-  print("Member: " + member.name)
-  print("  State: " + member.stateStr + " (" + member.state + ")")
-  print("  Health: " + member.health)
-  print("  Priority: " + (rs.conf().members.find(m => m.host === member.name) || {}).priority)
-  print("  Votes: " + (rs.conf().members.find(m => m.host === member.name) || {}).votes)
-  print("  Hidden: " + ((rs.conf().members.find(m => m.host === member.name) || {}).hidden || false))
-  print("")
-})
+// Step 1: Check current replica set status
+print("=== Current Replica Set Members ===");
+var status = rs.status();
+```
 
-print("=== Member Types Explanation ===")
-print("PRIMARY: Receives all writes, can serve reads")
-print("SECONDARY: Replicates data from primary, can serve reads with read preference")
-print("ARBITER: Votes in elections but stores no data (not in our current setup)")
-print("HIDDEN: Replicates data but doesn't serve client reads (not in our current setup)")
-print("DELAYED: Maintains historical snapshot of data (not in our current setup)")
+```javascript
+// Step 2: Display member information
+print("Member 1: " + status.members[0].name + " - " + status.members[0].stateStr);
+print("Member 2: " + status.members[1].name + " - " + status.members[1].stateStr);
+print("Member 3: " + status.members[2].name + " - " + status.members[2].stateStr);
+```
+
+```javascript
+// Step 3: Show member types explanation
+print("=== Member Types Explanation ===");
+print("PRIMARY: Receives all writes, can serve reads");
+print("SECONDARY: Replicates data from primary, can serve reads with read preference");
+print("ARBITER: Votes in elections but stores no data (not in our current setup)");
+print("HIDDEN: Replicates data but doesn't serve client reads (not in our current setup)");
+print("DELAYED: Maintains historical snapshot of data (not in our current setup)");
 ```
 
 **Replica Set Member Types Demo:**
+
 ```javascript
-// Demonstrate different member configurations (conceptual)
-function demonstrateMemberTypes() {
-  print("=== Replica Set Member Types Demo ===")
-  print("")
+// Step 1: Show member types demonstration header
+print("=== Replica Set Member Types Demo ===");
+```
 
-  print("1. ARBITER MEMBER (Voting Only)")
-  print("   Configuration: { _id: 3, host: 'arbiter:27017', arbiterOnly: true }")
-  print("   Purpose: Provides voting in elections without storing data")
-  print("   Use case: Odd number of votes in geographically distributed deployments")
-  print("")
+```javascript
+// Step 2: Arbiter member explanation
+print("1. ARBITER MEMBER (Voting Only)");
+print("   Configuration: { _id: 3, host: 'arbiter:27017', arbiterOnly: true }");
+print("   Purpose: Provides voting in elections without storing data");
+print("   Use case: Odd number of votes in geographically distributed deployments");
+```
 
-  print("2. HIDDEN MEMBER (Data but No Client Reads)")
-  print("   Configuration: { _id: 4, host: 'hidden:27017', priority: 0, hidden: true, votes: 0 }")
-  print("   Purpose: Analytics, backups, or reporting without affecting client traffic")
-  print("   Use case: Dedicated analytics replica that doesn't impact production reads")
-  print("")
+```javascript
+// Step 3: Hidden member explanation
+print("2. HIDDEN MEMBER (Data but No Client Reads)");
+print("   Configuration: { _id: 4, host: 'hidden:27017', priority: 0, hidden: true, votes: 0 }");
+print("   Purpose: Analytics, backups, or reporting without affecting client traffic");
+print("   Use case: Dedicated analytics replica that doesn't impact production reads");
+```
 
-  print("3. DELAYED MEMBER (Historical Data)")
-  print("   Configuration: { _id: 5, host: 'delayed:27017', priority: 0, hidden: true, secondaryDelaySecs: 3600 }")
-  print("   Purpose: Maintains historical view for disaster recovery")
-  print("   Use case: Protection against accidental data deletion or corruption")
-  print("")
+```javascript
+// Step 4: Delayed member explanation
+print("3. DELAYED MEMBER (Historical Data)");
+print("   Configuration: { _id: 5, host: 'delayed:27017', priority: 0, hidden: true, secondaryDelaySecs: 3600 }");
+print("   Purpose: Maintains historical view for disaster recovery");
+print("   Use case: Protection against accidental data deletion or corruption");
+```
 
-  print("4. HIGH PRIORITY MEMBER (Preferred Primary)")
-  print("   Configuration: { _id: 0, host: 'primary:27017', priority: 2 }")
-  print("   Purpose: Prefers to be primary when available")
-  print("   Use case: Ensuring primary runs in preferred data center")
-  print("")
-}
-
-demonstreateMemberTypes()
+```javascript
+// Step 5: High priority member explanation
+print("4. HIGH PRIORITY MEMBER (Preferred Primary)");
+print("   Configuration: { _id: 0, host: 'primary:27017', priority: 2 }");
+print("   Purpose: Prefers to be primary when available");
+print("   Use case: Ensuring primary runs in preferred data center");
 ```
 
 ## Part B: Failover Testing and Read Preferences (15 minutes)
