@@ -62,7 +62,7 @@
        $lookup: {
          from: "customers",
          localField: "customerId",
-         foreignField: "customerId",
+         foreignField: "_id",
          as: "customerInfo"
        }
      },
@@ -87,7 +87,7 @@
      {
        $lookup: {
          from: "claims",
-         localField: "customerId",
+         localField: "_id",
          foreignField: "customerId",
          as: "claims"
        }
@@ -95,7 +95,7 @@
      {
        $lookup: {
          from: "policies",
-         localField: "customerId",
+         localField: "_id",
          foreignField: "customerId",
          as: "policies"
        }
@@ -160,7 +160,7 @@
        $lookup: {
          from: "customers",
          localField: "customerId",
-         foreignField: "customerId",
+         foreignField: "_id",
          as: "customer"
        }
      },
