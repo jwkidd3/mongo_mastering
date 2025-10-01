@@ -34,20 +34,40 @@
    ```javascript
    // Create compound index for common query pattern
    db.claims.createIndex({
-     "policyId": 1,
+     "policyNumber": 1,
      "status": 1,
-     "filedDate": -1
+     "createdAt": -1
    })
 
    // Analyze index usage
    db.claims.find({
-     policyId: ObjectId("..."),
-     status: "under_investigation"
-   }).sort({ filedDate: -1 }).explain("executionStats")
+     policyNumber: "POL-AUTO-2024-001",
+     status: "approved"
+   }).sort({ createdAt: -1 }).explain("executionStats")
    ```
 
 2. **Text Indexes**
    ```javascript
+   // First, create test data for text search
+   db.test_policies.drop()
+   db.test_policies.insertMany([
+     {
+       policyType: "Auto",
+       coverageDescription: "Comprehensive auto insurance with collision coverage",
+       coverageTypes: ["collision", "comprehensive", "liability"]
+     },
+     {
+       policyType: "Home",
+       coverageDescription: "Complete homeowners insurance protection",
+       coverageTypes: ["dwelling", "personal_property", "liability"]
+     },
+     {
+       policyType: "Life",
+       coverageDescription: "Term life insurance with death benefits",
+       coverageTypes: ["death_benefit", "accidental_death"]
+     }
+   ])
+
    // Create text index with weights on different fields to avoid conflicts
    db.test_policies.createIndex({
      "policyType": "text",
@@ -61,6 +81,9 @@
      },
      name: "policy_text_index"
    })
+
+   // Test the text search
+   db.test_policies.find({ $text: { $search: "auto collision" } })
 
    // Or examine existing text index
    db.policies.getIndexes().filter(idx => idx.textIndexVersion)

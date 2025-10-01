@@ -213,14 +213,15 @@
      {
        $lookup: {
          from: "policies",
-         localField: "_id",
+         localField: "agentId",
          foreignField: "agentId",
          as: "policies"
        }
      },
      {
        $project: {
-         agentName: 1,
+         firstName: 1,
+         lastName: 1,
          territory: 1,
          totalPolicies: { $size: "$policies" },
          totalRevenue: { $sum: "$policies.annualPremium" },
