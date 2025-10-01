@@ -90,12 +90,12 @@ totalCommands++; try { var result43 = db.policies.deleteOne({premiumAmount: {$lt
 totalCommands++; try { var verifyDelete = db.policies.countDocuments({premiumAmount: {$lt: 100}}); print("✅ Verify deletion worked"); passedCommands++; } catch (error) { print("❌ Verify deletion worked - ERROR: " + error.message); errors.push("Lab5 verifyDelete: " + error.message); failedCommands++; }
 totalCommands++; try { var result44 = db.policies.deleteMany({policyType: "Discontinued", active: false}); print("✅ Delete many policies"); passedCommands++; } catch (error) { print("❌ Delete many policies - ERROR: " + error.message); errors.push("Lab5 deleteMany: " + error.message); failedCommands++; }
 
-// LAB 6: Advanced Queries
-print("\n🔬 TESTING LAB 6: Advanced Queries");
-totalCommands++; try { db = db.getSiblingDB('insurance_analytics'); var result45 = db.claims.find({claimAmount: {$gte: 1000, $lte: 5000}}); print("✅ Range query"); passedCommands++; } catch (error) { print("❌ Range query - ERROR: " + error.message); errors.push("Lab6 range: " + error.message); failedCommands++; }
-totalCommands++; try { var result46 = db.customers.find({tags: {$in: ["premium", "gold"]}}); print("✅ Array query"); passedCommands++; } catch (error) { print("❌ Array query - ERROR: " + error.message); errors.push("Lab6 array: " + error.message); failedCommands++; }
-totalCommands++; try { var result47 = db.policies.find({policyNumber: /^POL/}); print("✅ Regex query"); passedCommands++; } catch (error) { print("❌ Regex query - ERROR: " + error.message); errors.push("Lab6 regex: " + error.message); failedCommands++; }
-totalCommands++; try { var result48 = db.policies.find({coverage: {$exists: true}}); print("✅ Exists query"); passedCommands++; } catch (error) { print("❌ Exists query - ERROR: " + error.message); errors.push("Lab6 exists: " + error.message); failedCommands++; }
+// LAB 6: Advanced Query Techniques
+print("\n🔬 TESTING LAB 6: Advanced Query Techniques");
+totalCommands++; try { db = db.getSiblingDB('insurance_analytics'); var result45 = db.policies.find({$and: [{annualPremium: {$gt: 1000}}, {$or: [{"coverageDetails.dwelling.deductible": {$lt: 1500}}, {coverageTypes: "personal_property"}]}]}); print("✅ Complex AND/OR query"); passedCommands++; } catch (error) { print("❌ Complex AND/OR query - ERROR: " + error.message); errors.push("Lab6 complex: " + error.message); failedCommands++; }
+totalCommands++; try { var result46 = db.claims.find({$and: [{severityLevel: {$in: ["major", "critical"]}}, {fraudIndicators: {$exists: true, $not: {$size: 0}}}]}); print("✅ Array element matching"); passedCommands++; } catch (error) { print("❌ Array element matching - ERROR: " + error.message); errors.push("Lab6 elemMatch: " + error.message); failedCommands++; }
+totalCommands++; try { var thirtyDaysFromNow = new Date(); thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30); var result47 = db.policies.find({expirationDate: {$gte: new Date(), $lte: thirtyDaysFromNow}}); print("✅ Date range query"); passedCommands++; } catch (error) { print("❌ Date range query - ERROR: " + error.message); errors.push("Lab6 dateRange: " + error.message); failedCommands++; }
+totalCommands++; try { var result48 = db.customers.find({phone: /^\+1-555-/}); print("✅ Regex pattern matching"); passedCommands++; } catch (error) { print("❌ Regex pattern matching - ERROR: " + error.message); errors.push("Lab6 regex: " + error.message); failedCommands++; }
 
 // LAB 7: Aggregation Framework
 print("\n🔬 TESTING LAB 7: Aggregation Framework");

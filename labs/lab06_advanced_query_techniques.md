@@ -40,14 +40,14 @@ mongosh --eval "db.getSiblingDB('insurance_analytics').customers.countDocuments(
 
 1. **Complex AND/OR Queries**
    ```javascript
-   // Find policies where premium > 1000 AND (deductible < 500 OR coverage includes "comprehensive")
+   // Find policies where premium > 1000 AND (dwelling deductible < 1500 OR coverage includes "personal_property")
    db.policies.find({
      $and: [
-       { premiumAmount: { $gt: 1000 } },
+       { annualPremium: { $gt: 1000 } },
        {
          $or: [
-           { deductible: { $lt: 500 } },
-           { coverageTypes: "comprehensive" }
+           { "coverageDetails.dwelling.deductible": { $lt: 1500 } },
+           { coverageTypes: "personal_property" }
          ]
        }
      ]
@@ -56,14 +56,12 @@ mongosh --eval "db.getSiblingDB('insurance_analytics').customers.countDocuments(
 
 2. **Array Element Matching**
    ```javascript
-   // Find claims with multiple damage types including "collision"
+   // Find claims with severity level "major" or "critical" and fraud indicators
    db.claims.find({
-     damageTypes: {
-       $elemMatch: {
-         $eq: "collision"
-       }
-     },
-     "damageTypes.1": { $exists: true } // Ensure array has at least 2 elements
+     $and: [
+       { severityLevel: { $in: ["major", "critical"] } },
+       { fraudIndicators: { $exists: true, $not: { $size: 0 } } }
+     ]
    })
    ```
 
@@ -102,12 +100,12 @@ mongosh --eval "db.getSiblingDB('insurance_analytics').customers.countDocuments(
    ```javascript
    // Find customers with phone numbers in 555 area code
    db.customers.find({
-     phoneNumber: /^555-/
+     phone: /^\+1-555-/
    })
 
    // Find agents with email addresses ending in company domain
    db.agents.find({
-     email: /.*@insurecorp\.com$/i
+     email: /.*@insuranceco\.com$/i
    })
    ```
 
