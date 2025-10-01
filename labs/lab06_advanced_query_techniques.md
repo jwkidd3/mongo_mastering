@@ -40,14 +40,14 @@ mongosh --eval "db.getSiblingDB('insurance_analytics').customers.countDocuments(
 
 1. **Complex AND/OR Queries**
    ```javascript
-   // Find policies where premium > 1000 AND (dwelling deductible < 1500 OR coverage includes "personal_property")
+   // Find policies where premium > 500 AND (policy type is HOME OR AUTO)
    db.policies.find({
      $and: [
-       { annualPremium: { $gt: 1000 } },
+       { annualPremium: { $gt: 500 } },
        {
          $or: [
-           { "coverageDetails.dwelling.deductible": { $lt: 1500 } },
-           { coverageTypes: "personal_property" }
+           { policyType: "HOME" },
+           { policyType: "AUTO" }
          ]
        }
      ]
@@ -56,25 +56,19 @@ mongosh --eval "db.getSiblingDB('insurance_analytics').customers.countDocuments(
 
 2. **Array Element Matching**
    ```javascript
-   // Find claims with severity level "major" or "critical" and fraud indicators
+   // Find claims with severity level "major" or "moderate"
    db.claims.find({
-     $and: [
-       { severityLevel: { $in: ["major", "critical"] } },
-       { fraudIndicators: { $exists: true, $not: { $size: 0 } } }
-     ]
+     severityLevel: { $in: ["major", "moderate", "critical"] }
    })
    ```
 
 3. **Date Range Queries**
    ```javascript
-   // Find policies expiring in the next year
-   var oneYearFromNow = new Date();
-   oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
-
+   // Find policies created in 2024
    db.policies.find({
-     expirationDate: {
-       $gte: new Date(),
-       $lte: oneYearFromNow
+     createdAt: {
+       $gte: new Date("2024-01-01"),
+       $lt: new Date("2025-01-01")
      }
    })
    ```
@@ -117,56 +111,42 @@ mongosh --eval "db.getSiblingDB('insurance_analytics').customers.countDocuments(
    })
    ```
 
-### Part C: Geo-spatial Queries and Location-based Searches (15 minutes)
+### Part C: Text Search and Advanced Pattern Matching (15 minutes)
 
-1. **2dsphere Index and Near Queries**
+1. **Text Search on Reviews**
    ```javascript
-   // Create 2dsphere index for agent locations
-   db.agents.createIndex({ location: "2dsphere" })
+   // Create text index on reviews collection
+   db.reviews.createIndex({
+     reviewText: "text",
+     categories: "text"
+   })
 
-   // Find agents within 10km of a claim location
+   // Search for reviews mentioning service quality
+   db.reviews.find({
+     $text: { $search: "service excellent customer" }
+   }).sort({ score: { $meta: "textScore" } })
+   ```
+
+2. **Pattern Matching on Agent Performance**
+   ```javascript
+   // Find high-performing agents with specific criteria
    db.agents.find({
-     location: {
-       $near: {
-         $geometry: { type: "Point", coordinates: [-73.9857, 40.7484] },
-         $maxDistance: 10000
-       }
-     }
+     $and: [
+       { "performance.customerRating": { $gte: 4.5 } },
+       { "performance.salesActual": { $gt: 500000 } }
+     ]
    })
    ```
 
-2. **Polygon Area Queries**
+3. **Nested Field Queries**
    ```javascript
-   // Find properties within a specific geographic area (polygon)
-   db.properties.find({
-     location: {
-       $geoWithin: {
-         $geometry: {
-           type: "Polygon",
-           coordinates: [[
-             [-74.0, 40.7], [-73.9, 40.7],
-             [-73.9, 40.8], [-74.0, 40.8],
-             [-74.0, 40.7]
-           ]]
-         }
-       }
-     }
+   // Find customers in specific geographical areas using nested address fields
+   db.customers.find({
+     $or: [
+       { "address.state": "NY" },
+       { "address.state": "CA" }
+     ]
    })
-   ```
-
-3. **Distance Calculation**
-   ```javascript
-   // Find the distance between claim location and nearest repair shop
-   db.claims.aggregate([
-     {
-       $geoNear: {
-         near: { type: "Point", coordinates: [-73.9857, 40.7484] },
-         distanceField: "distanceToRepairShop",
-         spherical: true,
-         maxDistance: 50000
-       }
-     }
-   ])
    ```
 
 ## Challenge Exercises
