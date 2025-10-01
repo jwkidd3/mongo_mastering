@@ -39,11 +39,11 @@
    ```javascript
    // Group claims by month and calculate average claim amount
    db.claims.aggregate([
-     { $match: { claimStatus: "approved" } },
+     { $match: { status: "approved" } },
      { $group: {
        _id: {
-         year: { $year: "$filedDate" },
-         month: { $month: "$filedDate" }
+         year: { $year: "$createdAt" },
+         month: { $month: "$createdAt" }
        },
        averageClaimAmount: { $avg: "$claimAmount" },
        totalClaims: { $sum: 1 }
