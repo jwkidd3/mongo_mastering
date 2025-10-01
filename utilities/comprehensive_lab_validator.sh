@@ -48,27 +48,37 @@ setup_environment() {
     echo "========================================================================"
 
     echo "🔄 Tearing down existing environment..."
-    if cd scripts && ./teardown.sh > /dev/null 2>&1; then
+    SCRIPT_DIR="/Users/jwkidd3/classes_in_development/mongo_mastering/scripts"
+    if (cd "$SCRIPT_DIR" && ./teardown.sh) > /dev/null 2>&1; then
         echo "✅ Environment teardown completed"
     else
         echo "⚠️  Teardown completed (may have been already clean)"
     fi
 
     echo "🚀 Setting up fresh MongoDB environment..."
-    if ./setup.sh > /dev/null 2>&1; then
+    if (cd "$SCRIPT_DIR" && ./setup.sh) > setup_output.log 2>&1; then
         echo "✅ Environment setup completed"
+        rm -f setup_output.log
     else
         echo "❌ Environment setup failed"
+        echo "Setup error output:"
+        cat setup_output.log 2>/dev/null || echo "No error output captured"
+        rm -f setup_output.log
         exit 1
     fi
 
-    cd ..
+    # Return to project root for data loading
+    cd /Users/jwkidd3/classes_in_development/mongo_mastering
 
     echo "📊 Loading comprehensive course data..."
-    if mongosh < data/comprehensive_data_loader.js > /dev/null 2>&1; then
+    if mongosh < data/comprehensive_data_loader.js > data_load_output.log 2>&1; then
         echo "✅ Data loading completed"
+        rm -f data_load_output.log
     else
         echo "❌ Data loading failed"
+        echo "Data loading error output:"
+        cat data_load_output.log 2>/dev/null || echo "No error output captured"
+        rm -f data_load_output.log
         exit 1
     fi
 
@@ -83,12 +93,12 @@ cleanup_environment() {
     echo "========================================================================"
 
     echo "🧹 Cleaning up environment..."
-    if cd scripts && ./teardown.sh > /dev/null 2>&1; then
+    SCRIPT_DIR="/Users/jwkidd3/classes_in_development/mongo_mastering/scripts"
+    if (cd "$SCRIPT_DIR" && ./teardown.sh) > /dev/null 2>&1; then
         echo "✅ Environment cleanup completed"
     else
         echo "⚠️  Cleanup completed (may have been already clean)"
     fi
-    cd ..
 }
 
 # Run environment setup if clean run is selected

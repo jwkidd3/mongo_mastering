@@ -18,6 +18,13 @@ function loadScript(scriptName) {
     print(`\n🔄 Loading ${scriptName}...`);
     print("━".repeat(60));
 
+    // BUGFIX: Commenting out load() calls that cause MongoDB shell to hang
+    // Using inline fallback instead for reliable data loading
+    print(`ℹ️  Using inline data loading to avoid load() function issues`);
+    print("🔄 Falling back to inline data loading (same data, different loading method)...");
+    return false; // This triggers the inline fallback which contains all the data
+
+    /* ORIGINAL CODE - COMMENTED OUT DUE TO HANGING ISSUES
     // Try multiple path variations for cross-platform compatibility
     const pathVariations = [
         scriptName,                    // Direct filename (works from data directory)
@@ -46,6 +53,7 @@ function loadScript(scriptName) {
     print(`ℹ️  Note: On Windows, this is common due to path resolution differences`);
     print("🔄 Falling back to inline data loading (same data, different loading method)...");
     return false; // This triggers the inline fallback which contains all the data
+    */
 }
 
 function showProgress(message, step, total) {
