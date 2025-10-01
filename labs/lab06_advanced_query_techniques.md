@@ -111,9 +111,44 @@ mongosh --eval "db.getSiblingDB('insurance_analytics').customers.countDocuments(
    })
    ```
 
-### Part C: Text Search and Advanced Pattern Matching (15 minutes)
+### Part C: Geo-spatial Queries and Advanced Pattern Matching (15 minutes)
 
-1. **Text Search on Reviews**
+1. **2dsphere Index and Near Queries**
+   ```javascript
+   // Create 2dsphere index for claim locations
+   db.claims.createIndex({ location: "2dsphere" })
+
+   // Find claims within 50km of Manhattan (NYC)
+   db.claims.find({
+     location: {
+       $near: {
+         $geometry: { type: "Point", coordinates: [-73.9857, 40.7484] },
+         $maxDistance: 50000
+       }
+     }
+   })
+   ```
+
+2. **Polygon Area Queries**
+   ```javascript
+   // Find claims within a specific geographic area (NYC metropolitan area)
+   db.claims.find({
+     location: {
+       $geoWithin: {
+         $geometry: {
+           type: "Polygon",
+           coordinates: [[
+             [-74.5, 40.4], [-73.7, 40.4],
+             [-73.7, 40.9], [-74.5, 40.9],
+             [-74.5, 40.4]
+           ]]
+         }
+       }
+     }
+   })
+   ```
+
+3. **Distance Calculation and Text Search**
    ```javascript
    // Create text index on reviews collection
    db.reviews.createIndex({
@@ -125,28 +160,6 @@ mongosh --eval "db.getSiblingDB('insurance_analytics').customers.countDocuments(
    db.reviews.find({
      $text: { $search: "service excellent customer" }
    }).sort({ score: { $meta: "textScore" } })
-   ```
-
-2. **Pattern Matching on Agent Performance**
-   ```javascript
-   // Find high-performing agents with specific criteria
-   db.agents.find({
-     $and: [
-       { "performance.customerRating": { $gte: 4.5 } },
-       { "performance.salesActual": { $gt: 500000 } }
-     ]
-   })
-   ```
-
-3. **Nested Field Queries**
-   ```javascript
-   // Find customers in specific geographical areas using nested address fields
-   db.customers.find({
-     $or: [
-       { "address.state": "NY" },
-       { "address.state": "CA" }
-     ]
-   })
    ```
 
 ## Challenge Exercises
