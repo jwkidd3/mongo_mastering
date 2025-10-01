@@ -25,10 +25,10 @@
    ```javascript
    // Calculate total premium revenue by agent
    db.policies.aggregate([
-     { $match: { status: "active" } },
+     { $match: { isActive: true } },
      { $group: {
        _id: "$agentId",
-       totalRevenue: { $sum: "$premiumAmount" },
+       totalRevenue: { $sum: "$annualPremium" },
        policyCount: { $sum: 1 }
      }},
      { $sort: { totalRevenue: -1 } }
@@ -39,7 +39,7 @@
    ```javascript
    // Group claims by month and calculate average claim amount
    db.claims.aggregate([
-     { $match: { status: "approved" } },
+     { $match: { claimStatus: "approved" } },
      { $group: {
        _id: {
          year: { $year: "$filedDate" },
@@ -71,8 +71,8 @@
        $project: {
          policyNumber: 1,
          policyType: 1,
-         premiumAmount: 1,
-         "customerInfo.name": 1,
+         annualPremium: 1,
+         "customerInfo.customerName": 1,
          "customerInfo.email": 1
        }
      }
@@ -101,7 +101,7 @@
      },
      {
        $project: {
-         name: 1,
+         customerName: 1,
          email: 1,
          totalClaims: { $size: "$claims" },
          totalPolicies: { $size: "$policies" },
@@ -134,7 +134,7 @@
      { $group: {
        _id: "$coverageTypes",
        count: { $sum: 1 },
-       averagePremium: { $avg: "$premiumAmount" }
+       averagePremium: { $avg: "$annualPremium" }
      }},
      { $sort: { count: -1 } }
    ])
@@ -167,14 +167,14 @@
        $group: {
          _id: "$policyType",
          totalPolicies: { $sum: 1 },
-         totalPremiumRevenue: { $sum: "$premiumAmount" },
+         totalPremiumRevenue: { $sum: "$annualPremium" },
          totalClaimsAmount: { $sum: { $sum: "$claims.claimAmount" } },
-         averagePremium: { $avg: "$premiumAmount" },
+         averagePremium: { $avg: "$annualPremium" },
          claimsCount: { $sum: { $size: "$claims" } },
          lossRatio: {
            $divide: [
              { $sum: { $sum: "$claims.claimAmount" } },
-             { $sum: "$premiumAmount" }
+             { $sum: "$annualPremium" }
            ]
          }
        }
@@ -215,17 +215,17 @@
      },
      {
        $project: {
-         name: 1,
+         agentName: 1,
          territory: 1,
          totalPolicies: { $size: "$policies" },
-         totalRevenue: { $sum: "$policies.premiumAmount" },
-         averagePolicyValue: { $avg: "$policies.premiumAmount" },
+         totalRevenue: { $sum: "$policies.annualPremium" },
+         averagePolicyValue: { $avg: "$policies.annualPremium" },
          performance: {
            $switch: {
              branches: [
-               { case: { $gte: [{ $sum: "$policies.premiumAmount" }, 100000] }, then: "Excellent" },
-               { case: { $gte: [{ $sum: "$policies.premiumAmount" }, 50000] }, then: "Good" },
-               { case: { $gte: [{ $sum: "$policies.premiumAmount" }, 25000] }, then: "Average" }
+               { case: { $gte: [{ $sum: "$policies.annualPremium" }, 100000] }, then: "Excellent" },
+               { case: { $gte: [{ $sum: "$policies.annualPremium" }, 50000] }, then: "Good" },
+               { case: { $gte: [{ $sum: "$policies.annualPremium" }, 25000] }, then: "Average" }
              ],
              default: "Needs Improvement"
            }
@@ -264,7 +264,7 @@ Build a pipeline that:
    ```javascript
    // Verify aggregation results match expected business logic
    db.policies.aggregate([
-     { $match: { policyType: "auto" } },
+     { $match: { policyType: "AUTO" } },
      { $count: "autoCount" }
    ])
    ```
