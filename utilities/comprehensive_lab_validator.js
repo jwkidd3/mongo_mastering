@@ -1,0 +1,422 @@
+// Comprehensive Lab Validator - Syntax + Functional Testing
+// Tests both syntax correctness AND meaningful data returns
+
+print("=== COMPREHENSIVE LAB VALIDATOR ===");
+print("Testing all labs for syntax correctness AND functional results");
+
+let validationResults = {
+    totalTests: 0,
+    passed: 0,
+    failed: 0,
+    syntaxErrors: 0,
+    functionalErrors: 0,
+    issues: []
+};
+
+function validateQuery(description, queryFunc, expectedMinResults = 1) {
+    validationResults.totalTests++;
+    print(`\n🔍 Testing: ${description}`);
+
+    try {
+        let result = queryFunc();
+        let resultCount = 0;
+
+        // Handle different result types
+        if (result && typeof result.toArray === 'function') {
+            result = result.toArray();
+        }
+
+        if (Array.isArray(result)) {
+            resultCount = result.length;
+        } else if (result && typeof result === 'object' && result.acknowledged !== undefined) {
+            // Insert/update operations
+            resultCount = result.insertedCount || result.modifiedCount || result.deletedCount || 0;
+        } else if (typeof result === 'number') {
+            resultCount = result;
+        } else if (result) {
+            resultCount = 1;
+        }
+
+        if (resultCount >= expectedMinResults) {
+            print(`✅ PASS: ${description} (${resultCount} results)`);
+            validationResults.passed++;
+            return true;
+        } else {
+            print(`❌ FUNCTIONAL FAIL: ${description} - Expected ${expectedMinResults}+ results, got ${resultCount}`);
+            validationResults.failed++;
+            validationResults.functionalErrors++;
+            validationResults.issues.push(`${description}: No meaningful data returned (${resultCount} results)`);
+            return false;
+        }
+    } catch (error) {
+        if (error.message.includes('SyntaxError') || error.message.includes('syntax') ||
+            error.message.includes('Unexpected token') || error.message.includes('semicolon')) {
+            print(`❌ SYNTAX ERROR: ${description} - ${error.message}`);
+            validationResults.syntaxErrors++;
+        } else {
+            print(`❌ RUNTIME ERROR: ${description} - ${error.message}`);
+            validationResults.functionalErrors++;
+        }
+        validationResults.failed++;
+        validationResults.issues.push(`${description}: ${error.message}`);
+        return false;
+    }
+}
+
+function checkPrerequisite(description, checkFunc) {
+    print(`\n🔧 Checking prerequisite: ${description}`);
+    try {
+        let result = checkFunc();
+        if (result) {
+            print(`✅ OK: ${description}`);
+            return true;
+        } else {
+            print(`❌ MISSING: ${description}`);
+            validationResults.issues.push(`Prerequisite missing: ${description}`);
+            return false;
+        }
+    } catch (error) {
+        print(`❌ ERROR: ${description} - ${error.message}`);
+        validationResults.issues.push(`Prerequisite error: ${description} - ${error.message}`);
+        return false;
+    }
+}
+
+// ============================================================================
+// LAB 6: Advanced Query Techniques
+// ============================================================================
+print("\n" + "=".repeat(60));
+print("TESTING LAB 6: Advanced Query Techniques");
+print("=".repeat(60));
+
+use insurance_analytics;
+
+// Check if course data is loaded
+checkPrerequisite("Insurance analytics database exists", () => {
+    return db.policies.countDocuments() > 0;
+});
+
+checkPrerequisite("Customers collection has data", () => {
+    return db.customers.countDocuments() > 0;
+});
+
+// Test complex AND/OR queries
+validateQuery("Complex AND/OR policy queries", () => {
+    return db.policies.find({
+        $and: [
+            { annualPremium: { $gt: 500 } },
+            {
+                $or: [
+                    { policyType: "HOME" },
+                    { policyType: "AUTO" }
+                ]
+            }
+        ]
+    });
+});
+
+// Test date range queries
+validateQuery("Date range queries for 2024 policies", () => {
+    return db.policies.find({
+        createdAt: {
+            $gte: new Date("2024-01-01"),
+            $lt: new Date("2025-01-01")
+        }
+    });
+});
+
+// ============================================================================
+// LAB 7: Aggregation Framework
+// ============================================================================
+print("\n" + "=".repeat(60));
+print("TESTING LAB 7: Aggregation Framework");
+print("=".repeat(60));
+
+use insurance_analytics;
+
+// Test basic policy type grouping
+validateQuery("Count policies by type", () => {
+    return db.policies.aggregate([
+        { $group: { _id: "$policyType", count: { $sum: 1 } } },
+        { $sort: { count: -1 } }
+    ]);
+});
+
+// Test revenue analysis by agent - check field names
+validateQuery("Revenue analysis by agent", () => {
+    return db.policies.aggregate([
+        { $match: { isActive: true } },
+        { $group: {
+            _id: "$agentId",
+            totalRevenue: { $sum: "$annualPremium" },
+            policyCount: { $sum: 1 }
+        }},
+        { $sort: { totalRevenue: -1 } }
+    ]);
+});
+
+// Test claims analysis - verify correct status field
+validateQuery("Claims analysis by month (approved status)", () => {
+    return db.claims.aggregate([
+        { $match: { status: "approved" } },  // Fixed: use 'status' not 'claimStatus'
+        { $group: {
+            _id: {
+                year: { $year: "$createdAt" },
+                month: { $month: "$createdAt" }
+            },
+            averageClaimAmount: { $avg: "$claimAmount" },
+            totalClaims: { $sum: 1 }
+        }},
+        { $sort: { "_id.year": 1, "_id.month": 1 } }
+    ]);
+});
+
+// Test $lookup operations with correct foreign keys
+validateQuery("Policies with customer info lookup", () => {
+    return db.policies.aggregate([
+        {
+            $lookup: {
+                from: "customers",
+                localField: "customerId",      // Fixed: use correct field names
+                foreignField: "customerId",    // Fixed: not "_id"
+                as: "customerInfo"
+            }
+        },
+        { $unwind: "$customerInfo" },
+        { $limit: 5 }  // Limit for testing
+    ]);
+});
+
+// ============================================================================
+// LAB 8: Indexing and Performance
+// ============================================================================
+print("\n" + "=".repeat(60));
+print("TESTING LAB 8: Indexing and Performance");
+print("=".repeat(60));
+
+use insurance_company;
+
+// Setup test_policies collection for text search
+checkPrerequisite("test_policies collection setup", () => {
+    db.test_policies.drop();
+    db.test_policies.insertMany([
+        {
+            policyType: "Auto",
+            coverageDescription: "Comprehensive auto insurance with collision coverage",
+            coverageTypes: ["collision", "comprehensive", "liability"]
+        },
+        {
+            policyType: "Home",
+            coverageDescription: "Complete homeowners insurance protection",
+            coverageTypes: ["dwelling", "personal_property", "liability"]
+        },
+        {
+            policyType: "Life",
+            coverageDescription: "Term life insurance with death benefits",
+            coverageTypes: ["death_benefit", "accidental_death"]
+        }
+    ]);
+
+    // Create text index
+    db.test_policies.createIndex({
+        "policyType": "text",
+        "coverageDescription": "text",
+        "coverageTypes": "text"
+    }, {
+        weights: {
+            policyType: 10,
+            coverageDescription: 5,
+            coverageTypes: 1
+        },
+        name: "policy_text_index"
+    });
+
+    return db.test_policies.countDocuments() > 0;
+});
+
+// Test text search functionality
+validateQuery("Text search for 'auto collision'", () => {
+    return db.test_policies.find({ $text: { $search: "auto collision" } });
+});
+
+validateQuery("Text search for 'auto'", () => {
+    return db.test_policies.find({ $text: { $search: "auto" } });
+});
+
+// ============================================================================
+// LAB 9: Data Modeling and Schema Design
+// ============================================================================
+print("\n" + "=".repeat(60));
+print("TESTING LAB 9: Data Modeling and Schema Design");
+print("=".repeat(60));
+
+use insurance_company;
+
+// Test embedded schema creation
+validateQuery("Create insurance claims with embedded data", () => {
+    // Clean slate for proper testing
+    db.insurance_claims.drop();
+    return db.insurance_claims.insertMany([
+        {
+            claimNumber: "CLM-2024-001234",
+            policyNumber: "POL-AUTO-2024-001",
+            customerId: "CUST000001",
+            incidentDescription: "Vehicle collision at intersection",
+            adjuster: {
+                name: "Sarah Johnson",
+                email: "sarah.johnson@insuranceco.com",
+                licenseNumber: "ADJ-5678"
+            },
+            incidentTypes: ["collision", "property damage", "injury"],
+            investigationNotes: [
+                {
+                    investigator: "Mike Thompson",
+                    note: "Photos taken, police report obtained",
+                    createdAt: new Date("2024-03-16")
+                }
+            ],
+            filedAt: new Date("2024-03-15"),
+            estimatedAmount: 8500,
+            status: "under_investigation"
+        },
+        {
+            claimNumber: "CLM-2024-001235",
+            policyNumber: "POL-HOME-2024-002",
+            customerId: "CUST000002",
+            incidentDescription: "Water damage from burst pipe",
+            adjuster: {
+                name: "David Chen",
+                email: "david.chen@insuranceco.com",
+                licenseNumber: "ADJ-9012"
+            },
+            incidentTypes: ["water damage", "property damage"],
+            investigationNotes: [
+                {
+                    investigator: "Lisa Wong",
+                    note: "Plumber inspection completed",
+                    createdAt: new Date("2024-03-17")
+                }
+            ],
+            filedAt: new Date("2024-03-16"),
+            estimatedAmount: 12000,
+            status: "approved"
+        }
+    ]);
+}, 2);
+
+// Test schema validation
+validateQuery("Create policyholders collection with validation", () => {
+    db.policyholders.drop();
+    return db.createCollection("policyholders", {
+        validator: {
+            $jsonSchema: {
+                bsonType: "object",
+                required: ["email", "licenseNumber", "createdAt"],
+                properties: {
+                    email: {
+                        bsonType: "string",
+                        pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+                    },
+                    licenseNumber: {
+                        bsonType: "string",
+                        minLength: 8,
+                        maxLength: 20
+                    },
+                    age: {
+                        bsonType: "int",
+                        minimum: 16,
+                        maximum: 120
+                    },
+                    communicationPreferences: {
+                        bsonType: "object",
+                        properties: {
+                            emailNotifications: { bsonType: "bool" },
+                            smsAlerts: { bsonType: "bool" }
+                        }
+                    }
+                }
+            }
+        }
+    });
+});
+
+// Test valid document insertion
+validateQuery("Insert valid policyholder document", () => {
+    return db.policyholders.insertOne({
+        email: "john.doe@email.com",
+        licenseNumber: "LIC123456789",
+        age: 35,
+        createdAt: new Date(),
+        communicationPreferences: {
+            emailNotifications: true,
+            smsAlerts: false
+        }
+    });
+});
+
+// Test embedded data queries
+validateQuery("Query claims by adjuster name", () => {
+    return db.insurance_claims.find({
+        "adjuster.name": "Sarah Johnson"
+    });
+});
+
+validateQuery("Query claims by incident types", () => {
+    return db.insurance_claims.find({
+        incidentTypes: { $in: ["collision", "water damage"] }
+    });
+});
+
+validateQuery("Query investigation notes", () => {
+    return db.insurance_claims.find({
+        "investigationNotes.investigator": "Mike Thompson"
+    });
+});
+
+validateQuery("Aggregate claims by status", () => {
+    return db.insurance_claims.aggregate([
+        { $group: {
+            _id: "$status",
+            totalAmount: { $sum: "$estimatedAmount" },
+            count: { $sum: 1 }
+        }}
+    ]);
+});
+
+// ============================================================================
+// FINAL VALIDATION REPORT
+// ============================================================================
+print("\n" + "=".repeat(60));
+print("COMPREHENSIVE VALIDATION REPORT");
+print("=".repeat(60));
+
+print(`\nTotal Tests Run: ${validationResults.totalTests}`);
+print(`✅ Passed: ${validationResults.passed}`);
+print(`❌ Failed: ${validationResults.failed}`);
+print(`🔧 Syntax Errors: ${validationResults.syntaxErrors}`);
+print(`📊 Functional Errors: ${validationResults.functionalErrors}`);
+
+if (validationResults.failed > 0) {
+    print(`\n🚨 CRITICAL ISSUES FOUND:`);
+    validationResults.issues.forEach((issue, index) => {
+        print(`${index + 1}. ${issue}`);
+    });
+    print(`\n❌ LAB VALIDATION FAILED - ${validationResults.failed} issues must be fixed`);
+    print(`   - Syntax issues: ${validationResults.syntaxErrors}`);
+    print(`   - Functional issues: ${validationResults.functionalErrors}`);
+} else {
+    print(`\n✅ ALL TESTS PASSED - Labs have correct syntax AND return meaningful data`);
+}
+
+let successRate = Math.round((validationResults.passed / validationResults.totalTests) * 100);
+print(`\nOverall Success Rate: ${successRate}%`);
+print(`Syntax Success: ${Math.round(((validationResults.totalTests - validationResults.syntaxErrors) / validationResults.totalTests) * 100)}%`);
+print(`Functional Success: ${Math.round(((validationResults.totalTests - validationResults.functionalErrors) / validationResults.totalTests) * 100)}%`);
+
+if (successRate >= 95) {
+    print("\n✅ EXCELLENT: Labs are syntactically correct and functionally sound");
+} else if (successRate >= 85) {
+    print("\n⚠️  GOOD: Minor issues found that should be addressed");
+} else {
+    print("\n❌ CRITICAL: Major issues found that will break student experience");
+}
