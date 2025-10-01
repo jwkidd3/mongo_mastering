@@ -415,6 +415,314 @@ validateQuery("Aggregate claims by status", () => {
 });
 
 // ============================================================================
+// LAB 10: MongoDB Transactions
+// ============================================================================
+print("\n" + "=".repeat(60));
+print("TESTING LAB 10: MongoDB Transactions");
+print("=".repeat(60));
+
+use insurance_company;
+
+// Check if environment supports transactions
+checkPrerequisite("Replica set supports transactions", () => {
+    try {
+        let status = rs.status();
+        return status && status.set;
+    } catch(e) {
+        return false;
+    }
+});
+
+// Test basic transaction session creation
+validateQuery("Start transaction session", () => {
+    let session = db.getMongo().startSession();
+    let result = session ? { acknowledged: true } : null;
+    if (session) session.endSession();
+    return result;
+});
+
+// Test basic transaction operations
+validateQuery("Basic transaction with customer policy update", () => {
+    let session = db.getMongo().startSession();
+    try {
+        session.startTransaction({ readConcern: { level: "majority" }, writeConcern: { w: "majority", wtimeout: 5000 } });
+        let sessionDb = session.getDatabase("insurance_company");
+
+        let customer = sessionDb.customers.findOne({});
+        if (!customer) {
+            session.abortTransaction();
+            return null;
+        }
+
+        let updateResult = sessionDb.customers.updateOne(
+            { _id: customer._id },
+            { $inc: { policyCount: 1 } }
+        );
+
+        let insertResult = sessionDb.policies.insertOne({
+            policyNumber: "TXN-TEST-" + new Date().getTime(),
+            policyType: "Term Life",
+            customerId: customer._id,
+            annualPremium: 600.00,
+            isActive: true,
+            createdInTransaction: true
+        });
+
+        session.commitTransaction();
+
+        // Clean up test data
+        sessionDb.policies.deleteOne({ _id: insertResult.insertedId });
+        sessionDb.customers.updateOne({ _id: customer._id }, { $inc: { policyCount: -1 } });
+
+        return { acknowledged: true, insertedCount: 1 };
+    } catch(e) {
+        session.abortTransaction();
+        throw e;
+    } finally {
+        session.endSession();
+    }
+});
+
+// Test transaction rollback
+validateQuery("Transaction rollback functionality", () => {
+    let session = db.getMongo().startSession();
+    try {
+        session.startTransaction();
+        let sessionDb = session.getDatabase("insurance_company");
+
+        let testResult = sessionDb.claims.insertOne({
+            claimNumber: "ROLLBACK-TEST-" + new Date().getTime(),
+            status: "Filed",
+            description: "Test claim for rollback"
+        });
+
+        session.abortTransaction();
+
+        // Verify rollback worked
+        let foundClaim = db.claims.findOne({ _id: testResult.insertedId });
+        return foundClaim ? null : { acknowledged: true, rollbackSuccessful: true };
+    } finally {
+        session.endSession();
+    }
+});
+
+// ============================================================================
+// LAB 11: Replica Sets & High Availability
+// ============================================================================
+print("\n" + "=".repeat(60));
+print("TESTING LAB 11: Replica Sets & High Availability");
+print("=".repeat(60));
+
+// Test replica set status
+validateQuery("Replica set status check", () => {
+    try {
+        let status = rs.status();
+        return status && status.members ? { acknowledged: true, memberCount: status.members.length } : null;
+    } catch(e) {
+        return null;
+    }
+});
+
+// Test replica set configuration
+validateQuery("Replica set configuration", () => {
+    try {
+        let config = rs.conf();
+        return config && config.members ? { acknowledged: true, configVersion: config.version } : null;
+    } catch(e) {
+        return null;
+    }
+});
+
+// Test write concern operations
+validateQuery("Write concern operations", () => {
+    return db.policies.updateOne(
+        { _id: { $exists: true } },
+        { $set: { lastReviewDate: new Date(), reviewedBy: "system" } },
+        { writeConcern: { w: "majority", j: true, wtimeout: 5000 } }
+    );
+});
+
+// Test read concern operations
+validateQuery("Read concern operations", () => {
+    let count = db.claims.countDocuments(
+        { status: { $exists: true } },
+        { readConcern: { level: "majority" } }
+    );
+    return count >= 0 ? { acknowledged: true, count: count } : null;
+});
+
+// ============================================================================
+// LAB 12: Sharding & Horizontal Scaling
+// ============================================================================
+print("\n" + "=".repeat(60));
+print("TESTING LAB 12: Sharding & Horizontal Scaling");
+print("=".repeat(60));
+
+use insurance_company;
+
+// Test customer geographic distribution analysis
+validateQuery("Customer geographic distribution analysis", () => {
+    return db.customers.aggregate([
+        { $group: { _id: "$address.state", count: { $sum: 1 } } },
+        { $sort: { count: -1 } }
+    ]);
+});
+
+// Test policy type distribution analysis
+validateQuery("Policy type distribution analysis", () => {
+    return db.policies.aggregate([
+        { $group: { _id: "$policyType", count: { $sum: 1 } } },
+        { $sort: { count: -1 } }
+    ]);
+});
+
+// Test simulated shard distribution calculation
+validateQuery("Simulated shard distribution calculation", () => {
+    let totalDocs = db.customers.countDocuments();
+    let docsPerShard = Math.ceil(totalDocs / 3);
+    return totalDocs > 0 ? { acknowledged: true, totalDocs: totalDocs, docsPerShard: docsPerShard } : null;
+});
+
+// Test geographic sharding simulation
+validateQuery("Geographic sharding simulation", () => {
+    return db.customers.aggregate([
+        { $addFields: {
+            assignedShard: {
+                $switch: {
+                    branches: [
+                        { case: { $eq: ["$address.state", "CA"] }, then: "shard-west" },
+                        { case: { $eq: ["$address.state", "NY"] }, then: "shard-east" },
+                        { case: { $eq: ["$address.state", "TX"] }, then: "shard-central" }
+                    ],
+                    default: "shard-other"
+                }
+            }
+        }},
+        { $group: { _id: "$assignedShard", count: { $sum: 1 } } },
+        { $sort: { _id: 1 } }
+    ]);
+});
+
+// ============================================================================
+// LAB 13: Change Streams & Real-time Processing
+// ============================================================================
+print("\n" + "=".repeat(60));
+print("TESTING LAB 13: Change Streams & Real-time Processing");
+print("=".repeat(60));
+
+use insurance_company;
+
+// Test notifications collection index creation
+validateQuery("Create notifications collection indexes", () => {
+    db.notifications.createIndex({ recipientId: 1, timestamp: -1 });
+    db.notifications.createIndex({ type: 1, read: 1 });
+    db.notifications.createIndex({ priority: 1, status: 1 });
+    return { acknowledged: true };
+});
+
+// Test activity log collection index creation
+validateQuery("Create activity log collection indexes", () => {
+    db.activity_log.createIndex({ timestamp: -1 });
+    db.activity_log.createIndex({ operation: 1, timestamp: -1 });
+    db.activity_log.createIndex({ userId: 1, timestamp: -1 });
+    return { acknowledged: true };
+});
+
+// Test fraud alerts collection index creation
+validateQuery("Create fraud alerts collection indexes", () => {
+    db.fraud_alerts.createIndex({ customerId: 1, timestamp: -1 });
+    db.fraud_alerts.createIndex({ severity: 1, status: 1 });
+    return { acknowledged: true };
+});
+
+// Test claims processing simulation
+validateQuery("Claims processing simulation", () => {
+    let testClaim = {
+        _id: "claim_cs_validation_test",
+        claimNumber: "CLM-VALIDATION-001",
+        customerId: "validation_customer",
+        status: "Filed",
+        claimAmount: 15000.00,
+        timestamp: new Date()
+    };
+
+    let result = db.claims.insertOne(testClaim);
+
+    if (result.acknowledged) {
+        db.notifications.insertOne({
+            recipientId: testClaim.customerId,
+            type: "claim_filed",
+            message: "Claim filed for validation test",
+            claimId: testClaim._id,
+            timestamp: new Date(),
+            read: false
+        });
+
+        // Clean up
+        db.claims.deleteOne({ _id: testClaim._id });
+        db.notifications.deleteOne({ claimId: testClaim._id });
+    }
+
+    return result;
+});
+
+// Test fraud detection simulation
+validateQuery("Fraud detection simulation", () => {
+    let suspiciousClaim = {
+        _id: "claim_fraud_validation_test",
+        claimNumber: "CLM-FRAUD-VALIDATION-001",
+        claimAmount: 75000.00,
+        status: "Filed",
+        timestamp: new Date()
+    };
+
+    let claimResult = db.claims.insertOne(suspiciousClaim);
+
+    if (claimResult.acknowledged) {
+        let alertResult = db.fraud_alerts.insertOne({
+            claimId: suspiciousClaim._id,
+            severity: "medium",
+            indicators: ["High claim amount"],
+            status: "active",
+            timestamp: new Date()
+        });
+
+        // Clean up
+        db.claims.deleteOne({ _id: suspiciousClaim._id });
+        db.fraud_alerts.deleteOne({ claimId: suspiciousClaim._id });
+
+        return alertResult;
+    }
+
+    return null;
+});
+
+// Test activity logging
+validateQuery("Activity logging functionality", () => {
+    let logResult = db.activity_log.insertOne({
+        operation: "validation_test",
+        collection: "test_collection",
+        timestamp: new Date(),
+        userId: "validator"
+    });
+
+    if (logResult.acknowledged) {
+        db.activity_log.deleteOne({ _id: logResult.insertedId });
+    }
+
+    return logResult;
+});
+
+// Test dashboard queries
+validateQuery("Real-time dashboard queries", () => {
+    let claimsCount = db.claims.countDocuments({ status: { $in: ["Filed", "Under Review"] } });
+    let notificationsCount = db.notifications.countDocuments({ read: false });
+
+    return claimsCount >= 0 && notificationsCount >= 0 ?
+        { acknowledged: true, activeClaims: claimsCount, pendingNotifications: notificationsCount } : null;
+});
+
+// ============================================================================
 // FINAL VALIDATION REPORT
 // ============================================================================
 print("\n" + "=".repeat(60));
