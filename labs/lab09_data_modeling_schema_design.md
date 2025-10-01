@@ -70,7 +70,7 @@
 
 1. **Create Claims Collection with Embedded Schema**
    ```javascript
-   use insurance_company
+   use insurance_company;
 
    // Create claims collection with embedded investigation data
    db.insurance_claims.insertMany([
@@ -118,7 +118,7 @@
        estimatedAmount: 12000,
        status: "approved"
      }
-   ])
+   ]);
    ```
 
 2. **Create Validation Rules**
@@ -154,7 +154,7 @@
          }
        }
      }
-   })
+   });
    ```
 
 3. **Test Schema Validation**
@@ -180,8 +180,8 @@
        createdAt: new Date()
      })
    } catch (error) {
-     print("Validation error (expected): " + error.message)
-   }
+     print("Validation error (expected): " + error.message);
+   };
    ```
 
 4. **Query Embedded Data**
@@ -189,17 +189,17 @@
    // Query claims by adjuster
    db.insurance_claims.find({
      "adjuster.name": "Sarah Johnson"
-   })
+   });
 
    // Query claims with specific incident types
    db.insurance_claims.find({
      incidentTypes: { $in: ["collision", "water damage"] }
-   })
+   });
 
    // Query investigation notes
    db.insurance_claims.find({
      "investigationNotes.investigator": "Mike Thompson"
-   })
+   });
 
    // Aggregate claims by status
    db.insurance_claims.aggregate([
@@ -208,7 +208,7 @@
        totalAmount: { $sum: "$estimatedAmount" },
        count: { $sum: 1 }
      }}
-   ])
+   ]);
    ```
 
 ## Challenge Exercise
