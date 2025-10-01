@@ -67,14 +67,14 @@ mongosh --eval "db.getSiblingDB('insurance_analytics').customers.countDocuments(
 
 3. **Date Range Queries**
    ```javascript
-   // Find policies expiring in the next 30 days
-   var thirtyDaysFromNow = new Date();
-   thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+   // Find policies expiring in the next year
+   var oneYearFromNow = new Date();
+   oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
 
    db.policies.find({
      expirationDate: {
        $gte: new Date(),
-       $lte: thirtyDaysFromNow
+       $lte: oneYearFromNow
      }
    })
    ```
