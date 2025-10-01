@@ -182,22 +182,22 @@ Compare the performance of these equivalent queries using `.explain("executionSt
 1. **Query Result Validation**
    ```javascript
    // Verify text search results contain search terms
-   db.policies.find({ $text: { $search: "auto" } })
-     .forEach(doc => print(doc.policyType + ": " + doc.description))
+   db.reviews.find({ $text: { $search: "service excellent customer" } })
+     .forEach(doc => print("Rating: " + doc.rating + " - " + doc.reviewText.substring(0, 50) + "..."))
    ```
 
 2. **Index Usage Verification**
    ```javascript
    // Check that geo-spatial queries use the 2dsphere index
-   db.agents.find({
-     location: { $near: { $geometry: { type: "Point", coordinates: [-73.9857, 40.7484] } } }
+   db.claims.find({
+     location: { $near: { $geometry: { type: "Point", coordinates: [-73.9857, 40.7484] }, $maxDistance: 50000 } }
    }).explain("executionStats")
    ```
 
 3. **Performance Metrics**
    ```javascript
    // Compare execution times for different query patterns
-   db.claims.find({ status: "pending" }).explain("executionStats").executionStats.totalDocsExamined
+   db.claims.find({ status: "approved" }).explain("executionStats").executionStats.totalDocsExamined
    ```
 
 ## Expected Outcomes
