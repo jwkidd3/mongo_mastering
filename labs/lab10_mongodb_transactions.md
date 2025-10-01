@@ -115,7 +115,17 @@ const customerUpdate = sessionDb.customers.updateOne({ customerId: customer.cust
 
 ```javascript
 // Step 6: Insert a new policy for this customer (part of transaction)
-const newPolicyResult = sessionDb.policies.insertOne({ policyNumber: "TXN-" + new Date().getTime(), policyType: "Term Life", customerId: customer.customerId, annualPremium: NumberDecimal("600.00"), coverageLimit: 100000, effectiveDate: new Date(), expirationDate: new Date(new Date().getTime() + (365 * 24 * 60 * 60 * 1000)), isActive: true, createdInTransaction: true });
+const newPolicyResult = sessionDb.policies.insertOne({
+  policyNumber: "TXN-" + new Date().getTime(),
+  policyType: "Term Life",
+  customerId: customer.customerId,
+  annualPremium: NumberDecimal("600.00"),
+  coverageLimit: 100000,
+  effectiveDate: new Date(),
+  expirationDate: new Date(new Date().getTime() + (365 * 24 * 60 * 60 * 1000)),
+  isActive: true,
+  createdInTransaction: true
+});
 ```
 
 ```javascript

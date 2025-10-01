@@ -181,7 +181,7 @@
      })
    } catch (error) {
      print("Validation error (expected): " + error.message);
-   };
+   }
    ```
 
 4. **Query Embedded Data**
