@@ -62,7 +62,7 @@
        $lookup: {
          from: "customers",
          localField: "customerId",
-         foreignField: "_id",
+         foreignField: "customerId",
          as: "customerInfo"
        }
      },
@@ -72,7 +72,8 @@
          policyNumber: 1,
          policyType: 1,
          annualPremium: 1,
-         "customerInfo.customerName": 1,
+         "customerInfo.firstName": 1,
+         "customerInfo.lastName": 1,
          "customerInfo.email": 1
        }
      }
@@ -86,7 +87,7 @@
      {
        $lookup: {
          from: "claims",
-         localField: "_id",
+         localField: "customerId",
          foreignField: "customerId",
          as: "claims"
        }
@@ -94,14 +95,15 @@
      {
        $lookup: {
          from: "policies",
-         localField: "_id",
+         localField: "customerId",
          foreignField: "customerId",
          as: "policies"
        }
      },
      {
        $project: {
-         customerName: 1,
+         firstName: 1,
+         lastName: 1,
          email: 1,
          totalClaims: { $size: "$claims" },
          totalPolicies: { $size: "$policies" },
@@ -149,8 +151,8 @@
      {
        $lookup: {
          from: "claims",
-         localField: "_id",
-         foreignField: "policyId",
+         localField: "policyNumber",
+         foreignField: "policyNumber",
          as: "claims"
        }
      },
@@ -158,7 +160,7 @@
        $lookup: {
          from: "customers",
          localField: "customerId",
-         foreignField: "_id",
+         foreignField: "customerId",
          as: "customer"
        }
      },
@@ -170,13 +172,7 @@
          totalPremiumRevenue: { $sum: "$annualPremium" },
          totalClaimsAmount: { $sum: { $sum: "$claims.claimAmount" } },
          averagePremium: { $avg: "$annualPremium" },
-         claimsCount: { $sum: { $size: "$claims" } },
-         lossRatio: {
-           $divide: [
-             { $sum: { $sum: "$claims.claimAmount" } },
-             { $sum: "$annualPremium" }
-           ]
-         }
+         claimsCount: { $sum: { $size: "$claims" } }
        }
      },
      {
@@ -187,10 +183,19 @@
          totalClaimsAmount: { $round: ["$totalClaimsAmount", 2] },
          averagePremium: { $round: ["$averagePremium", 2] },
          claimsCount: 1,
-         lossRatio: { $round: ["$lossRatio", 4] },
+         lossRatio: {
+           $cond: {
+             if: { $gt: ["$totalPremiumRevenue", 0] },
+             then: { $round: [{ $divide: ["$totalClaimsAmount", "$totalPremiumRevenue"] }, 4] },
+             else: 0
+           }
+         },
          profitability: {
            $cond: {
-             if: { $lt: ["$lossRatio", 0.8] },
+             if: { $and: [
+               { $gt: ["$totalPremiumRevenue", 0] },
+               { $lt: [{ $divide: ["$totalClaimsAmount", "$totalPremiumRevenue"] }, 0.8] }
+             ]},
              then: "Profitable",
              else: "Review Required"
            }
