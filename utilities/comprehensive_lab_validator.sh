@@ -796,6 +796,16 @@ test_mongo_command \
     "print('=== Member Types Explanation ==='); print('PRIMARY: Receives all writes, can serve reads'); print('SECONDARY: Replicates data from primary'); print('ARBITER: Votes in elections but stores no data'); print('HIDDEN: Replicates data but no client reads'); print('DELAYED: Maintains historical snapshot');" \
     ""
 
+test_mongo_command \
+    "Lab 11 - Test read preferences (primary and secondaryPreferred)" \
+    "use insurance_company; db.policies.find().readPref('primary').limit(1); db.claims.find().readPref('secondaryPreferred').limit(1); db.customers.find().readPref('nearest').limit(1);" \
+    ""
+
+test_mongo_command \
+    "Lab 11 - Explain tagged read preferences concepts" \
+    "print('Tagged read preferences require properly configured replica set members'); print('Example config: { _id: 1, host: \"rs1:27017\", tags: { \"region\": \"east\" } }'); print('Analytics read preferences require dedicated analytics members'); print('Example config: { _id: 2, host: \"analytics:27017\", tags: { \"usage\": \"analytics\" } }');" \
+    ""
+
 echo "========================================================================"
 echo "LAB 12: Sharding & Horizontal Scaling - Testing Actual Lab Commands"
 echo "========================================================================"

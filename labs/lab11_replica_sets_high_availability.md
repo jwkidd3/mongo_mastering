@@ -290,15 +290,15 @@ db.claims.find().readPref("secondaryPreferred");
 // Nearest member - for branch operations
 db.customers.find().readPref("nearest");
 
-// Tagged reads - east coast branches only
-db.policies.find().readPref("secondary", [
-  { "region": "east" }
-]);
+// Tagged reads example - would work with proper replica set configuration
+// In production: db.policies.find().readPref("secondary", [{ "region": "east" }]);
+print("Tagged read preferences require properly configured replica set members");
+print("Example config: { _id: 1, host: 'rs1:27017', tags: { 'region': 'east' } }");
 
-// Analytics member only - for compliance and reporting
-db.claims.find().readPref("secondary", [
-  { "usage": "analytics" }
-]);
+// Analytics member example - would work with proper replica set configuration
+// In production: db.claims.find().readPref("secondary", [{ "usage": "analytics" }]);
+print("Analytics read preferences require dedicated analytics members");
+print("Example config: { _id: 2, host: 'analytics:27017', tags: { 'usage': 'analytics' } }");
 ```
 
 ### Step 5: Write and Read Concerns for Insurance Operations
