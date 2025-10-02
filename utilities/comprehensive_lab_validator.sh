@@ -679,6 +679,16 @@ test_mongo_command \
     "use insurance_company; db.insurance_claims.aggregate([{\$group: {_id: \"\$status\", totalAmount: {\$sum: \"\$estimatedAmount\"}, count: {\$sum: 1}}}])" \
     ""
 
+test_mongo_command \
+    "Lab 9 - Query claims with specific incident types" \
+    "use insurance_company; db.insurance_claims.find({incidentTypes: {\$in: [\"collision\", \"water damage\"]}})" \
+    ""
+
+test_mongo_command \
+    "Lab 9 - Query investigation notes by investigator" \
+    "use insurance_company; db.insurance_claims.find({\"investigationNotes.investigator\": \"Mike Thompson\"})" \
+    ""
+
 echo "========================================================================"
 echo "LAB 10: MongoDB Transactions - Testing Actual Lab Commands"
 echo "========================================================================"
@@ -722,6 +732,11 @@ test_mongo_command \
         print('Transaction aborted due to error: ' + error.message);
     }
     session2.endSession();" \
+    ""
+
+test_mongo_command \
+    "Lab 10 - Multi-collection transaction with session management" \
+    "use insurance_company; const session3 = db.getMongo().startSession(); session3.startTransaction({ readConcern: { level: \"majority\" }, writeConcern: { w: \"majority\", wtimeout: 10000 } }); const sessionDb = session3.getDatabase(\"insurance_company\"); const customer = sessionDb.customers.findOne({}); const policy = sessionDb.policies.findOne({ customerId: customer.customerId }); const newClaim = sessionDb.claims.insertOne({ claimNumber: \"TXN-CLAIM-\" + new Date().getTime(), customerId: customer.customerId, policyNumber: policy.policyNumber, claimAmount: NumberDecimal(\"5000.00\"), status: \"Under Review\", filedDate: new Date(), description: \"Multi-collection transaction test claim\" }); sessionDb.customers.updateOne({ customerId: customer.customerId }, { \$inc: { claimCount: 1 }, \$set: { lastClaimDate: new Date() } }); sessionDb.policies.updateOne({ policyNumber: policy.policyNumber }, { \$set: { hasActiveClaims: true, lastClaimDate: new Date() } }); sessionDb.audit_logs.insertOne({ action: \"CLAIM_FILED\", entityType: \"claim\", entityId: newClaim.insertedId, userId: \"system\", timestamp: new Date(), details: { customerId: customer.customerId, policyNumber: policy.policyNumber, claimAmount: 5000.00 } }); session3.commitTransaction(); print(\"✅ Multi-collection transaction completed successfully\"); session3.endSession();" \
     ""
 
 echo "========================================================================"
