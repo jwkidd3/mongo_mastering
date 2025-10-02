@@ -1,4 +1,4 @@
-# Lab 5B: JavaScript/Node.js MongoDB Integration for Insurance Management
+# Lab 14B: JavaScript/Node.js MongoDB Integration for Insurance Management
 **Duration:** 45 minutes
 **Objective:** Integrate MongoDB with JavaScript/Node.js applications for insurance management system
 

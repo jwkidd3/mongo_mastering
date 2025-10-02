@@ -1,4 +1,4 @@
-# Lab 5A: C# MongoDB Integration for Insurance Management
+# Lab 14A: C# MongoDB Integration for Insurance Management
 **Duration:** 30 minutes
 **Objective:** Integrate MongoDB with C# applications for insurance management system
 
@@ -1110,7 +1110,7 @@ dotnet run
 4. View the documents and their insurance-specific structure
 5. Observe the policy and claim relationships through the `customerId` and `policyId` fields
 
-## Lab 5 Deliverables
+## Lab 14A Deliverables
 ✅ **C# MongoDB integration** for insurance management with strongly-typed models:
    - Policy management system
    - Claims processing system

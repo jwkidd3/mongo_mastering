@@ -1,4 +1,4 @@
-# Lab 5C: Python MongoDB Integration for Insurance Management
+# Lab 14C: Python MongoDB Integration for Insurance Management
 **Duration:** 45 minutes
 **Objective:** Integrate MongoDB with Python using Jupyter Notebook for insurance management system
 
