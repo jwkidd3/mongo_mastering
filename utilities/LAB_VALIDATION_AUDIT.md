@@ -1,6 +1,6 @@
 # MongoDB Lab Validation Audit
 
-**Total Tests: 77**
+**Total Tests: 85**
 **Coverage: 100%**
 
 Quick reference mapping validator tests to lab steps.
@@ -121,33 +121,41 @@ Quick reference mapping validator tests to lab steps.
 | 63 | Step 6 | Transaction rollback demonstration |
 | 64 | Step 7 | Multi-collection transaction |
 
-## Lab 11: Replica Sets & High Availability (2 tests)
+## Lab 11: Replica Sets & High Availability (10 tests)
 
 | Test | Lab Step | Command |
 |------|----------|---------|
 | 65 | Step 1 | `rs.status()` |
-| 66 | Step 2 | `rs.conf()` |
+| 66 | Step 1 | `rs.conf()` |
+| 67 | Step 1 | `db.hello()` |
+| 68 | Step 1 | `rs.printReplicationInfo()` |
+| 69 | Step 1 | `rs.printSecondaryReplicationInfo()` |
+| 70 | Step 2 | `getCurrentPrimary()` function |
+| 71 | Step 3 | `explainElectionProcess()` function |
+| 72 | Step 3 | Replica set health analysis |
+| 73 | Step 2 | Display member status information |
+| 74 | Step 2 | Member types explanation demonstration |
 
 ## Lab 12: Sharding & Horizontal Scaling (2 tests)
 
 | Test | Lab Step | Command |
 |------|----------|---------|
-| 67 | Step 1 | `use insurance_distributed; db.runCommand("ping")` |
-| 68 | Step 2 | `db.policies_geographic.insertMany()` |
+| 75 | Step 1 | `use insurance_distributed; db.runCommand("ping")` |
+| 76 | Step 2 | `db.policies_geographic.insertMany()` |
 
 ## Lab 13: Change Streams & Real-time Processing (9 tests)
 
 | Test | Lab Step | Command |
 |------|----------|---------|
-| 69 | Step 1 | `db.notifications.createIndex({userId: 1, createdAt: -1})` |
-| 70 | Step 1 | `db.notifications.createIndex({type: 1, priority: 1})` |
-| 71 | Step 1 | `db.notifications.createIndex({priority: 1, status: 1, createdAt: -1})` |
-| 72 | Step 2 | `db.activity_log.createIndex({userId: 1, timestamp: -1})` |
-| 73 | Step 2 | `db.activity_log.createIndex({operation: 1, entityType: 1, timestamp: -1})` |
-| 74 | Step 2 | `db.activity_log.createIndex({userId: 1, operation: 1, timestamp: -1})` |
-| 75 | Step 3 | `db.fraud_alerts.createIndex({alertType: 1, severity: 1, createdAt: -1})` |
-| 76 | Step 3 | `db.fraud_alerts.createIndex({severity: 1, status: 1, investigatedAt: -1})` |
-| 77 | Step 4 | `db.change_stream_resume_tokens.createIndex({streamId: 1, timestamp: -1}, {unique: true})` |
+| 77 | Step 1 | `db.notifications.createIndex({userId: 1, createdAt: -1})` |
+| 78 | Step 1 | `db.notifications.createIndex({type: 1, priority: 1})` |
+| 79 | Step 1 | `db.notifications.createIndex({priority: 1, status: 1, createdAt: -1})` |
+| 80 | Step 2 | `db.activity_log.createIndex({userId: 1, timestamp: -1})` |
+| 81 | Step 2 | `db.activity_log.createIndex({operation: 1, entityType: 1, timestamp: -1})` |
+| 82 | Step 2 | `db.activity_log.createIndex({userId: 1, operation: 1, timestamp: -1})` |
+| 83 | Step 3 | `db.fraud_alerts.createIndex({alertType: 1, severity: 1, createdAt: -1})` |
+| 84 | Step 3 | `db.fraud_alerts.createIndex({severity: 1, status: 1, investigatedAt: -1})` |
+| 85 | Step 4 | `db.change_stream_resume_tokens.createIndex({streamId: 1, timestamp: -1}, {unique: true})` |
 
 ---
 

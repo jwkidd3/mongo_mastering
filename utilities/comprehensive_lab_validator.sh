@@ -671,11 +671,13 @@ test_mongo_command \
 
 test_mongo_command \
     "Lab 9 - Query claims by adjuster name" \
-    "use insurance_company; db.insurance_claims.find({\"adjuster.name\": \"Sarah Johnson\"})"
+    "use insurance_company; db.insurance_claims.find({\"adjuster.name\": \"Sarah Johnson\"})" \
+    ""
 
 test_mongo_command \
     "Lab 9 - Aggregate claims by status" \
-    "use insurance_company; db.insurance_claims.aggregate([{\$group: {_id: \"\$status\", totalAmount: {\$sum: \"\$estimatedAmount\"}, count: {\$sum: 1}}}])"
+    "use insurance_company; db.insurance_claims.aggregate([{\$group: {_id: \"\$status\", totalAmount: {\$sum: \"\$estimatedAmount\"}, count: {\$sum: 1}}}])" \
+    ""
 
 test_mongo_command \
     "Lab 9 - Query claims with specific incident types" \
@@ -752,6 +754,47 @@ test_mongo_command_with_output \
     "rs.conf()" \
     "" \
     "_id.*rs0"
+
+test_mongo_command_with_output \
+    "Lab 11 - Check current primary with db.hello()" \
+    "db.hello()" \
+    "" \
+    "primary"
+
+test_mongo_command \
+    "Lab 11 - View replication lag information" \
+    "rs.printReplicationInfo()" \
+    ""
+
+test_mongo_command \
+    "Lab 11 - View secondary replication information" \
+    "rs.printSecondaryReplicationInfo()" \
+    ""
+
+test_mongo_command \
+    "Lab 11 - Get current primary function" \
+    "function getCurrentPrimary() { var status = rs.status(); var primary = status.members.filter(function(m) { return m.state === 1 })[0]; if (primary) { print('Current primary: ' + primary.name); print('Primary since: ' + primary.electionDate); return primary; } else { print('No primary found!'); return null; } }; getCurrentPrimary();" \
+    ""
+
+test_mongo_command \
+    "Lab 11 - Explain election process" \
+    "function explainElectionProcess() { print('=== MongoDB Election Process ==='); print('1. Heartbeat Failure: Secondaries detect primary unavailability'); print('2. Candidacy: Eligible secondary calls for election'); print('3. Voting: Members vote for new primary'); print('4. Majority Required: Candidate needs majority of votes'); print('5. New Primary: Winner becomes primary'); print('Election timeout: ' + rs.conf().settings.electionTimeoutMillis + 'ms'); print('Heartbeat interval: ' + rs.conf().settings.heartbeatIntervalMillis + 'ms'); }; explainElectionProcess();" \
+    ""
+
+test_mongo_command \
+    "Lab 11 - Replica set health analysis" \
+    "var status = rs.status(); var config = rs.conf(); if (status && status.set) { print('Set name: ' + status.set); if (status.members) { print('Total members: ' + status.members.length); print('Majority needed for elections: ' + (Math.floor(status.members.length / 2) + 1)); } }" \
+    ""
+
+test_mongo_command \
+    "Lab 11 - Display member status information" \
+    "var status = rs.status(); if (status && status.members && status.members.length >= 3) { print('Member 1: ' + status.members[0].name + ' - ' + status.members[0].stateStr); print('Member 2: ' + status.members[1].name + ' - ' + status.members[1].stateStr); print('Member 3: ' + status.members[2].name + ' - ' + status.members[2].stateStr); } else { print('Warning: Expected 3 replica set members'); }" \
+    ""
+
+test_mongo_command \
+    "Lab 11 - Member types explanation demonstration" \
+    "print('=== Member Types Explanation ==='); print('PRIMARY: Receives all writes, can serve reads'); print('SECONDARY: Replicates data from primary'); print('ARBITER: Votes in elections but stores no data'); print('HIDDEN: Replicates data but no client reads'); print('DELAYED: Maintains historical snapshot');" \
+    ""
 
 echo "========================================================================"
 echo "LAB 12: Sharding & Horizontal Scaling - Testing Actual Lab Commands"
