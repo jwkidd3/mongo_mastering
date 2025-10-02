@@ -651,134 +651,34 @@ echo "========================================================================"
 # Test 1: Lab 9 - Create insurance claims collection (from lab lines 76-121)
 test_mongo_command \
     "Lab 9 - Create insurance claims with embedded data" \
-    "db.insurance_claims.insertMany([
-        {
-            claimNumber: \"CLM-2024-001234\",
-            policyNumber: \"POL-AUTO-2024-001\",
-            customerId: \"CUST000001\",
-            incidentDescription: \"Vehicle collision at intersection\",
-            adjuster: {
-                name: \"Sarah Johnson\",
-                email: \"sarah.johnson@insuranceco.com\",
-                licenseNumber: \"ADJ-5678\"
-            },
-            incidentTypes: [\"collision\", \"property damage\", \"injury\"],
-            investigationNotes: [
-                {
-                    investigator: \"Mike Thompson\",
-                    note: \"Photos taken, police report obtained\",
-                    createdAt: new Date(\"2024-03-16\")
-                }
-            ],
-            filedAt: new Date(\"2024-03-15\"),
-            estimatedAmount: 8500,
-            status: \"under_investigation\"
-        },
-        {
-            claimNumber: \"CLM-2024-001235\",
-            policyNumber: \"POL-HOME-2024-002\",
-            customerId: \"CUST000002\",
-            incidentDescription: \"Water damage from burst pipe\",
-            adjuster: {
-                name: \"David Chen\",
-                email: \"david.chen@insuranceco.com\",
-                licenseNumber: \"ADJ-9012\"
-            },
-            incidentTypes: [\"water damage\", \"property damage\"],
-            investigationNotes: [
-                {
-                    investigator: \"Lisa Wong\",
-                    note: \"Plumber inspection completed\",
-                    createdAt: new Date(\"2024-03-17\")
-                }
-            ],
-            filedAt: new Date(\"2024-03-16\"),
-            estimatedAmount: 12000,
-            status: \"approved\"
-        }
-    ])" \
-    "insurance_company"
+    "use insurance_company; db.insurance_claims.insertMany([{claimNumber: \"CLM-2024-001234\", policyNumber: \"POL-AUTO-2024-001\", customerId: \"CUST000001\", incidentDescription: \"Vehicle collision at intersection\", adjuster: {name: \"Sarah Johnson\", email: \"sarah.johnson@insuranceco.com\", licenseNumber: \"ADJ-5678\"}, incidentTypes: [\"collision\", \"property damage\", \"injury\"], investigationNotes: [{investigator: \"Mike Thompson\", note: \"Photos taken, police report obtained\", createdAt: new Date(\"2024-03-16\")}], filedAt: new Date(\"2024-03-15\"), estimatedAmount: 8500, status: \"under_investigation\"}, {claimNumber: \"CLM-2024-001235\", policyNumber: \"POL-HOME-2024-002\", customerId: \"CUST000002\", incidentDescription: \"Water damage from burst pipe\", adjuster: {name: \"David Chen\", email: \"david.chen@insuranceco.com\", licenseNumber: \"ADJ-9012\"}, incidentTypes: [\"water damage\", \"property damage\"], investigationNotes: [{investigator: \"Lisa Wong\", note: \"Plumber inspection completed\", createdAt: new Date(\"2024-03-17\")}], filedAt: new Date(\"2024-03-16\"), estimatedAmount: 12000, status: \"approved\"}])" \
+    ""
 
 test_mongo_command \
     "Lab 9 - Create collection with schema validation" \
-    "db.createCollection(\"policyholders\", {
-        validator: {
-            \$jsonSchema: {
-                bsonType: \"object\",
-                required: [\"email\", \"licenseNumber\", \"createdAt\"],
-                properties: {
-                    email: {
-                        bsonType: \"string\",
-                        pattern: \"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\\\.[a-zA-Z]{2,}\$\"
-                    },
-                    licenseNumber: {
-                        bsonType: \"string\",
-                        minLength: 8,
-                        maxLength: 20
-                    },
-                    age: {
-                        bsonType: \"int\",
-                        minimum: 16,
-                        maximum: 120
-                    },
-                    communicationPreferences: {
-                        bsonType: \"object\",
-                        properties: {
-                            emailNotifications: { bsonType: \"bool\" },
-                            smsAlerts: { bsonType: \"bool\" }
-                        }
-                    }
-                }
-            }
-        }
-    })" \
-    "insurance_company"
+    "use insurance_company; db.createCollection(\"policyholders\", {validator: {\$jsonSchema: {bsonType: \"object\", required: [\"email\", \"licenseNumber\", \"createdAt\"], properties: {email: {bsonType: \"string\", pattern: \"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\\\.[a-zA-Z]{2,}\$\"}, licenseNumber: {bsonType: \"string\", minLength: 8, maxLength: 20}, age: {bsonType: \"int\", minimum: 16, maximum: 120}, communicationPreferences: {bsonType: \"object\", properties: {emailNotifications: {bsonType: \"bool\"}, smsAlerts: {bsonType: \"bool\"}}}}}}})" \
+    ""
 
 test_mongo_command \
     "Lab 9 - Insert valid document to policyholders" \
-    "db.policyholders.insertOne({
-        email: \"john.doe@email.com\",
-        licenseNumber: \"LIC123456789\",
-        age: 35,
-        createdAt: new Date(),
-        communicationPreferences: {
-            emailNotifications: true,
-            smsAlerts: false
-        }
-    })" \
-    "insurance_company"
+    "use insurance_company; db.policyholders.insertOne({email: \"john.doe@email.com\", licenseNumber: \"LIC123456789\", age: 35, createdAt: new Date(), communicationPreferences: {emailNotifications: true, smsAlerts: false}})" \
+    ""
 
 test_mongo_command \
     "Lab 9 - Try-catch validation error handling" \
-    "try {
-        db.policyholders.insertOne({
-            email: \"invalid-email\",
-            licenseNumber: \"123\",
-            age: 15,
-            createdAt: new Date()
-        });
-        print('This should not print - validation should fail');
-    } catch (error) {
-        print('Validation error (expected): ' + error.message);
-    }" \
-    "insurance_company"
+    "use insurance_company; try { db.policyholders.insertOne({email: \"invalid-email\", licenseNumber: \"123\", age: 15, createdAt: new Date()}); print('This should not print - validation should fail'); } catch (error) { print('Validation error (expected): ' + error.message); }" \
+    ""
 
 test_mongo_command_with_output \
     "Lab 9 - Query claims by adjuster name" \
-    "db.insurance_claims.find({\"adjuster.name\": \"Sarah Johnson\"})" \
-    "insurance_company" \
+    "use insurance_company; db.insurance_claims.find({\"adjuster.name\": \"Sarah Johnson\"})" \
+    "" \
     "Sarah Johnson"
 
 test_mongo_command_with_output \
     "Lab 9 - Aggregate claims by status" \
-    "db.insurance_claims.aggregate([
-        { \$group: {
-            _id: \"\$status\",
-            totalAmount: { \$sum: \"\$estimatedAmount\" },
-            count: { \$sum: 1 }
-        }}
-    ])" \
-    "insurance_company" \
+    "use insurance_company; db.insurance_claims.aggregate([{\$group: {_id: \"\$status\", totalAmount: {\$sum: \"\$estimatedAmount\"}, count: {\$sum: 1}}}])" \
+    "" \
     "totalAmount"
 
 echo "========================================================================"

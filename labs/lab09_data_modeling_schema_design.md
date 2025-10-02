@@ -8,9 +8,13 @@
 ## Tasks
 
 ### Part A: Schema Design Patterns (25 minutes)
+
+**⚠️ Note: The following are example schemas for reference and learning purposes only. Do not execute these commands - they are provided to illustrate MongoDB schema design patterns.**
+
 1. **Insurance Claims Schema**
    Design collections for insurance claims with embedded incident details and investigation notes:
    ```javascript
+   // EXAMPLE ONLY - Do not execute
    // Claims collection with embedded investigation
    {
      _id: ObjectId("..."),
@@ -39,6 +43,7 @@
 
 2. **Insurance Policy System**
    ```javascript
+   // EXAMPLE ONLY - Do not execute
    // Policy with coverage options pattern
    {
      _id: ObjectId("..."),
