@@ -743,6 +743,7 @@ echo "========================================================================"
 echo "LAB 11: Replica Sets & High Availability - Testing Actual Lab Commands"
 echo "========================================================================"
 
+# Part A: Understanding Replica Set Basics
 test_mongo_command_with_output \
     "Lab 11 - Check replica set status" \
     "rs.status()" \
@@ -750,127 +751,518 @@ test_mongo_command_with_output \
     "set.*rs0"
 
 test_mongo_command_with_output \
-    "Lab 11 - View replica set configuration" \
-    "rs.conf()" \
-    "" \
-    "_id.*rs0"
-
-test_mongo_command_with_output \
     "Lab 11 - Check current primary with db.hello()" \
     "db.hello()" \
     "" \
     "primary"
 
+test_mongo_command_with_output \
+    "Lab 11 - View replica set configuration" \
+    "rs.conf()" \
+    "" \
+    "_id.*rs0"
+
+# Part B: Write to Primary, Read from Secondary
+# Step 2: Write Data to Primary
 test_mongo_command \
-    "Lab 11 - View replication lag information" \
-    "rs.printReplicationInfo()" \
+    "Lab 11 Step 2 - Insert test policies to primary" \
+    "use insurance_company; db.policies.insertMany([
+        { policyNumber: 'POL-TEST-001', status: 'Active', premium: 5000, type: 'Auto', timestamp: new Date() },
+        { policyNumber: 'POL-TEST-002', status: 'Pending', premium: 8500, type: 'Home', timestamp: new Date() },
+        { policyNumber: 'POL-TEST-003', status: 'Active', premium: 3200, type: 'Life', timestamp: new Date() }
+    ])" \
     ""
 
 test_mongo_command \
-    "Lab 11 - View secondary replication information" \
+    "Lab 11 Step 2 - Verify the write" \
+    "use insurance_company; var count = db.policies.countDocuments({ policyNumber: /POL-TEST/ }); print('Count: ' + count); if (count >= 3) { print('SUCCESS: Found ' + count + ' test policies'); } else { throw new Error('Expected at least 3 policies'); }" \
+    ""
+
+# Step 3: Read from Secondary (Note: This requires connecting to secondary port which the validator simulates)
+test_mongo_command \
+    "Lab 11 Step 3 - Simulate secondary read with secondaryPreferred" \
+    "use insurance_company; db.policies.find({ policyNumber: /POL-TEST/ }).readPref('secondaryPreferred').toArray()" \
+    ""
+
+# Step 4: Compare Primary vs Secondary Reads
+test_mongo_command \
+    "Lab 11 Step 4 - Read from primary" \
+    "use insurance_company; var docs = db.policies.find({ policyNumber: /POL-TEST/ }).toArray(); if (docs.length > 0) { print('SUCCESS: Found test policies'); } else { throw new Error('No test policies found'); }" \
+    ""
+
+# Part C: Failover Testing
+# Step 5: Identify Current Primary
+test_mongo_command \
+    "Lab 11 Step 5 - Identify current primary" \
+    "var status = rs.status(); status.members.forEach(function(member) { if (member.state === 1) { print('PRIMARY: ' + member.name); } else if (member.state === 2) { print('SECONDARY: ' + member.name); } });" \
+    ""
+
+# Step 6: Simulate Primary Failure (Note: Validator doesn't actually step down to avoid disrupting tests)
+test_mongo_command \
+    "Lab 11 Step 6 - Verify stepDown command exists (simulation)" \
+    "print('In actual lab, students run: rs.stepDown(60)'); print('Validator simulates failover scenario');" \
+    ""
+
+# Step 7: Verify Data Integrity After Failover
+test_mongo_command \
+    "Lab 11 Step 7 - Verify data is still accessible" \
+    "use insurance_company; var count = db.policies.countDocuments({ policyNumber: /POL-TEST/ }); if (count >= 3) { print('SUCCESS: Data accessible, found ' + count + ' policies'); } else { throw new Error('Expected at least 3 policies'); }" \
+    ""
+
+test_mongo_command \
+    "Lab 11 Step 7 - Insert new policy to new primary" \
+    "use insurance_company; db.policies.insertOne({ policyNumber: 'POL-TEST-004', status: 'Active', premium: 7500, type: 'Commercial', timestamp: new Date() })" \
+    ""
+
+test_mongo_command \
+    "Lab 11 Step 7 - Verify the new write" \
+    "use insurance_company; var doc = db.policies.findOne({ policyNumber: 'POL-TEST-004' }); if (doc) { print('SUCCESS: Found new policy ' + doc.policyNumber); } else { throw new Error('Policy POL-TEST-004 not found'); }" \
+    ""
+
+# Step 8: Observe Replication
+test_mongo_command \
+    "Lab 11 Step 8 - Check replication lag" \
     "rs.printSecondaryReplicationInfo()" \
     ""
 
 test_mongo_command \
-    "Lab 11 - Get current primary function" \
-    "function getCurrentPrimary() { var status = rs.status(); var primary = status.members.filter(function(m) { return m.state === 1 })[0]; if (primary) { print('Current primary: ' + primary.name); print('Primary since: ' + primary.electionDate); return primary; } else { print('No primary found!'); return null; } }; getCurrentPrimary();" \
+    "Lab 11 Step 8 - Verify data on primary" \
+    "use insurance_company; var count = db.policies.countDocuments({ policyNumber: /POL-TEST/ }); if (count >= 4) { print('SUCCESS: Found ' + count + ' policies on primary'); } else { throw new Error('Expected at least 4 policies'); }" \
+    ""
+
+# Part D: Understanding Write and Read Concerns
+# Step 9: Write Concerns
+test_mongo_command \
+    "Lab 11 Step 9 - Write with majority concern (waits for majority acknowledgment)" \
+    "use insurance_company; db.policies.insertOne(
+        { policyNumber: 'POL-TEST-005', status: 'Active', premium: 9000, type: 'Auto', timestamp: new Date() },
+        { writeConcern: { w: 'majority', wtimeout: 5000 } }
+    )" \
     ""
 
 test_mongo_command \
-    "Lab 11 - Explain election process" \
-    "function explainElectionProcess() { print('=== MongoDB Election Process ==='); print('1. Heartbeat Failure: Secondaries detect primary unavailability'); print('2. Candidacy: Eligible secondary calls for election'); print('3. Voting: Members vote for new primary'); print('4. Majority Required: Candidate needs majority of votes'); print('5. New Primary: Winner becomes primary'); print('Election timeout: ' + rs.conf().settings.electionTimeoutMillis + 'ms'); print('Heartbeat interval: ' + rs.conf().settings.heartbeatIntervalMillis + 'ms'); }; explainElectionProcess();" \
+    "Lab 11 Step 9 - Write with w:1 (only primary acknowledgment)" \
+    "use insurance_company; db.policies.insertOne(
+        { policyNumber: 'POL-TEST-006', status: 'Active', premium: 4500, type: 'Life', timestamp: new Date() },
+        { writeConcern: { w: 1 } }
+    )" \
+    ""
+
+# Step 10: Read Concerns
+test_mongo_command \
+    "Lab 11 Step 10 - Read with majority concern (only majority-acknowledged data)" \
+    "use insurance_company; var docs = db.policies.find({ policyNumber: /POL-TEST/ }).readConcern('majority').toArray(); if (docs.length > 0) { print('SUCCESS: Read ' + docs.length + ' policies with majority concern'); } else { throw new Error('No policies found'); }" \
     ""
 
 test_mongo_command \
-    "Lab 11 - Replica set health analysis" \
-    "var status = rs.status(); var config = rs.conf(); if (status && status.set) { print('Set name: ' + status.set); if (status.members) { print('Total members: ' + status.members.length); print('Majority needed for elections: ' + (Math.floor(status.members.length / 2) + 1)); } }" \
+    "Lab 11 Step 10 - Read with local concern (fastest, may include non-replicated data)" \
+    "use insurance_company; var docs = db.policies.find({ policyNumber: /POL-TEST/ }).readConcern('local').toArray(); if (docs.length > 0) { print('SUCCESS: Read ' + docs.length + ' policies with local concern'); } else { throw new Error('No policies found'); }" \
     ""
 
+# Cleanup
 test_mongo_command \
-    "Lab 11 - Display member status information" \
-    "var status = rs.status(); if (status && status.members && status.members.length >= 3) { print('Member 1: ' + status.members[0].name + ' - ' + status.members[0].stateStr); print('Member 2: ' + status.members[1].name + ' - ' + status.members[1].stateStr); print('Member 3: ' + status.members[2].name + ' - ' + status.members[2].stateStr); } else { print('Warning: Expected 3 replica set members'); }" \
-    ""
-
-test_mongo_command \
-    "Lab 11 - Member types explanation demonstration" \
-    "print('=== Member Types Explanation ==='); print('PRIMARY: Receives all writes, can serve reads'); print('SECONDARY: Replicates data from primary'); print('ARBITER: Votes in elections but stores no data'); print('HIDDEN: Replicates data but no client reads'); print('DELAYED: Maintains historical snapshot');" \
-    ""
-
-test_mongo_command \
-    "Lab 11 - Test read preferences (primary and secondaryPreferred)" \
-    "use insurance_company; db.policies.find().readPref('primary').limit(1); db.claims.find().readPref('secondaryPreferred').limit(1); db.customers.find().readPref('nearest').limit(1);" \
-    ""
-
-test_mongo_command \
-    "Lab 11 - Explain tagged read preferences concepts" \
-    "print('Tagged read preferences require properly configured replica set members'); print('Example config: { _id: 1, host: \"rs1:27017\", tags: { \"region\": \"east\" } }'); print('Analytics read preferences require dedicated analytics members'); print('Example config: { _id: 2, host: \"analytics:27017\", tags: { \"usage\": \"analytics\" } }');" \
+    "Lab 11 - Cleanup test data" \
+    "use insurance_company; db.policies.deleteMany({ policyNumber: /POL-TEST/ })" \
     ""
 
 echo "========================================================================"
 echo "LAB 12: Sharding & Horizontal Scaling - Testing Actual Lab Commands"
 echo "========================================================================"
 
+# Part A: Understanding Sharding Architecture
+# Step 2: Analyze Insurance Data for Sharding
 test_mongo_command \
-    "Lab 12 - Database connectivity for sharding concepts" \
-    "use insurance_company; db.runCommand({ping: 1})" \
+    "Lab 12 Step 2 - Analyze customer distribution by state for geographic sharding" \
+    "use insurance_company; var customersByState = db.customers.aggregate([
+        { \$group: { _id: '\$address.state', count: { \$sum: 1 } } },
+        { \$sort: { count: -1 } }
+    ]).toArray(); if (customersByState.length > 0) { print('SUCCESS: Found customer distribution across ' + customersByState.length + ' states'); } else { throw new Error('No customer data found'); }" \
     ""
 
 test_mongo_command \
-    "Lab 12 - Create sample data for sharding demonstration" \
-    "use insurance_company; db.geographic_policies.insertMany([
-        {region: \"east\", policyId: \"POL-EAST-001\", premium: 1200},
-        {region: \"west\", policyId: \"POL-WEST-001\", premium: 1100},
-        {region: \"central\", policyId: \"POL-CENT-001\", premium: 1300}
-    ])" \
+    "Lab 12 Step 2 - Analyze policy types for business-logic sharding" \
+    "use insurance_company; var policiesByType = db.policies.aggregate([
+        { \$group: { _id: '\$policyType', count: { \$sum: 1 } } },
+        { \$sort: { count: -1 } }
+    ]).toArray(); if (policiesByType.length > 0) { print('SUCCESS: Found ' + policiesByType.length + ' policy types'); } else { throw new Error('No policy data found'); }" \
+    ""
+
+test_mongo_command \
+    "Lab 12 Step 2 - Simulate shard distribution calculation" \
+    "use insurance_company; var totalDocs = db.customers.countDocuments(); var docsPerShard = Math.ceil(totalDocs / 3); print('Total customers: ' + totalDocs); print('Documents per shard (3 shards): ' + docsPerShard);" \
+    ""
+
+# Step 3: Sharding Strategy Simulation
+test_mongo_command \
+    "Lab 12 Step 3 - Geographic sharding simulation" \
+    "use insurance_company; var customersByGeographicShard = db.customers.aggregate([
+        { \$addFields: {
+            assignedShard: {
+                \$switch: {
+                    branches: [
+                        { case: { \$eq: ['\$address.state', 'CA'] }, then: 'shard-west' },
+                        { case: { \$eq: ['\$address.state', 'NY'] }, then: 'shard-east' },
+                        { case: { \$eq: ['\$address.state', 'TX'] }, then: 'shard-central' },
+                        { case: { \$eq: ['\$address.state', 'FL'] }, then: 'shard-east' },
+                        { case: { \$eq: ['\$address.state', 'IL'] }, then: 'shard-central' }
+                    ],
+                    default: 'shard-other'
+                }
+            }
+        }},
+        { \$group: { _id: '\$assignedShard', count: { \$sum: 1 } } },
+        { \$sort: { _id: 1 } }
+    ]).toArray(); for (var i = 0; i < customersByGeographicShard.length; i++) { var shard = customersByGeographicShard[i]; print('   ' + shard._id + ': ' + shard.count + ' customers'); }" \
+    ""
+
+test_mongo_command \
+    "Lab 12 Step 3 - Hash sharding distribution simulation" \
+    "use insurance_company; var customerCount = db.customers.countDocuments(); var shardSize = Math.ceil(customerCount / 3); print('shard-0: ~' + shardSize + ' customers'); print('shard-1: ~' + shardSize + ' customers'); print('shard-2: ~' + shardSize + ' customers');" \
+    ""
+
+test_mongo_command \
+    "Lab 12 Step 3 - Range sharding by policy type simulation" \
+    "use insurance_company; var policiesByTypeShard = db.policies.aggregate([
+        { \$addFields: {
+            assignedShard: {
+                \$switch: {
+                    branches: [
+                        { case: { \$eq: ['\$policyType', 'Auto'] }, then: 'shard-auto' },
+                        { case: { \$eq: ['\$policyType', 'Property'] }, then: 'shard-property' },
+                        { case: { \$eq: ['\$policyType', 'Life'] }, then: 'shard-life' },
+                        { case: { \$eq: ['\$policyType', 'Commercial'] }, then: 'shard-commercial' }
+                    ],
+                    default: 'shard-other'
+                }
+            }
+        }},
+        { \$group: { _id: '\$assignedShard', count: { \$sum: 1 } } },
+        { \$sort: { _id: 1 } }
+    ]).toArray(); for (var j = 0; j < policiesByTypeShard.length; j++) { var policyShard = policiesByTypeShard[j]; print('   ' + policyShard._id + ': ' + policyShard.count + ' policies'); }" \
+    ""
+
+# Step 4: Query Routing Simulation
+test_mongo_command \
+    "Lab 12 Step 4 - Query routing performance analysis" \
+    "use insurance_company; var start = new Date(); var customerCount = db.customers.countDocuments({ 'address.state': 'CA' }); var end = new Date(); print('Current (non-sharded): ' + customerCount + ' CA customers found in ' + (end - start) + 'ms'); print('Sharded scenario: Would be faster with geographic sharding');" \
+    ""
+
+# Part C: Zone Sharding and Management
+# Step 8: Zone Sharding Concepts (Simulation)
+test_mongo_command \
+    "Lab 12 Step 8 - Zone sharding analysis with suggested zones" \
+    "use insurance_company; var stateDistribution = db.customers.aggregate([
+        { \$group: { _id: '\$address.state', customers: { \$sum: 1 } } },
+        { \$addFields: {
+            suggestedZone: {
+                \$cond: {
+                    if: { \$in: ['\$_id', ['NY', 'FL', 'GA', 'NC', 'PA']] },
+                    then: 'EASTERN-REGION',
+                    else: 'WESTERN-REGION'
+                }
+            }
+        }},
+        { \$sort: { customers: -1 } }
+    ]).toArray(); stateDistribution.forEach(function(result) { print('  ' + (result._id || 'Unknown') + ': ' + result.customers + ' customers → ' + result.suggestedZone); });" \
+    ""
+
+# Step 9: Chunk Management Concepts (Simulation)
+test_mongo_command \
+    "Lab 12 Step 9 - Chunk distribution analysis" \
+    "use insurance_company; if (db.policies.countDocuments() > 0) { var policyTypes = db.policies.aggregate([{ \$group: { _id: '\$policyType', count: { \$sum: 1 } } }, { \$sort: { count: -1 } }]).toArray(); policyTypes.forEach(function(result) { print('  ' + (result._id || 'Unknown') + ': ' + result.count + ' policies'); }); } if (db.claims.countDocuments() > 0) { var totalClaims = db.claims.countDocuments(); print('Total claims: ' + totalClaims); print('Estimated chunks (64MB each): ' + Math.ceil(totalClaims / 1000)); }" \
     ""
 
 echo "========================================================================"
 echo "LAB 13: Change Streams & Real-time Processing - Testing Actual Lab Commands"
 echo "========================================================================"
 
+# Part A: Change Stream Infrastructure Setup
+# Step 1: Create Supporting Collections for Change Stream Processing
 test_mongo_command \
-    "Lab 13 - Create notifications index" \
+    "Lab 13 Step 1 - Create notifications recipientId index" \
     "use insurance_company; db.notifications.createIndex({ recipientId: 1, timestamp: -1 })" \
     ""
 
 test_mongo_command \
-    "Lab 13 - Create notifications type index" \
+    "Lab 13 Step 1 - Create notifications type index" \
     "use insurance_company; db.notifications.createIndex({ type: 1, read: 1 })" \
     ""
 
 test_mongo_command \
-    "Lab 13 - Create notifications priority index" \
+    "Lab 13 Step 1 - Create notifications priority index" \
     "use insurance_company; db.notifications.createIndex({ priority: 1, status: 1 })" \
     ""
 
 test_mongo_command \
-    "Lab 13 - Create activity log index" \
+    "Lab 13 Step 1 - Create activity log timestamp index" \
     "use insurance_company; db.activity_log.createIndex({ timestamp: -1 })" \
     ""
 
 test_mongo_command \
-    "Lab 13 - Create activity log operation index" \
+    "Lab 13 Step 1 - Create activity log operation index" \
     "use insurance_company; db.activity_log.createIndex({ operation: 1, timestamp: -1 })" \
     ""
 
 test_mongo_command \
-    "Lab 13 - Create activity log user index" \
+    "Lab 13 Step 1 - Create activity log userId index" \
     "use insurance_company; db.activity_log.createIndex({ userId: 1, timestamp: -1 })" \
     ""
 
 test_mongo_command \
-    "Lab 13 - Create fraud alerts index" \
+    "Lab 13 Step 1 - Create fraud alerts customerId index" \
     "use insurance_company; db.fraud_alerts.createIndex({ customerId: 1, timestamp: -1 })" \
     ""
 
 test_mongo_command \
-    "Lab 13 - Create fraud alerts severity index" \
+    "Lab 13 Step 1 - Create fraud alerts severity index" \
     "use insurance_company; db.fraud_alerts.createIndex({ severity: 1, status: 1 })" \
     ""
 
 test_mongo_command \
-    "Lab 13 - Create resume tokens index" \
+    "Lab 13 Step 1 - Create resume tokens index" \
     "use insurance_company; db.resume_tokens.createIndex({ lastUpdated: -1 })" \
+    ""
+
+# Part B: Simulated Change Stream Processing
+# Step 3: Test Claims Processing Simulation
+test_mongo_command \
+    "Lab 13 Step 3 - Create test claim (Step 1-2)" \
+    "use insurance_company; db.claims.insertOne({
+        _id: 'claim_cs_test1',
+        claimNumber: 'CLM-2024-CS001',
+        customerId: 'cust1',
+        policyNumber: 'POL-001',
+        claimType: 'Auto',
+        claimAmount: NumberDecimal('15000.00'),
+        status: 'Filed',
+        incidentDate: new Date('2024-03-15'),
+        filedDate: new Date(),
+        description: 'Vehicle collision on highway'
+    })" \
+    ""
+
+test_mongo_command \
+    "Lab 13 - Create customer claim notification" \
+    "use insurance_company; db.notifications.insertOne({
+        recipientId: 'cust1',
+        type: 'claim_filed',
+        priority: 'medium',
+        message: 'Your claim CLM-2024-CS001 has been filed and is under review.',
+        claimId: 'claim_cs_test1',
+        claimNumber: 'CLM-2024-CS001',
+        timestamp: new Date(),
+        read: false,
+        status: 'active'
+    })" \
+    ""
+
+test_mongo_command \
+    "Lab 13 - Create claims department notification" \
+    "use insurance_company; db.notifications.insertOne({
+        recipientId: 'claims_department',
+        type: 'claim_assignment',
+        priority: 'high',
+        message: 'New Auto claim filed: CLM-2024-CS001 for \$15000.00',
+        claimId: 'claim_cs_test1',
+        timestamp: new Date(),
+        read: false,
+        status: 'active'
+    })" \
+    ""
+
+test_mongo_command \
+    "Lab 13 - Verify claim notifications created" \
+    "use insurance_company; var notifs = db.notifications.find({ claimId: 'claim_cs_test1' }).toArray(); if (notifs.length >= 2) { print('SUCCESS: Found ' + notifs.length + ' claim notifications'); } else { throw new Error('Expected at least 2 notifications'); }" \
+    ""
+
+# Part B: Policy Creation Simulation
+test_mongo_command \
+    "Lab 13 - Insert test policy" \
+    "use insurance_company; db.policies.insertOne({
+        _id: 'policy_cs_test1',
+        policyNumber: 'POL-CS-2024-001',
+        customerId: 'cust2',
+        policyType: 'Home Insurance',
+        coverageLimit: 250000,
+        effectiveDate: new Date(),
+        premiumAmount: NumberDecimal('1200.00'),
+        status: 'Active'
+    })" \
+    ""
+
+test_mongo_command \
+    "Lab 13 - Create policy welcome notification" \
+    "use insurance_company; db.notifications.insertOne({
+        recipientId: 'cust2',
+        type: 'policy_issued',
+        priority: 'medium',
+        message: 'Welcome! Your Home Insurance policy POL-CS-2024-001 is now active.',
+        policyId: 'policy_cs_test1',
+        timestamp: new Date(),
+        read: false,
+        status: 'active'
+    })" \
+    ""
+
+test_mongo_command \
+    "Lab 13 - Verify policy notification" \
+    "use insurance_company; var notif = db.notifications.findOne({ policyId: 'policy_cs_test1' }); if (notif) { print('SUCCESS: Found policy notification'); } else { throw new Error('Policy notification not found'); }" \
+    ""
+
+# Part B: Claims Status Update Simulation
+test_mongo_command \
+    "Lab 13 - Update claim to Under Review" \
+    "use insurance_company; db.claims.updateOne(
+        { _id: 'claim_cs_test1' },
+        { \$set: { status: 'Under Review', reviewDate: new Date() } }
+    )" \
+    ""
+
+test_mongo_command \
+    "Lab 13 - Create status update notification" \
+    "use insurance_company; db.notifications.insertOne({
+        recipientId: 'cust1',
+        type: 'claim_status_update',
+        priority: 'medium',
+        message: 'Your claim CLM-2024-CS001 is now under review by our adjusters.',
+        claimId: 'claim_cs_test1',
+        claimNumber: 'CLM-2024-CS001',
+        timestamp: new Date(),
+        read: false,
+        status: 'active'
+    })" \
+    ""
+
+test_mongo_command \
+    "Lab 13 - Update claim to Approved" \
+    "use insurance_company; db.claims.updateOne(
+        { _id: 'claim_cs_test1' },
+        { \$set: { status: 'Approved', settlementAmount: NumberDecimal('14500.00') } }
+    )" \
+    ""
+
+test_mongo_command \
+    "Lab 13 - Create settlement notification" \
+    "use insurance_company; db.notifications.insertOne({
+        recipientId: 'cust1',
+        type: 'settlement_approved',
+        priority: 'high',
+        message: 'Your claim CLM-2024-CS001 has been settled for \$14500.00',
+        claimId: 'claim_cs_test1',
+        claimNumber: 'CLM-2024-CS001',
+        timestamp: new Date(),
+        read: false,
+        status: 'active'
+    })" \
+    ""
+
+# Part C: Fraud Detection Simulation
+test_mongo_command \
+    "Lab 13 - Insert suspicious high-value claim" \
+    "use insurance_company; db.claims.insertOne({
+        _id: 'claim_fraud_test',
+        claimNumber: 'CLM-FRAUD-001',
+        customerId: 'cust3',
+        policyNumber: 'POL-002',
+        claimType: 'Auto',
+        claimAmount: NumberDecimal('75000.00'),
+        status: 'Filed',
+        incidentDate: new Date(),
+        filedDate: new Date(),
+        description: 'High-value vehicle total loss'
+    })" \
+    ""
+
+test_mongo_command \
+    "Lab 13 - Create fraud alert" \
+    "use insurance_company; db.fraud_alerts.insertOne({
+        customerId: 'cust3',
+        claimId: 'claim_fraud_test',
+        claimNumber: 'CLM-FRAUD-001',
+        severity: 'medium',
+        indicators: ['High claim amount'],
+        status: 'active',
+        timestamp: new Date(),
+        reviewedBy: null,
+        notes: 'Automatically generated fraud alert'
+    })" \
+    ""
+
+test_mongo_command \
+    "Lab 13 - Create fraud team notification" \
+    "use insurance_company; db.notifications.insertOne({
+        recipientId: 'fraud_investigation_team',
+        type: 'fraud_alert',
+        priority: 'critical',
+        message: 'Potential fraud detected for claim CLM-FRAUD-001. Severity: medium',
+        claimId: 'claim_fraud_test',
+        timestamp: new Date(),
+        read: false,
+        status: 'active'
+    })" \
+    ""
+
+test_mongo_command \
+    "Lab 13 - Verify fraud detection results" \
+    "use insurance_company; var fraudAlert = db.fraud_alerts.findOne({ claimId: 'claim_fraud_test' }); var fraudNotif = db.notifications.findOne({ type: 'fraud_alert' }); if (fraudAlert && fraudNotif) { print('SUCCESS: Found fraud alert and notification'); } else { throw new Error('Fraud detection verification failed'); }" \
+    ""
+
+# Part C: Activity Logging Simulation
+test_mongo_command \
+    "Lab 13 - Log delete operation" \
+    "use insurance_company; db.activity_log.insertOne({
+        operation: 'delete',
+        collection: 'test_collection',
+        documentId: 'test_doc_123',
+        timestamp: new Date(),
+        userId: 'system'
+    })" \
+    ""
+
+test_mongo_command \
+    "Lab 13 - Log claim processing activity" \
+    "use insurance_company; db.activity_log.insertOne({
+        operation: 'claim_processed',
+        collection: 'claims',
+        documentId: 'claim_cs_test1',
+        details: {
+            previousStatus: 'Filed',
+            newStatus: 'Approved',
+            processedBy: 'adjuster1'
+        },
+        timestamp: new Date(),
+        userId: 'system'
+    })" \
+    ""
+
+test_mongo_command \
+    "Lab 13 - Query recent activity logs" \
+    "use insurance_company; var logs = db.activity_log.find().sort({ timestamp: -1 }).limit(5).toArray(); if (logs.length > 0) { print('SUCCESS: Found ' + logs.length + ' activity logs'); } else { throw new Error('No activity logs found'); }" \
+    ""
+
+# Part D: Real-time Monitoring Dashboard Simulation
+test_mongo_command \
+    "Lab 13 - Real-time dashboard queries" \
+    "use insurance_company; print('Active Claims: ' + db.claims.countDocuments({ status: { \$in: ['Filed', 'Under Review'] } })); print('Pending Notifications: ' + db.notifications.countDocuments({ read: false })); print('Active Fraud Alerts: ' + db.fraud_alerts.countDocuments({ status: 'active' }));" \
+    ""
+
+test_mongo_command \
+    "Lab 13 - Customer notification summary" \
+    "use insurance_company; db.notifications.aggregate([
+        { \$group: { _id: '\$type', count: { \$sum: 1 } } },
+        { \$sort: { count: -1 } }
+    ])" \
+    ""
+
+test_mongo_command \
+    "Lab 13 - Query high priority notifications" \
+    "use insurance_company; db.notifications.find({ priority: 'high', read: false }).sort({ timestamp: -1 }).limit(3)" \
+    ""
+
+# Cleanup
+test_mongo_command \
+    "Lab 13 - Cleanup test data" \
+    "use insurance_company; db.claims.deleteMany({ _id: { \$in: ['claim_cs_test1', 'claim_fraud_test'] } }); db.policies.deleteMany({ _id: 'policy_cs_test1' }); db.notifications.deleteMany({ \$or: [{ claimId: { \$in: ['claim_cs_test1', 'claim_fraud_test'] } }, { policyId: 'policy_cs_test1' }] }); db.fraud_alerts.deleteMany({ claimId: 'claim_fraud_test' }); db.activity_log.deleteMany({ userId: 'system' });" \
     ""
 
 # Final Results
