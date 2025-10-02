@@ -947,6 +947,74 @@ test_mongo_command \
     "use insurance_company; var start = new Date(); var customerCount = db.customers.countDocuments({ 'address.state': 'CA' }); var end = new Date(); print('Current (non-sharded): ' + customerCount + ' CA customers found in ' + (end - start) + 'ms'); print('Sharded scenario: Would be faster with geographic sharding');" \
     ""
 
+# Part B: Sharding Strategy Deep Dive
+# Step 6: Load Test Data (Using separate collections to avoid conflicts)
+test_mongo_command \
+    "Lab 12 Step 6 - Generate test customer data for sharding" \
+    "use insurance_company;
+    var customerTypes = ['Individual', 'Business'];
+    var states = ['CA', 'NY', 'TX', 'FL', 'IL'];
+    for (let i = 1; i <= 100; i++) {
+        var customerType = customerTypes[Math.floor(Math.random() * customerTypes.length)];
+        var state = states[Math.floor(Math.random() * states.length)];
+        db.test_customers_sharding.insertOne({
+            _id: 'test_cust' + i,
+            name: customerType === 'Individual' ? 'Customer ' + i : 'Business Corp ' + i,
+            type: customerType,
+            state: state
+        });
+    }
+    print('SUCCESS: Generated 100 test customers');" \
+    ""
+
+test_mongo_command \
+    "Lab 12 Step 6 - Verify test customer data" \
+    "use insurance_company; var count = db.test_customers_sharding.countDocuments(); if (count >= 100) { print('SUCCESS: Found ' + count + ' test customers'); } else { throw new Error('Expected at least 100 test customers'); }" \
+    ""
+
+test_mongo_command \
+    "Lab 12 Step 6 - Generate test policy data for sharding" \
+    "use insurance_company;
+    var policyTypes = ['Auto', 'Property', 'Life', 'Commercial'];
+    for (let i = 1; i <= 100; i++) {
+        var policyType = policyTypes[Math.floor(Math.random() * policyTypes.length)];
+        db.test_policies_sharding.insertOne({
+            _id: 'test_policy' + i,
+            policyNumber: policyType.toUpperCase() + '-TEST-' + String(i).padStart(6, '0'),
+            policyType: policyType
+        });
+    }
+    print('SUCCESS: Generated 100 test policies');" \
+    ""
+
+test_mongo_command \
+    "Lab 12 Step 6 - Verify test policy data" \
+    "use insurance_company; var count = db.test_policies_sharding.countDocuments(); if (count >= 100) { print('SUCCESS: Found ' + count + ' test policies'); } else { throw new Error('Expected at least 100 test policies'); }" \
+    ""
+
+# Step 7: Analyze Distribution
+test_mongo_command \
+    "Lab 12 Step 7 - Analyze test customer distribution by state" \
+    "use insurance_company; var distribution = db.test_customers_sharding.aggregate([
+        { \$group: { _id: '\$state', count: { \$sum: 1 } } },
+        { \$sort: { count: -1 } }
+    ]).toArray(); if (distribution.length > 0) { print('SUCCESS: Found distribution across ' + distribution.length + ' states'); } else { throw new Error('No distribution data'); }" \
+    ""
+
+test_mongo_command \
+    "Lab 12 Step 7 - Analyze test policy distribution by type" \
+    "use insurance_company; var distribution = db.test_policies_sharding.aggregate([
+        { \$group: { _id: '\$policyType', count: { \$sum: 1 } } },
+        { \$sort: { count: -1 } }
+    ]).toArray(); if (distribution.length > 0) { print('SUCCESS: Found ' + distribution.length + ' policy types'); } else { throw new Error('No distribution data'); }" \
+    ""
+
+# Cleanup test data
+test_mongo_command \
+    "Lab 12 - Cleanup test sharding data" \
+    "use insurance_company; db.test_customers_sharding.drop(); db.test_policies_sharding.drop(); db.test_claims_sharding.drop(); db.test_agents_sharding.drop(); print('SUCCESS: Cleaned up test data');" \
+    ""
+
 # Part C: Zone Sharding and Management
 # Step 8: Zone Sharding Concepts (Simulation)
 test_mongo_command \

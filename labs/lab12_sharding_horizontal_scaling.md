@@ -348,12 +348,14 @@ print("3. Simulate query routing")
 print("4. Test index strategies for sharded queries")
 ```
 
-### Step 6: Load Test Data
+### Step 6: Load Test Data (Optional - Data Already Loaded)
 
-**Generate Customer Data (Hashed Sharding):**
+**Note:** The comprehensive data loader has already populated the insurance_company database with customer, policy, claim, and agent data. This step is optional and shows how you would generate additional test data if needed.
+
+**If you want to generate additional test data, use a separate collection:**
 ```javascript
-// Generate customers for hashed distribution
-print("Generating customer data...");
+// Generate additional test customers for sharding simulation
+print("Generating additional test customer data...");
 var customerTypes = ["Individual", "Business"];
 var states = ["CA", "NY", "TX", "FL", "IL", "PA", "OH", "GA", "NC", "MI"];
 
@@ -361,8 +363,8 @@ for (let i = 1; i <= 1000; i++) {
   var customerType = customerTypes[Math.floor(Math.random() * customerTypes.length)];
   var state = states[Math.floor(Math.random() * states.length)];
 
-  db.customers.insertOne({
-    _id: "cust" + i,
+  db.test_customers_sharding.insertOne({
+    _id: "test_cust" + i,
     name: customerType === "Individual" ? `Customer ${i}` : `Business Corp ${i}`,
     email: `customer${i}@example.com`,
     phone: `555-${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`,
@@ -375,15 +377,23 @@ for (let i = 1; i <= 1000; i++) {
   });
 
   if (i % 200 === 0) {
-    print(`Inserted ${i} customers`);
+    print(`Inserted ${i} test customers`);
   }
 }
 ```
 
-**Generate Policy Data (Range Sharding):**
+**Or simply skip this step and use the existing data:**
 ```javascript
-// Generate policies for range-based distribution
-print("Generating policy data...");
+print("Using existing customer data from comprehensive loader");
+print("Customer count: " + db.customers.countDocuments());
+print("Policy count: " + db.policies.countDocuments());
+print("Claim count: " + db.claims.countDocuments());
+```
+
+**Generate Policy Data (Optional - Range Sharding):**
+```javascript
+// Generate additional test policies for range-based distribution
+print("Generating additional test policy data...");
 var regions = ["Northeast", "Southeast", "Midwest", "Southwest", "West"];
 var policyTypes = ["Auto", "Property", "Life", "Commercial", "Health"];
 var states = ["CA", "NY", "TX", "FL", "IL", "PA", "OH", "GA", "NC", "MI"];
@@ -392,7 +402,7 @@ for (let i = 1; i <= 1500; i++) {
   var region = regions[Math.floor(Math.random() * regions.length)];
   var policyType = policyTypes[Math.floor(Math.random() * policyTypes.length)];
   var state = states[Math.floor(Math.random() * states.length)];
-  var customerId = "cust" + Math.floor(Math.random() * 1000 + 1);
+  var customerId = "test_cust" + Math.floor(Math.random() * 1000 + 1);
 
   var coverageLimits = {
     "Auto": [25000, 50000, 100000, 250000],
@@ -405,9 +415,9 @@ for (let i = 1; i <= 1500; i++) {
   var coverageLimit = coverageLimits[policyType][Math.floor(Math.random() * coverageLimits[policyType].length)];
   var premium = coverageLimit * (0.001 + Math.random() * 0.004); // 0.1% to 0.5% of coverage
 
-  db.policies.insertOne({
-    _id: "policy" + i,
-    policyNumber: policyType.toUpperCase() + "-" + String(i).padStart(6, '0'),
+  db.test_policies_sharding.insertOne({
+    _id: "test_policy" + i,
+    policyNumber: policyType.toUpperCase() + "-TEST-" + String(i).padStart(6, '0'),
     customerId: customerId,
     region: region,
     state: state,
@@ -427,10 +437,10 @@ for (let i = 1; i <= 1500; i++) {
 }
 ```
 
-**Generate Claims Data (Geographic Sharding):**
+**Generate Claims Data (Optional - Geographic Sharding):**
 ```javascript
-// Generate claims for geographic distribution
-print("Generating claims data...");
+// Generate additional test claims for geographic distribution
+print("Generating additional test claims data...");
 var states = ["CA", "NY", "TX", "FL", "IL", "PA", "OH", "GA", "NC", "MI"];
 var claimTypes = ["Auto Accident", "Property Damage", "Theft", "Fire", "Medical", "Liability"];
 var statuses = ["Filed", "Under Review", "Investigating", "Approved", "Denied", "Settled"];
@@ -439,15 +449,15 @@ for (let i = 1; i <= 800; i++) {
   var state = states[Math.floor(Math.random() * states.length)];
   var claimType = claimTypes[Math.floor(Math.random() * claimTypes.length)];
   var status = statuses[Math.floor(Math.random() * statuses.length)];
-  var customerId = "cust" + Math.floor(Math.random() * 1000 + 1);
-  var policyId = "policy" + Math.floor(Math.random() * 1500 + 1);
+  var customerId = "test_cust" + Math.floor(Math.random() * 1000 + 1);
+  var policyId = "test_policy" + Math.floor(Math.random() * 1500 + 1);
 
   var claimAmount = Math.round((Math.random() * 50000 + 500) * 100) / 100;
   var settlementAmount = status === "Settled" ? Math.round(claimAmount * (0.7 + Math.random() * 0.3) * 100) / 100 : null;
 
-  db.claims.insertOne({
-    _id: "claim" + i,
-    claimNumber: "CLM-" + new Date().getFullYear() + "-" + String(i).padStart(6, '0'),
+  db.test_claims_sharding.insertOne({
+    _id: "test_claim" + i,
+    claimNumber: "CLM-TEST-" + new Date().getFullYear() + "-" + String(i).padStart(6, '0'),
     customerId: customerId,
     policyId: policyId,
     state: state,
@@ -467,15 +477,15 @@ for (let i = 1; i <= 800; i++) {
   }
 }
 
-// Generate agent data for territory-based sharding
-print("Generating agent data...");
+// Generate additional test agent data for territory-based sharding
+print("Generating additional test agent data...");
 var territories = ["North-CA", "South-CA", "NYC", "Upstate-NY", "Dallas-TX", "Houston-TX", "Miami-FL", "Tampa-FL"];
 for (let i = 1; i <= 150; i++) {
   var territory = territories[Math.floor(Math.random() * territories.length)];
 
-  db.agents.insertOne({
+  db.test_agents_sharding.insertOne({
     territory: territory,
-    agentId: "agent" + i,
+    agentId: "test_agent" + i,
     name: `Agent ${i}`,
     email: `agent${i}@insurance.com`,
     phone: `555-${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`,

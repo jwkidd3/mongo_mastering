@@ -4,8 +4,6 @@
 
 ## Prerequisites: Environment Setup
 
-### Step 1: Set Up MongoDB Environment
-
 **⚠️ Only run if MongoDB environment is not already running**
 
 From the project root directory, use the course's standardized setup scripts:
