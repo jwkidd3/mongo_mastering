@@ -34,13 +34,7 @@ mongosh < data/comprehensive_data_loader.js
 
 ### Step 1: Examine Current Replica Set Configuration
 
-**Using MongoDB Compass:**
-1. Connection String: `mongodb://localhost:27017/?replicaSet=rs0`
-2. Click **"Connect"**
-3. Navigate to `admin` database → `system.replset` collection
-4. View the current replica set configuration document
-
-**Using MongoSH to explore the existing setup:**
+**Using MongoSH to explore the replica set:**
 ```javascript
 // Connect to the replica set and examine configuration
 rs.status()
@@ -69,9 +63,18 @@ var status = rs.status();
 
 ```javascript
 // Step 2: Display member information
-print("Member 1: " + status.members[0].name + " - " + status.members[0].stateStr);
-print("Member 2: " + status.members[1].name + " - " + status.members[1].stateStr);
-print("Member 3: " + status.members[2].name + " - " + status.members[2].stateStr);
+if (status && status.members && status.members.length >= 3) {
+    print("Member 1: " + status.members[0].name + " - " + status.members[0].stateStr);
+    print("Member 2: " + status.members[1].name + " - " + status.members[1].stateStr);
+    print("Member 3: " + status.members[2].name + " - " + status.members[2].stateStr);
+} else {
+    print("Warning: Expected 3 replica set members but found " + (status && status.members ? status.members.length : "none"));
+    if (status && status.members) {
+        status.members.forEach((member, index) => {
+            print("Member " + (index + 1) + ": " + member.name + " - " + member.stateStr);
+        });
+    }
+}
 ```
 
 ```javascript
@@ -183,48 +186,68 @@ var config = rs.conf();
 
 ```javascript
 // Step 3: Display basic set information
-print("Set name: " + status.set);
-print("Total members: " + status.members.length);
-print("Majority needed for elections: " + (Math.floor(status.members.length / 2) + 1));
+if (status && status.set) {
+    print("Set name: " + status.set);
+    if (status.members) {
+        print("Total members: " + status.members.length);
+        print("Majority needed for elections: " + (Math.floor(status.members.length / 2) + 1));
+    } else {
+        print("No members found in replica set status");
+    }
+} else {
+    print("No replica set status available");
+}
 print("");
 ```
 
 ```javascript
 // Step 4: Check member 1 status and configuration
-var member1 = status.members[0];
-var member1Config = config.members[0];
-print("Member: " + member1.name);
-print("  State: " + member1.stateStr);
-print("  Health: " + member1.health);
-print("  Can become primary: " + (member1Config.priority > 0 ? "Yes" : "No"));
-print("  Can vote: " + (member1Config.votes > 0 ? "Yes" : "No"));
-if (member1.state === 1) print("  *** CURRENT PRIMARY ***");
+if (status && status.members && status.members.length > 0 && config && config.members && config.members.length > 0) {
+    var member1 = status.members[0];
+    var member1Config = config.members[0];
+    print("Member: " + member1.name);
+    print("  State: " + member1.stateStr);
+    print("  Health: " + member1.health);
+    print("  Can become primary: " + (member1Config.priority > 0 ? "Yes" : "No"));
+    print("  Can vote: " + (member1Config.votes > 0 ? "Yes" : "No"));
+    if (member1.state === 1) print("  *** CURRENT PRIMARY ***");
+} else {
+    print("Member 1: Not available");
+}
 print("");
 ```
 
 ```javascript
 // Step 5: Check member 2 status and configuration
-var member2 = status.members[1];
-var member2Config = config.members[1];
-print("Member: " + member2.name);
-print("  State: " + member2.stateStr);
-print("  Health: " + member2.health);
-print("  Can become primary: " + (member2Config.priority > 0 ? "Yes" : "No"));
-print("  Can vote: " + (member2Config.votes > 0 ? "Yes" : "No"));
-if (member2.state === 1) print("  *** CURRENT PRIMARY ***");
+if (status && status.members && status.members.length > 1 && config && config.members && config.members.length > 1) {
+    var member2 = status.members[1];
+    var member2Config = config.members[1];
+    print("Member: " + member2.name);
+    print("  State: " + member2.stateStr);
+    print("  Health: " + member2.health);
+    print("  Can become primary: " + (member2Config.priority > 0 ? "Yes" : "No"));
+    print("  Can vote: " + (member2Config.votes > 0 ? "Yes" : "No"));
+    if (member2.state === 1) print("  *** CURRENT PRIMARY ***");
+} else {
+    print("Member 2: Not available");
+}
 print("");
 ```
 
 ```javascript
 // Step 6: Check member 3 status and configuration
-var member3 = status.members[2];
-var member3Config = config.members[2];
-print("Member: " + member3.name);
-print("  State: " + member3.stateStr);
-print("  Health: " + member3.health);
-print("  Can become primary: " + (member3Config.priority > 0 ? "Yes" : "No"));
-print("  Can vote: " + (member3Config.votes > 0 ? "Yes" : "No"));
-if (member3.state === 1) print("  *** CURRENT PRIMARY ***");
+if (status && status.members && status.members.length > 2 && config && config.members && config.members.length > 2) {
+    var member3 = status.members[2];
+    var member3Config = config.members[2];
+    print("Member: " + member3.name);
+    print("  State: " + member3.stateStr);
+    print("  Health: " + member3.health);
+    print("  Can become primary: " + (member3Config.priority > 0 ? "Yes" : "No"));
+    print("  Can vote: " + (member3Config.votes > 0 ? "Yes" : "No"));
+    if (member3.state === 1) print("  *** CURRENT PRIMARY ***");
+} else {
+    print("Member 3: Not available");
+}
 print("");
 ```
 
@@ -244,27 +267,15 @@ print("- No new primary can be elected");
 print("- Service degraded until members recover");
 ```
 
-**In MongoDB Compass:**
-1. Keep Compass connected to the replica set
-2. Watch the topology view for member status
-3. Use Performance tab to monitor replication metrics
-4. Note how connection status shows current primary
+**Note:** This demonstrates automatic failover concepts. In production environments, monitoring tools would track these member state changes and trigger alerts for operational teams.
 
 ### Step 4: Read Preferences Configuration
 
-**Create Multiple Connections in Compass:**
+**Connection String Examples for Different Read Preferences:**
 
-1. **Primary Only Connection:**
-   - Connection String: `mongodb://localhost:27017,localhost:27018,localhost:27019/?replicaSet=rs0&readPreference=primary`
-   - Favorite Name: "Primary Only"
-
-2. **Secondary Preferred Connection:**
-   - Connection String: `mongodb://localhost:27017,localhost:27018,localhost:27019/?replicaSet=rs0&readPreference=secondaryPreferred`
-   - Favorite Name: "Secondary Preferred"
-
-3. **Nearest Connection:**
-   - Connection String: `mongodb://localhost:27017,localhost:27018,localhost:27019/?replicaSet=rs0&readPreference=nearest`
-   - Favorite Name: "Nearest"
+1. **Primary Only:** `mongodb://localhost:27017,localhost:27018,localhost:27019/?replicaSet=rs0&readPreference=primary`
+2. **Secondary Preferred:** `mongodb://localhost:27017,localhost:27018,localhost:27019/?replicaSet=rs0&readPreference=secondaryPreferred`
+3. **Nearest:** `mongodb://localhost:27017,localhost:27018,localhost:27019/?replicaSet=rs0&readPreference=nearest`
 
 **Test Read Preferences via MongoSH:**
 ```javascript
@@ -372,20 +383,17 @@ print("- Financial reports: Use majority read concern for accuracy")
 print("- Real-time dashboards: Use local read concern for speed")
 ```
 
-**Monitor in Compass:**
-- Watch the Performance tab during write operations
-- Observe connection status showing replica set health
-- Use the Real Time tab to see operation timing
-- Note how write acknowledgment timing varies with different concerns
+**Monitoring Write Concerns:**
+Use `db.runCommand({getLastError: 1})` to check write acknowledgment status and timing in production environments.
 
 ## Part C: Monitoring and Maintenance (10 minutes)
 
 ### Step 6: Comprehensive Monitoring
 
-**Compass Monitoring Features:**
-1. **Performance Tab:** Operations/sec, read/write distribution, replication lag
-2. **Real-time Metrics:** Memory usage, connections, network I/O
-3. **Topology View:** Visual cluster health representation
+**Production Monitoring Considerations:**
+1. **Performance Metrics:** Operations/sec, read/write distribution, replication lag
+2. **System Metrics:** Memory usage, connections, network I/O
+3. **Health Monitoring:** Member state tracking and alerting
 
 **MongoSH Monitoring Script for Insurance Operations:**
 
@@ -408,38 +416,50 @@ print("\n--- Branch Data Center Status ---");
 
 ```javascript
 // Step 4: Check member 1 status with business context
-var member1 = status.members[0];
-var role1 = "";
-if (member1.state === 1) role1 = "[PRIMARY - Main Operations]";
-else if (member1.state === 2) role1 = "[SECONDARY - Branch/Analytics]";
-else if (member1.state === 7) role1 = "[ARBITER - Voting Only]";
-print(member1.name + ": " + member1.stateStr + " " + role1 + " (Health: " + member1.health + ")");
-if (member1.optimeDate) print("  Last Optime: " + member1.optimeDate);
-if (member1.lastHeartbeat) print("  Last Heartbeat: " + member1.lastHeartbeat);
+if (status && status.members && status.members.length > 0) {
+    var member1 = status.members[0];
+    var role1 = "";
+    if (member1.state === 1) role1 = "[PRIMARY - Main Operations]";
+    else if (member1.state === 2) role1 = "[SECONDARY - Branch/Analytics]";
+    else if (member1.state === 7) role1 = "[ARBITER - Voting Only]";
+    print(member1.name + ": " + member1.stateStr + " " + role1 + " (Health: " + member1.health + ")");
+    if (member1.optimeDate) print("  Last Optime: " + member1.optimeDate);
+    if (member1.lastHeartbeat) print("  Last Heartbeat: " + member1.lastHeartbeat);
+} else {
+    print("Member 1: Not available");
+}
 ```
 
 ```javascript
 // Step 5: Check member 2 status with business context
-var member2 = status.members[1];
-var role2 = "";
-if (member2.state === 1) role2 = "[PRIMARY - Main Operations]";
-else if (member2.state === 2) role2 = "[SECONDARY - Branch/Analytics]";
-else if (member2.state === 7) role2 = "[ARBITER - Voting Only]";
-print(member2.name + ": " + member2.stateStr + " " + role2 + " (Health: " + member2.health + ")");
-if (member2.optimeDate) print("  Last Optime: " + member2.optimeDate);
-if (member2.lastHeartbeat) print("  Last Heartbeat: " + member2.lastHeartbeat);
+if (status && status.members && status.members.length > 1) {
+    var member2 = status.members[1];
+    var role2 = "";
+    if (member2.state === 1) role2 = "[PRIMARY - Main Operations]";
+    else if (member2.state === 2) role2 = "[SECONDARY - Branch/Analytics]";
+    else if (member2.state === 7) role2 = "[ARBITER - Voting Only]";
+    print(member2.name + ": " + member2.stateStr + " " + role2 + " (Health: " + member2.health + ")");
+    if (member2.optimeDate) print("  Last Optime: " + member2.optimeDate);
+    if (member2.lastHeartbeat) print("  Last Heartbeat: " + member2.lastHeartbeat);
+} else {
+    print("Member 2: Not available");
+}
 ```
 
 ```javascript
 // Step 6: Check member 3 status with business context
-var member3 = status.members[2];
-var role3 = "";
-if (member3.state === 1) role3 = "[PRIMARY - Main Operations]";
-else if (member3.state === 2) role3 = "[SECONDARY - Branch/Analytics]";
-else if (member3.state === 7) role3 = "[ARBITER - Voting Only]";
-print(member3.name + ": " + member3.stateStr + " " + role3 + " (Health: " + member3.health + ")");
-if (member3.optimeDate) print("  Last Optime: " + member3.optimeDate);
-if (member3.lastHeartbeat) print("  Last Heartbeat: " + member3.lastHeartbeat);
+if (status && status.members && status.members.length > 2) {
+    var member3 = status.members[2];
+    var role3 = "";
+    if (member3.state === 1) role3 = "[PRIMARY - Main Operations]";
+    else if (member3.state === 2) role3 = "[SECONDARY - Branch/Analytics]";
+    else if (member3.state === 7) role3 = "[ARBITER - Voting Only]";
+    print(member3.name + ": " + member3.stateStr + " " + role3 + " (Health: " + member3.health + ")");
+    if (member3.optimeDate) print("  Last Optime: " + member3.optimeDate);
+    if (member3.lastHeartbeat) print("  Last Heartbeat: " + member3.lastHeartbeat);
+} else {
+    print("Member 3: Not available");
+}
 ```
 
 ```javascript

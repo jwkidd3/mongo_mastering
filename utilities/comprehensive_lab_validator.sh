@@ -671,13 +671,11 @@ test_mongo_command \
 
 test_mongo_command \
     "Lab 9 - Query claims by adjuster name" \
-    "use insurance_company; db.insurance_claims.find({\"adjuster.name\": \"Sarah Johnson\"})" \
-    ""
+    "use insurance_company; db.insurance_claims.find({\"adjuster.name\": \"Sarah Johnson\"})"
 
 test_mongo_command \
     "Lab 9 - Aggregate claims by status" \
-    "use insurance_company; db.insurance_claims.aggregate([{\$group: {_id: \"\$status\", totalAmount: {\$sum: \"\$estimatedAmount\"}, count: {\$sum: 1}}}])" \
-    ""
+    "use insurance_company; db.insurance_claims.aggregate([{\$group: {_id: \"\$status\", totalAmount: {\$sum: \"\$estimatedAmount\"}, count: {\$sum: 1}}}])"
 
 test_mongo_command \
     "Lab 9 - Query claims with specific incident types" \
