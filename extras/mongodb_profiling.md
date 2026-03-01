@@ -487,13 +487,13 @@ db.setProfilingLevel(1, { slowms: 100 })
 ```javascript
 // Script to monitor and alert on slow operations
 function checkSlowOperations() {
-  const recentSlowOps = db.system.profile.countDocuments({
+  var recentSlowOps = db.system.profile.countDocuments({
     ts: { $gte: new Date(Date.now() - 300000) }, // Last 5 minutes
     millis: { $gt: 1000 }  // >1 second
   });
   
   if (recentSlowOps > 10) {
-    print(`ALERT: ${recentSlowOps} slow operations in the last 5 minutes`);
+    print("ALERT: " + recentSlowOps + " slow operations in the last 5 minutes");
   }
   
   return recentSlowOps;
@@ -577,13 +577,13 @@ db.setProfilingLevel(1)
 ```javascript
 // Periodic profiling data analysis script
 function weeklyProfilingReport() {
-  const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  var oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   
   // Slowest operations
   print("=== SLOWEST OPERATIONS ===");
   db.system.profile.find({
     ts: { $gte: oneWeekAgo }
-  }).sort({ millis: -1 }).limit(10).forEach(doc => print(JSON.stringify(doc, null, 2)));
+  }).sort({ millis: -1 }).limit(10).forEach(function(doc) { print(JSON.stringify(doc, null, 2)); });
   
   // Most frequent slow operations
   print("\n=== MOST FREQUENT SLOW OPERATIONS ===");
@@ -601,7 +601,7 @@ function weeklyProfilingReport() {
     },
     { $sort: { count: -1 } },
     { $limit: 10 }
-  ]).forEach(doc => print(JSON.stringify(doc, null, 2)));
+  ]).forEach(function(doc) { print(JSON.stringify(doc, null, 2)); });
 }
 
 // Run weekly report

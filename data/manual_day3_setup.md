@@ -184,7 +184,7 @@ print("Completed customer creation.");
 // Create 2000 claims for range sharding
 var claims = [];
 var claimTypes = ["Auto", "Property", "Life", "Commercial"];
-var statuses = ["approved", "denied", "under_review", "pending", "closed"];
+var statuses = ["approved", "denied", "under_review", "pending", "investigating"];
 
 print("Creating 2000 claims for range sharding...");
 

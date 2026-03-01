@@ -86,7 +86,7 @@
    db.test_policies.find({ $text: { $search: "auto collision" } })
 
    // Or examine existing text index
-   db.policies.getIndexes().filter(idx => idx.textIndexVersion)
+   db.policies.getIndexes().forEach(function(idx) { if (idx.textIndexVersion) printjson(idx) })
    ```
 
 3. **Partial Indexes**

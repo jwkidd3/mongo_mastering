@@ -191,7 +191,7 @@
    db.policies.find({}, {"coverageDetails.deathBenefit": 1, policyNumber: 1})
 
    // Array element projection
-   db.policies.find({}, {policyNumber: 1, "coverageTypes.1": 1})
+   db.policies.find({}, {policyNumber: 1, coverageTypes: {$slice: [1, 1]}})
    ```
 
 2. **Sorting, Limiting, and Skipping**
@@ -213,7 +213,6 @@
    db.policies.find({policyType: "Auto"})
      .sort({annualPremium: -1})
      .limit(3)
-     .pretty()
    ```
 
 3. **Cursor Methods and Iteration**

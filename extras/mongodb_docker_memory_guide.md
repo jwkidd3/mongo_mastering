@@ -238,7 +238,7 @@ while true; do
     
     # MongoDB cache statistics
     MONGO_STATS=$(docker exec mongodb-course-memory mongosh --quiet --eval "
-        const stats = db.serverStatus().wiredTiger.cache;
+        var stats = db.serverStatus().wiredTiger.cache;
         print('WiredTiger Cache Stats:');
         print('- Current: ' + Math.round(stats['bytes currently in the cache'] / 1024 / 1024) + 'MB');
         print('- Maximum: ' + Math.round(stats['maximum bytes configured'] / 1024 / 1024) + 'MB');
@@ -269,32 +269,32 @@ db.runCommand({serverStatus: 1}).wiredTiger.cache
 
 // Check if data fits in memory
 function analyzeMemoryEfficiency() {
-    const serverStatus = db.serverStatus();
-    const cache = serverStatus.wiredTiger.cache;
-    
-    const currentCacheMB = Math.round(cache['bytes currently in the cache'] / 1024 / 1024);
-    const maxCacheMB = Math.round(cache['maximum bytes configured'] / 1024 / 1024);
-    const dirtyMB = Math.round(cache['tracked dirty bytes in the cache'] / 1024 / 1024);
-    
-    const cacheUtilization = (currentCacheMB / maxCacheMB * 100).toFixed(2);
-    const pagesRead = cache['pages read into cache'];
-    const pagesRequested = cache['pages requested from the cache'];
-    const hitRatio = ((pagesRequested - pagesRead) / pagesRequested * 100).toFixed(2);
-    
+    var serverStatus = db.serverStatus();
+    var cache = serverStatus.wiredTiger.cache;
+
+    var currentCacheMB = Math.round(cache['bytes currently in the cache'] / 1024 / 1024);
+    var maxCacheMB = Math.round(cache['maximum bytes configured'] / 1024 / 1024);
+    var dirtyMB = Math.round(cache['tracked dirty bytes in the cache'] / 1024 / 1024);
+
+    var cacheUtilization = (currentCacheMB / maxCacheMB * 100).toFixed(2);
+    var pagesRead = cache['pages read into cache'];
+    var pagesRequested = cache['pages requested from the cache'];
+    var hitRatio = ((pagesRequested - pagesRead) / pagesRequested * 100).toFixed(2);
+
     print('=== Memory Efficiency Analysis ===');
-    print(`Cache Utilization: ${cacheUtilization}% (${currentCacheMB}MB / ${maxCacheMB}MB)`);
-    print(`Dirty Data: ${dirtyMB}MB`);
-    print(`Cache Hit Ratio: ${hitRatio}%`);
-    print(`Pages Read from Disk: ${pagesRead.toLocaleString()}`);
-    
+    print('Cache Utilization: ' + cacheUtilization + '% (' + currentCacheMB + 'MB / ' + maxCacheMB + 'MB)');
+    print('Dirty Data: ' + dirtyMB + 'MB');
+    print('Cache Hit Ratio: ' + hitRatio + '%');
+    print('Pages Read from Disk: ' + pagesRead.toLocaleString());
+
     if (hitRatio < 95) {
-        print('⚠️  WARNING: Low cache hit ratio - consider increasing cache size');
+        print('WARNING: Low cache hit ratio - consider increasing cache size');
     }
     if (cacheUtilization > 95) {
-        print('⚠️  WARNING: Cache nearly full - monitor for evictions');
+        print('WARNING: Cache nearly full - monitor for evictions');
     }
     if (hitRatio > 98 && cacheUtilization < 80) {
-        print('✅ OPTIMAL: Working set fits comfortably in memory');
+        print('OPTIMAL: Working set fits comfortably in memory');
     }
 }
 
@@ -317,25 +317,25 @@ use coursedb;
 // Function to touch all collections to load into cache
 function preloadCourseData() {
     print('Preloading course data into memory...');
-    
-    const collections = db.runCommand("listCollections").cursor.firstBatch;
-    
-    collections.forEach(col => {
-        const collName = col.name;
-        print(`Loading ${collName}...`);
-        
+
+    var collections = db.runCommand("listCollections").cursor.firstBatch;
+
+    collections.forEach(function(col) {
+        var collName = col.name;
+        print('Loading ' + collName + '...');
+
         // Touch every document to ensure it's in cache
-        db[collName].find().forEach(() => {});
-        
+        db[collName].find().forEach(function() {});
+
         // Load all indexes
-        db[collName].getIndexes().forEach(index => {
-            print(`  - Index: ${index.name}`);
+        db[collName].getIndexes().forEach(function(index) {
+            print('  - Index: ' + index.name);
         });
-        
-        const stats = db[collName].stats();
-        print(`  - Documents: ${stats.count}, Size: ${Math.round(stats.size / 1024)}KB`);
+
+        var stats = db[collName].stats();
+        print('  - Documents: ' + stats.count + ', Size: ' + Math.round(stats.size / 1024) + 'KB');
     });
-    
+
     print('Preload complete!');
 }
 
@@ -344,16 +344,16 @@ preloadCourseData();
 
 // Verify data is in cache
 function verifyCacheStatus() {
-    const cache = db.serverStatus().wiredTiger.cache;
-    const currentMB = Math.round(cache['bytes currently in the cache'] / 1024 / 1024);
-    const maxMB = Math.round(cache['maximum bytes configured'] / 1024 / 1024);
-    
-    print(`\nCache Status: ${currentMB}MB / ${maxMB}MB used`);
-    
+    var cache = db.serverStatus().wiredTiger.cache;
+    var currentMB = Math.round(cache['bytes currently in the cache'] / 1024 / 1024);
+    var maxMB = Math.round(cache['maximum bytes configured'] / 1024 / 1024);
+
+    print('\nCache Status: ' + currentMB + 'MB / ' + maxMB + 'MB used');
+
     if (currentMB / maxMB > 0.8) {
-        print('✅ Good: Course data loaded in cache');
+        print('Good: Course data loaded in cache');
     } else {
-        print('⚠️  Cache utilization low - data may not be fully loaded');
+        print('Cache utilization low - data may not be fully loaded');
     }
 }
 
@@ -416,19 +416,19 @@ db.users.createIndex({email: 1}, {unique: true});
 // 1. Generate test data
 function generateCourseData() {
     print('Generating course test data...');
-    
-    const products = [];
-    const categories = ['Electronics', 'Books', 'Clothing', 'Home', 'Sports'];
-    
-    for (let i = 0; i < 10000; i++) {
+
+    var products = [];
+    var categories = ['Electronics', 'Books', 'Clothing', 'Home', 'Sports'];
+
+    for (var i = 0; i < 10000; i++) {
         products.push({
             _id: ObjectId(),
-            name: `Product ${i}`,
+            name: 'Product ' + i,
             category: categories[i % 5],
             price: Math.random() * 1000,
             inStock: Math.random() > 0.3,
-            tags: [`tag${i % 10}`, `tag${i % 20}`],
-            description: `Description for product ${i}`.repeat(10), // Make docs larger
+            tags: ['tag' + (i % 10), 'tag' + (i % 20)],
+            description: ('Description for product ' + i).repeat(10), // Make docs larger
             specs: {
                 weight: Math.random() * 10,
                 dimensions: [Math.random() * 100, Math.random() * 100, Math.random() * 100]
@@ -436,41 +436,41 @@ function generateCourseData() {
             createdAt: new Date()
         });
     }
-    
+
     db.products.insertMany(products);
-    print(`Inserted ${products.length} products`);
+    print('Inserted ' + products.length + ' products');
 }
 
 // 2. Performance test function
 function testQueryPerformance() {
     print('\n=== Query Performance Test ===');
-    
+
     // Test 1: Category queries (should be fast with index)
-    const start1 = Date.now();
-    const electronics = db.products.find({category: "Electronics"}).toArray();
-    const time1 = Date.now() - start1;
-    print(`Category query: ${electronics.length} docs in ${time1}ms`);
-    
+    var start1 = Date.now();
+    var electronics = db.products.find({category: "Electronics"}).toArray();
+    var time1 = Date.now() - start1;
+    print('Category query: ' + electronics.length + ' docs in ' + time1 + 'ms');
+
     // Test 2: Complex aggregation
-    const start2 = Date.now();
-    const categoryStats = db.products.aggregate([
+    var start2 = Date.now();
+    var categoryStats = db.products.aggregate([
         {$group: {_id: "$category", avgPrice: {$avg: "$price"}, count: {$sum: 1}}},
         {$sort: {avgPrice: -1}}
     ]).toArray();
-    const time2 = Date.now() - start2;
-    print(`Aggregation: ${categoryStats.length} groups in ${time2}ms`);
-    
+    var time2 = Date.now() - start2;
+    print('Aggregation: ' + categoryStats.length + ' groups in ' + time2 + 'ms');
+
     // Test 3: Text search
-    const start3 = Date.now();
-    const searchResults = db.products.find({$text: {$search: "product"}}).limit(100).toArray();
-    const time3 = Date.now() - start3;
-    print(`Text search: ${searchResults.length} docs in ${time3}ms`);
-    
+    var start3 = Date.now();
+    var searchResults = db.products.find({$text: {$search: "product"}}).limit(100).toArray();
+    var time3 = Date.now() - start3;
+    print('Text search: ' + searchResults.length + ' docs in ' + time3 + 'ms');
+
     // Performance analysis
     if (time1 < 50 && time2 < 100 && time3 < 100) {
-        print('✅ EXCELLENT: All queries performing optimally in memory');
+        print('EXCELLENT: All queries performing optimally in memory');
     } else {
-        print('⚠️  Some queries may be hitting disk - check cache configuration');
+        print('Some queries may be hitting disk - check cache configuration');
     }
 }
 

@@ -100,6 +100,7 @@
      annualPremium: 1500.00,
      isActive: true,
      coverageTypes: ["liability", "collision"],
+     claims: [4, 2, 1, 0, 0],
      riders: [],
      createdAt: new Date()
    })

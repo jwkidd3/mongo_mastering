@@ -207,7 +207,7 @@ Compare the performance of these equivalent queries using `.explain("executionSt
    ```javascript
    // Verify text search results contain search terms
    db.reviews.find({ $text: { $search: "excellent service claims process" } })
-     .forEach(doc => print("Rating: " + doc.rating + " - " + doc.reviewText.substring(0, 50) + "..."))
+     .forEach(function(doc) { print("Rating: " + doc.rating + " - " + doc.reviewText.substring(0, 50) + "...") })
    ```
 
 2. **Index Usage Verification**

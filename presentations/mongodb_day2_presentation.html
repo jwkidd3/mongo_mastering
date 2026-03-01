@@ -1050,7 +1050,7 @@ db.products.find().skip(10000).limit(20)  // Slower
       push: true
     }
   },
-  created_at: ISODate("2023-01-15")
+  createdAt: ISODate("2023-01-15")
 }</code></pre>
                     <div class="fragment">
                         <div class="highlight-box small-text">
@@ -1083,16 +1083,16 @@ db.products.find().skip(10000).limit(20)  // Slower
                             <pre><code class="language-javascript small-text">// Orders collection
 {
   _id: ObjectId("order1"),
-  user_id: ObjectId("user1"),
+  userId: ObjectId("user1"),
   items: [
     {
-      product_id: ObjectId("product1"),
+      productId: ObjectId("product1"),
       quantity: 1,
       price: 999.99
     }
   ],
   total: 999.99,
-  order_date: ISODate("2023-01-15")
+  orderDate: ISODate("2023-01-15")
 }</code></pre>
                         </div>
                     </div>

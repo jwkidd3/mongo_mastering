@@ -182,9 +182,9 @@ db.customers.insertMany([
       state: "TX",
       zipCode: "75202"
     },
-    riskLevel: "Medium",
+    isActive: true,
     joinDate: new Date("2022-01-15"),
-    status: "Active"
+    riskScore: NumberDecimal("5.2")
   },
   {
     _id: "customer_002",
@@ -201,9 +201,9 @@ db.customers.insertMany([
       state: "TX",
       zipCode: "75024"
     },
-    riskLevel: "Low",
+    isActive: true,
     joinDate: new Date("2022-02-01"),
-    status: "Active"
+    riskScore: NumberDecimal("2.8")
   },
   {
     _id: "customer_003",
@@ -220,9 +220,9 @@ db.customers.insertMany([
       state: "TX",
       zipCode: "76103"
     },
-    riskLevel: "High",
+    isActive: true,
     joinDate: new Date("2022-03-10"),
-    status: "Active"
+    riskScore: NumberDecimal("8.1")
   },
   {
     _id: "customer_004",
@@ -239,9 +239,9 @@ db.customers.insertMany([
       state: "TX",
       zipCode: "75062"
     },
-    riskLevel: "Low",
+    isActive: true,
     joinDate: new Date("2022-04-05"),
-    status: "Active"
+    riskScore: NumberDecimal("2.3")
   },
   {
     _id: "customer_005",
@@ -258,9 +258,9 @@ db.customers.insertMany([
       state: "TX",
       zipCode: "75150"
     },
-    riskLevel: "Medium",
+    isActive: true,
     joinDate: new Date("2022-05-20"),
-    status: "Active"
+    riskScore: NumberDecimal("5.7")
   },
   {
     _id: "customer_006",
@@ -277,9 +277,9 @@ db.customers.insertMany([
       state: "TX",
       zipCode: "75081"
     },
-    riskLevel: "Medium",
+    isActive: true,
     joinDate: new Date("2022-06-12"),
-    status: "Active"
+    riskScore: NumberDecimal("4.9")
   }
 ])
 ```
@@ -300,7 +300,7 @@ db.agents.insertMany([
     branchId: "BR-001",
     specialties: ["Auto", "Property"],
     commissionRate: NumberDecimal("0.05"),
-    status: "Active"
+    isActive: true
   },
   {
     _id: "agent_002",
@@ -314,7 +314,7 @@ db.agents.insertMany([
     branchId: "BR-002",
     specialties: ["Life", "Commercial"],
     commissionRate: NumberDecimal("0.06"),
-    status: "Active"
+    isActive: true
   }
 ])
 ```
@@ -374,7 +374,7 @@ db.payments.insertMany([
     amount: NumberDecimal("1299.99"),
     paymentDate: new Date("2023-01-15"),
     paymentMethod: "Credit Card",
-    status: "Completed"
+    status: "completed"
   },
   {
     _id: "payment_002",
@@ -384,7 +384,7 @@ db.payments.insertMany([
     amount: NumberDecimal("899.50"),
     paymentDate: new Date("2023-02-01"),
     paymentMethod: "Bank Transfer",
-    status: "Completed"
+    status: "completed"
   },
   {
     _id: "payment_003",
@@ -394,7 +394,7 @@ db.payments.insertMany([
     amount: NumberDecimal("2400.00"),
     paymentDate: new Date("2023-03-10"),
     paymentMethod: "Check",
-    status: "Completed"
+    status: "completed"
   }
 ])
 ```
@@ -415,7 +415,7 @@ print("\nSample Policy:")
 db.policies.findOne()
 
 print("\nActive Customers:")
-print(db.customers.countDocuments({status: "Active"}))
+print(db.customers.countDocuments({isActive: true}))
 ```
 
 ## Expected Results

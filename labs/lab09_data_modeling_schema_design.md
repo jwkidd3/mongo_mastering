@@ -99,7 +99,7 @@
        ],
        filedAt: new Date("2024-03-15"),
        estimatedAmount: 8500,
-       status: "under_investigation"
+       status: "investigating"
      },
      {
        claimNumber: "CLM-2024-001235",
