@@ -769,7 +769,7 @@ docker exec -it mongodb mongosh
 
 # Check the new data
 use insurance_company
-db.policies.find({"policyNumber": "POL-JS-2024-001"}).pretty()
+db.policies.find({"policyNumber": "POL-JS-2024-001"})
 ```
 
 ## Part F: Extensions and Best Practices (5 minutes)

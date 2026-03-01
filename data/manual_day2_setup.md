@@ -287,10 +287,10 @@ for (var i = 1; i <= 100; i++) {
                               riskLevel === "Medium" ? 4 + Math.random() * 3 :
                               7 + Math.random() * 3).toFixed(1)),
     creditScore: NumberInt(creditScore),
-    joinDate: new Date(2022, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1),
+    registrationDate: new Date(2022, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1),
     status: "Active",
-    lifetime_value: NumberDecimal((Math.random() * 50000 + 10000).toFixed(2)),
-    claims_history: NumberInt(Math.floor(Math.random() * 5))
+    lifetimeValue: NumberDecimal((Math.random() * 50000 + 10000).toFixed(2)),
+    claimsHistory: NumberInt(Math.floor(Math.random() * 5))
   });
 }
 

@@ -48,7 +48,7 @@
    {
      _id: ObjectId("..."),
      policyNumber: "POL-AUTO-2024-5678",
-     policyType: "Auto Insurance",
+     policyType: "Auto",
      carrier: "SafeGuard Insurance",
      coverageOptions: [
        {
@@ -75,7 +75,7 @@
 
 1. **Create Claims Collection with Embedded Schema**
    ```javascript
-   use insurance_company;
+   use insurance_company
 
    // Create claims collection with embedded investigation data
    db.insurance_claims.insertMany([

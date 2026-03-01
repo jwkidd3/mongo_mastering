@@ -152,7 +152,7 @@ for (var i = 1; i <= 1000; i++) {
     region: region,
     riskLevel: riskLevel,
     riskScore: NumberDecimal((Math.random() * 9 + 1).toFixed(1)),
-    joinDate: new Date(2022, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1),
+    registrationDate: new Date(2022, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1),
     status: statuses[Math.floor(Math.random() * statuses.length)],
     shardKey: region + "_" + customerId,
     metadata: {
@@ -281,7 +281,7 @@ for (var i = 1; i <= 400; i++) {
       customerSatisfaction: NumberDecimal((Math.random() * 2 + 3).toFixed(1))
     },
     shardKey: state.region + "_" + branchId,
-    active: Math.random() > 0.05, // 95% active
+    isActive: Math.random() > 0.05, // 95% active
     metadata: {
       created: new Date(),
       lastAudit: new Date(Date.now() - Math.floor(Math.random() * 90) * 24 * 60 * 60 * 1000),
@@ -553,7 +553,7 @@ db.resume_tokens.insertOne({
     "_data": "placeholder_token_data_for_testing"
   },
   lastProcessed: new Date(),
-  active: true,
+  isActive: true,
   description: "Main policy change stream token",
   metadata: {
     created: new Date(),

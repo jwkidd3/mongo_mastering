@@ -77,8 +77,8 @@ print("Customers: " + db.customers.countDocuments())
 print("Claims: " + db.claims.countDocuments())
 
 // Find some specific policies and customers we'll use for transactions
-db.policies.find({}).limit(3).pretty()
-db.customers.find({}).limit(2).pretty()
+db.policies.find({}).limit(3)
+db.customers.find({}).limit(2)
 ```
 
 ## Part B: Basic Transaction Implementation (15 minutes)

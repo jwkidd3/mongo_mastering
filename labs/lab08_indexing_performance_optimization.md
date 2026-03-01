@@ -46,7 +46,7 @@
    }).sort({ createdAt: -1 }).explain("executionStats")
    ```
 
-2. **Text Indexes**
+3. **Text Indexes**
    ```javascript
    // First, create test data for text search
    db.test_policies.drop()

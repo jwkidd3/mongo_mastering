@@ -39,7 +39,7 @@ db.branches.insertMany([
     phone: "(214) 555-0100",
     manager: "Sarah Johnson",
     established: new Date("2010-01-15"),
-    active: true
+    isActive: true
   },
   {
     _id: "branch_002",
@@ -54,7 +54,7 @@ db.branches.insertMany([
     phone: "(972) 555-0200",
     manager: "Michael Chen",
     established: new Date("2015-03-22"),
-    active: true
+    isActive: true
   },
   {
     _id: "branch_003",
@@ -69,7 +69,7 @@ db.branches.insertMany([
     phone: "(817) 555-0300",
     manager: "Lisa Rodriguez",
     established: new Date("2018-07-10"),
-    active: true
+    isActive: true
   },
   {
     _id: "branch_004",
@@ -84,7 +84,7 @@ db.branches.insertMany([
     phone: "(214) 555-0400",
     manager: "David Kim",
     established: new Date("2020-01-05"),
-    active: true
+    isActive: true
   },
   {
     _id: "branch_005",
@@ -99,7 +99,7 @@ db.branches.insertMany([
     phone: "(214) 555-0500",
     manager: "Jennifer Wang",
     established: new Date("2019-11-18"),
-    active: true
+    isActive: true
   }
 ])
 ```
@@ -183,7 +183,7 @@ db.customers.insertMany([
       zipCode: "75202"
     },
     isActive: true,
-    joinDate: new Date("2022-01-15"),
+    registrationDate: new Date("2022-01-15"),
     riskScore: NumberDecimal("5.2")
   },
   {
@@ -202,7 +202,7 @@ db.customers.insertMany([
       zipCode: "75024"
     },
     isActive: true,
-    joinDate: new Date("2022-02-01"),
+    registrationDate: new Date("2022-02-01"),
     riskScore: NumberDecimal("2.8")
   },
   {
@@ -221,7 +221,7 @@ db.customers.insertMany([
       zipCode: "76103"
     },
     isActive: true,
-    joinDate: new Date("2022-03-10"),
+    registrationDate: new Date("2022-03-10"),
     riskScore: NumberDecimal("8.1")
   },
   {
@@ -240,7 +240,7 @@ db.customers.insertMany([
       zipCode: "75062"
     },
     isActive: true,
-    joinDate: new Date("2022-04-05"),
+    registrationDate: new Date("2022-04-05"),
     riskScore: NumberDecimal("2.3")
   },
   {
@@ -259,7 +259,7 @@ db.customers.insertMany([
       zipCode: "75150"
     },
     isActive: true,
-    joinDate: new Date("2022-05-20"),
+    registrationDate: new Date("2022-05-20"),
     riskScore: NumberDecimal("5.7")
   },
   {
@@ -278,7 +278,7 @@ db.customers.insertMany([
       zipCode: "75081"
     },
     isActive: true,
-    joinDate: new Date("2022-06-12"),
+    registrationDate: new Date("2022-06-12"),
     riskScore: NumberDecimal("4.9")
   }
 ])

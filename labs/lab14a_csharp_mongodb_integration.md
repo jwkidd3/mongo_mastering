@@ -1,5 +1,5 @@
 # Lab 14A: C# MongoDB Integration for Insurance Management
-**Duration:** 30 minutes
+**Duration:** 45 minutes
 **Objective:** Integrate MongoDB with C# applications for insurance management system
 
 ## Prerequisites: MongoDB Environment Setup

@@ -124,7 +124,7 @@ db.notifications.insertOne({ recipientId: "claims_department", type: "claim_assi
 
 ```javascript
 // Step 5: Verify notifications were created
-db.notifications.find({ claimId: "claim_cs_test1" }).pretty();
+db.notifications.find({ claimId: "claim_cs_test1" });
 ```
 
 ### Step 4: Policy Creation Simulation
@@ -146,7 +146,7 @@ db.notifications.insertOne({ recipientId: newPolicy.customerId, type: "policy_is
 
 ```javascript
 // Step 4: Verify policy notification
-db.notifications.find({ policyId: "policy_cs_test1" }).pretty();
+db.notifications.find({ policyId: "policy_cs_test1" });
 ```
 
 ### Step 5: Claims Status Update Simulation
@@ -203,11 +203,11 @@ db.notifications.insertOne({ recipientId: "fraud_investigation_team", type: "fra
 
 ```javascript
 // Step 6: Verify fraud detection results
-db.fraud_alerts.find({ claimId: "claim_fraud_test" }).pretty();
+db.fraud_alerts.find({ claimId: "claim_fraud_test" });
 ```
 
 ```javascript
-db.notifications.find({ type: "fraud_alert" }).pretty();
+db.notifications.find({ type: "fraud_alert" });
 ```
 
 ### Step 7: Activity Logging Simulation
@@ -224,7 +224,7 @@ db.activity_log.insertOne({ operation: "claim_processed", collection: "claims", 
 
 ```javascript
 // Step 3: Review activity logs
-db.activity_log.find().sort({ timestamp: -1 }).limit(5).pretty();
+db.activity_log.find().sort({ timestamp: -1 }).limit(5);
 ```
 
 ## Part D: Real-time Monitoring Dashboard Simulation (5 minutes)
