@@ -141,17 +141,11 @@ net:
     pathPrefix: /tmp
     filePermissions: 0700
   
-  # HTTP interface (deprecated, use MongoDB Compass)
-  http:
-    enabled: false
-    JSONPEnabled: false
-    RESTInterfaceEnabled: false
-  
   # SSL/TLS configuration
-  ssl:
-    mode: requireSSL  # disabled, allowSSL, preferSSL, requireSSL
-    PEMKeyFile: /etc/mongodb/ssl/mongodb.pem
-    PEMKeyPassword: "password"  # If key is encrypted
+  tls:
+    mode: requireTLS  # disabled, allowTLS, preferTLS, requireTLS
+    certificateKeyFile: /etc/mongodb/ssl/mongodb.pem
+    certificateKeyFilePassword: "password"  # If key is encrypted
     clusterFile: /etc/mongodb/ssl/cluster.pem
     CAFile: /etc/mongodb/ssl/ca.pem
     CRLFile: /etc/mongodb/ssl/crl.pem
@@ -273,9 +267,6 @@ replication:
   # Replica set name
   replSetName: rs0
   
-  # Secondary read preference
-  secondaryIndexPrefetch: all  # none, all, _id_only
-  
   # Enable majority read concern
   enableMajorityReadConcern: true
   
@@ -377,15 +368,15 @@ net:
   port: 27017
   bindIp: 0.0.0.0
   maxIncomingConnections: 20000
+  tls:
+    mode: requireTLS
+    certificateKeyFile: /etc/mongodb/ssl/mongodb.pem
+    allowInvalidCertificates: false
 
 security:
   authorization: enabled
-  enableEncryption: true
+  enableEncryption: true  # Enterprise Edition only
   encryptionKeyFile: /etc/mongodb/keys/mongodb.key
-  ssl:
-    mode: requireSSL
-    PEMKeyFile: /etc/mongodb/ssl/mongodb.pem
-    allowInvalidCertificates: false
 
 systemLog:
   destination: file
@@ -442,7 +433,7 @@ docker run -d \
   -v $(pwd)/config/mongod.conf:/etc/mongod.conf:ro \
   -v $(pwd)/data:/data/db \
   -v $(pwd)/logs:/var/log/mongodb \
-  mongo:7.0 mongod --config /etc/mongod.conf
+  mongo:8.0 mongod --config /etc/mongod.conf
 ```
 
 ### Advanced Container with Full Security
@@ -462,9 +453,9 @@ storage:
 net:
   port: 27017
   bindIp: 0.0.0.0
-  ssl:
-    mode: requireSSL
-    PEMKeyFile: /etc/mongodb/ssl/mongodb.pem
+  tls:
+    mode: requireTLS
+    certificateKeyFile: /etc/mongodb/ssl/mongodb.pem
     allowInvalidCertificates: true
 
 security:
@@ -497,7 +488,7 @@ docker run -d \
   -v $(pwd)/ssl/mongodb.pem:/etc/mongodb/ssl/mongodb.pem:ro \
   -e MONGO_INITDB_ROOT_USERNAME=admin \
   -e MONGO_INITDB_ROOT_PASSWORD=securepassword123 \
-  mongo:7.0 mongod --config /etc/mongod.conf
+  mongo:8.0 mongod --config /etc/mongod.conf
 ```
 
 ## Configuration Validation
@@ -512,18 +503,18 @@ docker exec -it mongodb-configured bash
 mongod --config /etc/mongod.conf --help
 
 # Check current configuration
-mongo --eval "db.adminCommand('getCmdLineOpts')"
+mongosh --eval "db.adminCommand('getCmdLineOpts')"
 
 # Check specific settings
-mongo --eval "db.serverStatus().storageEngine"
-mongo --eval "db.serverStatus().connections"
+mongosh --eval "db.serverStatus().storageEngine"
+mongosh --eval "db.serverStatus().connections"
 ```
 
 ### Verify Settings with MongoDB Shell
 
 ```javascript
 // Connect to MongoDB
-mongo
+mongosh
 
 // Check command line options
 db.adminCommand("getCmdLineOpts")
@@ -557,14 +548,14 @@ docker run -d \
   --name mongodb-dev \
   -v $(pwd)/config/mongod-dev.conf:/etc/mongod.conf:ro \
   -v $(pwd)/data-dev:/data/db \
-  mongo:7.0 mongod --config /etc/mongod.conf
+  mongo:8.0 mongod --config /etc/mongod.conf
 
 # Production
 docker run -d \
   --name mongodb-prod \
   -v $(pwd)/config/mongod-prod.conf:/etc/mongod.conf:ro \
   -v $(pwd)/data-prod:/data/db \
-  mongo:7.0 mongod --config /etc/mongod.conf
+  mongo:8.0 mongod --config /etc/mongod.conf
 ```
 
 ### 2. Configuration Templates
@@ -616,14 +607,14 @@ docker run -d \
   --name mongodb-primary \
   -p 27017:27017 \
   -v $(pwd)/config/mongod-primary.conf:/etc/mongod.conf:ro \
-  mongo:7.0 mongod --config /etc/mongod.conf
+  mongo:8.0 mongod --config /etc/mongod.conf
 
 # Secondary MongoDB
 docker run -d \
   --name mongodb-secondary \
   -p 27018:27017 \
   -v $(pwd)/config/mongod-secondary.conf:/etc/mongod.conf:ro \
-  mongo:7.0 mongod --config /etc/mongod.conf
+  mongo:8.0 mongod --config /etc/mongod.conf
 ```
 
 ## Troubleshooting Configuration
@@ -661,7 +652,7 @@ docker run -d \
    docker exec mongodb-configured ps aux | grep mongod
    
    # Verify configuration is loaded
-   docker exec mongodb-configured mongo --eval "db.adminCommand('getCmdLineOpts')"
+   docker exec mongodb-configured mongosh --eval "db.adminCommand('getCmdLineOpts')"
    ```
 
 ### Debug Configuration
@@ -670,13 +661,13 @@ docker run -d \
 # Test configuration without starting MongoDB
 docker run --rm \
   -v $(pwd)/config/mongod.conf:/etc/mongod.conf:ro \
-  mongo:7.0 mongod --config /etc/mongod.conf --help
+  mongo:8.0 mongod --config /etc/mongod.conf --help
 
 # Start MongoDB in foreground to see errors
 docker run --rm -it \
   -v $(pwd)/config/mongod.conf:/etc/mongod.conf:ro \
   -v $(pwd)/data:/data/db \
-  mongo:7.0 mongod --config /etc/mongod.conf
+  mongo:8.0 mongod --config /etc/mongod.conf
 
 # Check logs for configuration errors
 docker logs mongodb-configured

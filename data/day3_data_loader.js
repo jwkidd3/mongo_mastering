@@ -20,14 +20,8 @@ print("-----------------------------------------------------------");
 // Switch to insurance database
 db = db.getSiblingDB('insurance_company');
 
-// Drop existing collections to start fresh
-print("Cleaning existing collections...");
-db.policies.drop();
-db.customers.drop();
-db.claims.drop();
-db.payments.drop();
-db.agents.drop();
-db.branches.drop();
+// Only drop Day 3-specific collections to preserve Day 1 and Day 2 data
+print("Cleaning Day 3-specific collections...");
 db.vehicles.drop();
 db.properties.drop();
 db.policy_notifications.drop();
@@ -36,7 +30,8 @@ db.resume_tokens.drop();
 db.fraud_investigations.drop();
 db.compliance_records.drop();
 
-print("✓ Cleaned existing collections");
+print("✓ Cleaned Day 3-specific collections");
+print("Note: Preserving Day 1/2 data in policies, customers, claims, agents, branches");
 
 // ===========================================
 // Lab 1: MongoDB Transactions
@@ -51,16 +46,22 @@ var policy1 = {_id: "pol1", policyNumber: "POL-AUTO-001", name: "Premium Auto Co
 var policy2 = {_id: "pol2", policyNumber: "POL-HOME-001", name: "Homeowners Protection", policyType: "Property", annualPremium: 1899.99, activePolicies: 25, coverageDetails: {dwelling: { coverage: 400000, deductible: 1000 }, personalProperty: { coverage: 200000, deductible: 500 }, liability: 300000}, coverageTypes: ["dwelling", "personal_property", "liability"], isActive: true};
 var policy3 = {_id: "pol3", policyNumber: "POL-LIFE-001", name: "Term Life Insurance", policyType: "Life", annualPremium: 599.99, activePolicies: 15, coverageDetails: {deathBenefit: 500000, term: "20 years", beneficiaries: "Spouse and Children"}, coverageTypes: ["death_benefit", "accidental_death"], isActive: true};
 var policy4 = {_id: "pol4", policyNumber: "POL-COMM-001", name: "Business Liability", policyType: "Commercial", annualPremium: 2499.99, activePolicies: 8, coverageDetails: {generalLiability: 2000000, productLiability: 1000000, businessType: "Technology"}, coverageTypes: ["general_liability", "product_liability"], isActive: true};
-db.policies.insertMany([policy1, policy2, policy3, policy4]);
+// Upsert policies to avoid conflicts with Day 1/2 data
+[policy1, policy2, policy3, policy4].forEach(function(p) {
+  db.policies.updateOne({_id: p._id}, {$set: p}, {upsert: true});
+});
 
-print("✓ Created " + db.policies.countDocuments() + " core policies");
+print("✓ Upserted Day 3 policies - total: " + db.policies.countDocuments());
 
 // Create customers with premium balances for transaction testing
 print("Creating customers with premium balances...");
 var customer1 = {_id: "cust1", customerId: "CUST000001", name: "John Smith", email: "john.smith@email.com", phone: "+1-555-0101", premiumBalance: 1200.00, totalPolicies: 0, totalPremiumsPaid: 0, lastPaymentDate: null, riskScore: 75, address: {street: "123 Main Street", city: "New York", state: "NY", zipCode: "10001"}, registrationDate: new Date("2024-01-15"), isActive: true};
 var customer2 = {_id: "cust2", customerId: "CUST000002", name: "Sarah Johnson", email: "sarah.johnson@email.com", phone: "+1-555-0102", premiumBalance: 800.00, totalPolicies: 0, totalPremiumsPaid: 0, lastPaymentDate: null, riskScore: 60, address: {street: "456 Oak Avenue", city: "Chicago", state: "IL", zipCode: "60601"}, registrationDate: new Date("2024-02-20"), isActive: true};
 var customer3 = {_id: "cust3", customerId: "CUST000003", name: "Michael Davis", email: "michael.davis@email.com", phone: "+1-555-0103", premiumBalance: 1500.00, totalPolicies: 0, totalPremiumsPaid: 0, lastPaymentDate: null, riskScore: 45, address: {street: "789 Business Plaza", city: "Los Angeles", state: "CA", zipCode: "90001"}, registrationDate: new Date("2024-03-10"), isActive: true};
-db.customers.insertMany([customer1, customer2, customer3]);
+// Upsert customers to avoid conflicts with Day 1/2 data
+[customer1, customer2, customer3].forEach(function(c) {
+  db.customers.updateOne({_id: c._id}, {$set: c}, {upsert: true});
+});
 
 print("✓ Created " + db.customers.countDocuments() + " customers with balances");
 
@@ -94,8 +95,8 @@ print("✓ Created replication test collections");
 print("\n⚡ Loading data for Lab 3: Sharding & Horizontal Scaling");
 print("------------------------------------------------------");
 
-// Generate massive customer dataset for sharding and production scale testing
-print("Generating massive customer dataset for sharding (5000 customers)...");
+// Generate additional customer data for sharding demonstrations
+print("Adding Day 3 customers for sharding labs...");
 var customers = [];
 var firstNames = ["John", "Sarah", "Michael", "Emily", "David", "Lisa", "Robert", "Jennifer", "William", "Mary", "James", "Patricia", "Christopher", "Linda", "Matthew", "Barbara", "Daniel", "Susan", "Mark", "Jessica", "Anthony", "Karen", "Joshua", "Nancy", "Andrew", "Betty", "Kenneth", "Helen", "Paul", "Sandra", "Steven", "Donna", "Timothy", "Carol", "Edward", "Ruth", "Jason", "Sharon", "Jeffrey", "Michelle", "Ryan", "Laura", "Jacob", "Sarah", "Gary", "Kimberly", "Nicholas", "Deborah", "Eric", "Dorothy", "Jonathan", "Amy"];
 var lastNames = ["Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis", "Rodriguez", "Martinez", "Hernandez", "Lopez", "Gonzalez", "Wilson", "Anderson", "Thomas", "Taylor", "Moore", "Jackson", "Martin", "Lee", "Perez", "Thompson", "White", "Harris", "Sanchez", "Clark", "Ramirez", "Lewis", "Robinson", "Walker", "Young", "Allen", "King", "Wright", "Scott", "Torres", "Nguyen", "Hill", "Flores", "Green", "Adams", "Nelson", "Baker", "Hall", "Rivera", "Campbell", "Mitchell", "Carter"];
@@ -110,14 +111,16 @@ customers.push(customer1);
 customers.push(customer2);
 customers.push(customer3);
 
-// Insert all customers at once (avoiding for loops)
-print("Inserting " + customers.length + " customers...");
-db.customers.insertMany(customers);
+// Upsert customers to avoid conflicts with Day 1/2 data
+print("Upserting " + customers.length + " customers...");
+customers.forEach(function(c) {
+  db.customers.updateOne({_id: c._id}, {$set: c}, {upsert: true});
+});
 
 print("✓ Generated " + db.customers.countDocuments() + " customers for sharding");
 
-// Generate massive claims dataset for range sharding and production testing
-print("Generating massive claims dataset for range sharding (10000 claims)...");
+// Generate additional claims data for sharding demonstrations
+print("Adding Day 3 claims for sharding labs...");
 var sampleCustomers = ["customer1", "customer2", "customer3"];
 var claims = [];
 var claimTypes = ["Auto Accident", "Property Damage", "Theft", "Fire", "Water Damage", "Medical", "Liability", "Vandalism", "Natural Disaster", "Cyber Attack", "Equipment Failure", "Personal Injury", "Product Liability", "Professional Liability", "Workers Compensation"];
@@ -131,20 +134,22 @@ claims.push(claim1);
 claims.push(claim2);
 claims.push(claim3);
 
-// Insert all claims at once (avoiding for loops)
-print("Inserting " + claims.length + " claims...");
-db.claims.insertMany(claims);
+// Upsert claims to avoid conflicts with Day 1/2 data
+print("Upserting " + claims.length + " claims...");
+claims.forEach(function(c) {
+  db.claims.updateOne({_id: c._id}, {$set: c}, {upsert: true});
+});
 
 print("✓ Generated " + db.claims.countDocuments() + " claims for sharding");
 
-// Generate comprehensive branches for geographic sharding and production scale
-print("Generating comprehensive branches for geographic sharding (1000 branches)...");
+// Generate additional branches for geographic sharding demonstrations
+print("Adding Day 3 branches for sharding labs...");
 var branches = [];
 
 // Create comprehensive branch dataset with sample data and bulk generation
-var branch1 = {_id: "branch1", region: "north", branchCode: "BR-NO-001", name: "Insurance Branch 1", address: {street: "1 Insurance Blvd", city: "North City", state: "NY", zipCode: "12345"}, manager: "Manager 1", agentCount: 15, performanceData: {monthlyPremiums: 450000.50, quarterlyPremiums: 1350000.75, annualPremiums: 5400000.25}, policyMetrics: {activePolicies: 1500, policyTypes: 4, lastUpdated: new Date()}, coordinates: {lat: 40.7128, lng: -74.0060}, specialties: ["Auto", "Home", "Life"]};
+var branch1 = {_id: "branch1", region: "north", branchCode: "BR-NO-001", name: "Insurance Branch 1", address: {street: "1 Insurance Blvd", city: "North City", state: "NY", zipCode: "12345"}, manager: "Manager 1", agentCount: 15, performanceData: {monthlyPremiums: 450000.50, quarterlyPremiums: 1350000.75, annualPremiums: 5400000.25}, policyMetrics: {activePolicies: 1500, policyTypes: 4, lastUpdated: new Date()}, coordinates: {lat: 40.7128, lng: -74.0060}, specialties: ["Auto", "Property", "Life"]};
 var branch2 = {_id: "branch2", region: "south", branchCode: "BR-SO-002", name: "Insurance Branch 2", address: {street: "2 Insurance Blvd", city: "South City", state: "CA", zipCode: "23456"}, manager: "Manager 2", agentCount: 12, performanceData: {monthlyPremiums: 380000.25, quarterlyPremiums: 1140000.50, annualPremiums: 4560000.75}, policyMetrics: {activePolicies: 1200, policyTypes: 5, lastUpdated: new Date()}, coordinates: {lat: 34.0522, lng: -118.2437}, specialties: ["Auto", "Commercial"]};
-var branch3 = {_id: "branch3", region: "east", branchCode: "BR-EA-003", name: "Insurance Branch 3", address: {street: "3 Insurance Blvd", city: "East City", state: "TX", zipCode: "34567"}, manager: "Manager 3", agentCount: 18, performanceData: {monthlyPremiums: 520000.75, quarterlyPremiums: 1560000.25, annualPremiums: 6240000.50}, policyMetrics: {activePolicies: 1800, policyTypes: 3, lastUpdated: new Date()}, coordinates: {lat: 29.7604, lng: -95.3698}, specialties: ["Home", "Life", "Commercial"]};
+var branch3 = {_id: "branch3", region: "east", branchCode: "BR-EA-003", name: "Insurance Branch 3", address: {street: "3 Insurance Blvd", city: "East City", state: "TX", zipCode: "34567"}, manager: "Manager 3", agentCount: 18, performanceData: {monthlyPremiums: 520000.75, quarterlyPremiums: 1560000.25, annualPremiums: 6240000.50}, policyMetrics: {activePolicies: 1800, policyTypes: 3, lastUpdated: new Date()}, coordinates: {lat: 29.7604, lng: -95.3698}, specialties: ["Property", "Life", "Commercial"]};
 
 branches.push(branch1);
 branches.push(branch2);
@@ -155,7 +160,7 @@ branches.push(branch3);
 // that demonstrates sharding capabilities without complex generation loops
 
 // Add a few more sample branches manually
-var branch4 = {_id: "branch4", region: "west", branchCode: "BR-WE-004", name: "Insurance Branch 4", address: {street: "4 Insurance Blvd", city: "West City", state: "FL", zipCode: "45678"}, manager: "Manager 4", agentCount: 10, performanceData: {monthlyPremiums: 350000.00, quarterlyPremiums: 1050000.00, annualPremiums: 4200000.00}, policyMetrics: {activePolicies: 900, policyTypes: 4, lastUpdated: new Date()}, coordinates: {lat: 25.7617, lng: -80.1918}, specialties: ["Auto", "Home"]};
+var branch4 = {_id: "branch4", region: "west", branchCode: "BR-WE-004", name: "Insurance Branch 4", address: {street: "4 Insurance Blvd", city: "West City", state: "FL", zipCode: "45678"}, manager: "Manager 4", agentCount: 10, performanceData: {monthlyPremiums: 350000.00, quarterlyPremiums: 1050000.00, annualPremiums: 4200000.00}, policyMetrics: {activePolicies: 900, policyTypes: 4, lastUpdated: new Date()}, coordinates: {lat: 25.7617, lng: -80.1918}, specialties: ["Auto", "Property"]};
 var branch5 = {_id: "branch5", region: "central", branchCode: "BR-CE-005", name: "Insurance Branch 5", address: {street: "5 Insurance Blvd", city: "Central City", state: "IL", zipCode: "56789"}, manager: "Manager 5", agentCount: 14, performanceData: {monthlyPremiums: 425000.00, quarterlyPremiums: 1275000.00, annualPremiums: 5100000.00}, policyMetrics: {activePolicies: 1300, policyTypes: 5, lastUpdated: new Date()}, coordinates: {lat: 41.8781, lng: -87.6298}, specialties: ["Commercial", "Life"]};
 
 branches.push(branch4);
@@ -164,8 +169,11 @@ branches.push(branch5);
 print("Created " + branches.length + " sample branches for sharding demonstration");
 print("Note: In production, this would scale to 1000+ branches using efficient bulk operations");
 
-db.branches.insertMany(branches);
-print("✓ Generated " + db.branches.countDocuments() + " branches for geographic sharding");
+// Upsert branches to avoid conflicts with Day 1/2 data
+branches.forEach(function(b) {
+  db.branches.updateOne({_id: b._id}, {$set: b}, {upsert: true});
+});
+print("✓ Upserted branches - total: " + db.branches.countDocuments());
 
 // ===========================================
 // Lab 4: Change Streams for Real-time Applications
@@ -212,7 +220,9 @@ print("Creating comprehensive insurance dataset for C# integration...");
 // Add agents for the C# service examples
 var agent1 = {_id: new ObjectId(), agentId: "AGT001", firstName: "Emily", lastName: "Rodriguez", email: "emily.rodriguez@insuranceco.com", phone: "+1-555-0201", branchId: "BR001", territory: "Manhattan", specialties: ["Auto", "Property"], licenseNumber: "LIC-NY-12345", isActive: true, performance: {monthlyQuota: 50000.00, quarterlyRevenue: 145000.00, customerSatisfaction: 4.7}, hireDate: new Date("2022-03-15")};
 var agent2 = {_id: new ObjectId(), agentId: "AGT002", firstName: "David", lastName: "Thompson", email: "david.thompson@insuranceco.com", phone: "+1-555-0202", branchId: "BR002", territory: "Chicago", specialties: ["Commercial", "Life"], licenseNumber: "LIC-IL-67890", isActive: true, performance: {monthlyQuota: 75000.00, quarterlyRevenue: 220000.00, customerSatisfaction: 4.9}, hireDate: new Date("2021-08-22")};
-db.agents.insertMany([agent1, agent2]);
+[agent1, agent2].forEach(function(a) {
+  db.agents.updateOne({agentId: a.agentId}, {$set: a}, {upsert: true});
+});
 
 print("✓ Created " + db.agents.countDocuments() + " agents for C# integration");
 
@@ -349,7 +359,7 @@ print("All production data for MongoDB Day 3 labs has been loaded.");
 print("");
 print("Production features ready:");
 print("- Transaction-ready datasets with proper constraints");
-print("- Large-scale datasets for sharding (1000+ customers, 2000+ claims)");
+print("- Sample datasets for sharding demonstrations");
 print("- Change stream monitoring collections with indexes");
 print("- Comprehensive asset management data for C# integration");
 print("- Utility functions for data management and testing");

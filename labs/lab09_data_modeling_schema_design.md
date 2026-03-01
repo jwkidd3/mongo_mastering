@@ -1,4 +1,4 @@
-# Lab 2: Data Modeling and Schema Design (45 minutes)
+# Lab 9: Data Modeling and Schema Design (45 minutes)
 
 ## Learning Objectives
 - Design efficient schemas for different use cases
@@ -137,7 +137,7 @@
          properties: {
            email: {
              bsonType: "string",
-             pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+             pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
            },
            licenseNumber: {
              bsonType: "string",
@@ -168,7 +168,7 @@
    db.policyholders.insertOne({
      email: "john.doe@email.com",
      licenseNumber: "LIC123456789",
-     age: 35,
+     age: NumberInt(35),
      createdAt: new Date(),
      communicationPreferences: {
        emailNotifications: true,
@@ -181,7 +181,7 @@
      db.policyholders.insertOne({
        email: "invalid-email",  // Invalid email format
        licenseNumber: "123",    // Too short
-       age: 15,                 // Too young
+       age: NumberInt(15),       // Too young
        createdAt: new Date()
      })
    } catch (error) {

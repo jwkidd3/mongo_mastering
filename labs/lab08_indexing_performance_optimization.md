@@ -1,4 +1,4 @@
-# Lab 3: Indexing Strategies and Performance Optimization (45 minutes)
+# Lab 8: Indexing Strategies and Performance Optimization (45 minutes)
 
 ## Learning Objectives
 - Create and optimize indexes for different query patterns
@@ -57,7 +57,7 @@
        coverageTypes: ["collision", "comprehensive", "liability"]
      },
      {
-       policyType: "Home",
+       policyType: "Property",
        coverageDescription: "Complete homeowners insurance protection",
        coverageTypes: ["dwelling", "personal_property", "liability"]
      },
@@ -94,7 +94,7 @@
    // Index only active policies
    db.policies.createIndex(
      { "policyType": 1, "annualPremium": 1 },
-     { partialFilterExpression: { "status": "active" } }
+     { partialFilterExpression: { "isActive": true } }
    )
    ```
 
@@ -139,7 +139,7 @@
    db.test_policies.drop()
    db.test_policies.insertMany([
      {policyType: "Auto", annualPremium: 1200, policyNumber: "POL-001"},
-     {policyType: "Home", annualPremium: 1800, policyNumber: "POL-002"},
+     {policyType: "Property", annualPremium: 1800, policyNumber: "POL-002"},
      {policyType: "Auto", annualPremium: 2500, policyNumber: "POL-003"}
    ])
 

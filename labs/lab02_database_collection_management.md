@@ -70,7 +70,7 @@
    db.createCollection("audit_logs", { capped: true, size: 1000000, max: 5000 })
 
    // Collection with validation (using new collection name to avoid conflicts)
-   db.createCollection("new_policies", { validator: { $jsonSchema: { bsonType: "object", required: ["policyNumber", "premiumAmount"], properties: { policyNumber: { bsonType: "string", description: "Policy number is required" }, premiumAmount: { bsonType: "number", minimum: 0, description: "Premium amount must be a positive number" } } } }, validationAction: "error" })
+   db.createCollection("new_policies", { validator: { $jsonSchema: { bsonType: "object", required: ["policyNumber", "annualPremium"], properties: { policyNumber: { bsonType: "string", description: "Policy number is required" }, annualPremium: { bsonType: "number", minimum: 0, description: "Premium amount must be a positive number" } } } }, validationAction: "error" })
    ```
 
 2. **Collection Information and Metadata**
@@ -95,14 +95,16 @@
 
 3. **Collection Modification and Maintenance**
    ```javascript
-   // Rename collection
-   db.customers.renameCollection("policyholders")
+   // Rename collection (using test collection to avoid breaking later labs)
+   db.createCollection("lab2_test_collection")
+   db.lab2_test_collection.insertOne({test: true})
+   db.lab2_test_collection.renameCollection("lab2_policyholders")
 
    // Convert to capped collection
-   db.runCommand({ convertToCapped: "policyholders", size: 100000 })
+   db.runCommand({ convertToCapped: "lab2_policyholders", size: 100000 })
 
    // Modify collection validation
-   db.runCommand({ collMod: "new_policies", validator: { $jsonSchema: { bsonType: "object", required: ["policyNumber", "premiumAmount", "policyType"], properties: { policyNumber: {bsonType: "string"}, premiumAmount: {bsonType: "number", minimum: 0}, policyType: {bsonType: "string"} } } } })
+   db.runCommand({ collMod: "new_policies", validator: { $jsonSchema: { bsonType: "object", required: ["policyNumber", "annualPremium", "policyType"], properties: { policyNumber: {bsonType: "string"}, annualPremium: {bsonType: "number", minimum: 0}, policyType: {bsonType: "string"} } } } })
    ```
 
 ### Part C: Naming Conventions and Best Practices (5 minutes)

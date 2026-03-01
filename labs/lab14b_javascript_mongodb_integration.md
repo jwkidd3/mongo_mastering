@@ -13,12 +13,12 @@ From the project root directory, use the course's standardized setup scripts:
 
 **macOS/Linux:**
 ```bash
-./setup/setup.sh
+./scripts/setup.sh
 ```
 
 **Windows PowerShell:**
 ```powershell
-.\setup\setup.ps1
+.\scripts\setup.ps1
 ```
 
 To check if MongoDB is already running:
@@ -164,8 +164,8 @@ class Policy {
         if (!this.policyNumber) errors.push('Policy number is required');
         if (!this.customerId) errors.push('Customer ID is required');
         if (!this.policyType) errors.push('Policy type is required');
-        if (!['Auto', 'Property', 'Life', 'Commercial'].includes(this.policyType)) {
-            errors.push('Policy type must be Auto, Property, Life, or Commercial');
+        if (!['Auto', 'Property', 'Life', 'Commercial', 'Cyber', 'Health'].includes(this.policyType)) {
+            errors.push('Policy type must be Auto, Property, Life, Commercial, Cyber, or Health');
         }
         if (this.coverageLimit <= 0) errors.push('Coverage limit must be positive');
         if (this.annualPremium <= 0) errors.push('Annual premium must be positive');

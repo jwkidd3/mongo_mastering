@@ -110,7 +110,7 @@ docker run -d \
   -p 27017:27017 \
   -v $(pwd)/config/mongod.conf:/etc/mongod.conf:ro \
   -v $(pwd)/data:/data/db \
-  mongo:7.0 mongod --config /etc/mongod.conf
+  mongo:8.0 mongod --config /etc/mongod.conf
 ```
 
 ## Understanding Profiling Data
@@ -487,10 +487,10 @@ db.setProfilingLevel(1, { slowms: 100 })
 ```javascript
 // Script to monitor and alert on slow operations
 function checkSlowOperations() {
-  const recentSlowOps = db.system.profile.find({
+  const recentSlowOps = db.system.profile.countDocuments({
     ts: { $gte: new Date(Date.now() - 300000) }, // Last 5 minutes
     millis: { $gt: 1000 }  // >1 second
-  }).count();
+  });
   
   if (recentSlowOps > 10) {
     print(`ALERT: ${recentSlowOps} slow operations in the last 5 minutes`);
@@ -507,20 +507,26 @@ checkSlowOperations();
 
 ```javascript
 // Function to enable temporary profiling
-function temporaryProfiling(durationMinutes, threshold = 100) {
-  // Enable profiling
-  db.setProfilingLevel(1, { slowms: threshold });
-  print(`Profiling enabled for ${durationMinutes} minutes`);
-  
-  // Set timeout to disable profiling
-  setTimeout(() => {
-    db.setProfilingLevel(0);
-    print("Profiling disabled");
-  }, durationMinutes * 60 * 1000);
+// Note: setTimeout is not available in mongosh. Use sleep() instead
+// or manually disable profiling when done.
+function enableProfiling(threshold) {
+  db.setProfilingLevel(1, { slowms: threshold || 100 });
+  print("Profiling enabled with threshold: " + (threshold || 100) + "ms");
+  print("Remember to disable profiling when done: db.setProfilingLevel(0)");
 }
 
-// Enable profiling for 30 minutes
-temporaryProfiling(30, 50);
+function disableProfiling() {
+  db.setProfilingLevel(0);
+  print("Profiling disabled");
+}
+
+// Enable profiling
+enableProfiling(50);
+
+// ... run your queries ...
+
+// When done, disable profiling
+// disableProfiling();
 ```
 
 ## Best Practices
@@ -577,7 +583,7 @@ function weeklyProfilingReport() {
   print("=== SLOWEST OPERATIONS ===");
   db.system.profile.find({
     ts: { $gte: oneWeekAgo }
-  }).sort({ millis: -1 }).limit(10).forEach(printjson);
+  }).sort({ millis: -1 }).limit(10).forEach(doc => print(JSON.stringify(doc, null, 2)));
   
   // Most frequent slow operations
   print("\n=== MOST FREQUENT SLOW OPERATIONS ===");
@@ -595,7 +601,7 @@ function weeklyProfilingReport() {
     },
     { $sort: { count: -1 } },
     { $limit: 10 }
-  ]).forEach(printjson);
+  ]).forEach(doc => print(JSON.stringify(doc, null, 2)));
 }
 
 // Run weekly report

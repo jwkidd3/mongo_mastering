@@ -50,7 +50,7 @@ db.policies.insertMany([
   {
     _id: "production_policy_002",
     policyNumber: "HOME-PROD-001",
-    policyType: "Home",
+    policyType: "Property",
     customerId: "PROD-CUST-002",
     annualPremium: NumberDecimal("2299.50"),
     deductible: NumberInt(1000),
@@ -90,7 +90,7 @@ db.policies.insertMany([
   {
     _id: "production_policy_004",
     policyNumber: "BUSINESS-PROD-001",
-    policyType: "Business",
+    policyType: "Commercial",
     customerId: "PROD-CUST-004",
     annualPremium: NumberDecimal("8500.00"),
     deductible: NumberInt(2500),
@@ -183,8 +183,8 @@ print("Completed customer creation.");
 ```javascript
 // Create 2000 claims for range sharding
 var claims = [];
-var claimTypes = ["Auto", "Home", "Life", "Business"];
-var statuses = ["Approved", "Denied", "Under Review", "Pending", "Closed"];
+var claimTypes = ["Auto", "Property", "Life", "Commercial"];
+var statuses = ["approved", "denied", "under_review", "pending", "closed"];
 
 print("Creating 2000 claims for range sharding...");
 
@@ -197,10 +197,10 @@ for (var i = 1; i <= 2000; i++) {
   var claimNumber = "CLM-" + String(i).padStart(6, '0');
 
   var baseAmount = claimType === "Life" ? 250000 :
-                   claimType === "Business" ? 50000 :
-                   claimType === "Home" ? 25000 : 12000;
+                   claimType === "Commercial" ? 50000 :
+                   claimType === "Property" ? 25000 : 12000;
 
-  var amount = status === "Denied" ? 0 : baseAmount + (Math.random() * baseAmount * 0.8);
+  var amount = status === "denied" ? 0 : baseAmount + (Math.random() * baseAmount * 0.8);
 
   claims.push({
     _id: "production_claim_" + String(i).padStart(4, '0'),
@@ -211,7 +211,7 @@ for (var i = 1; i <= 2000; i++) {
     incidentDate: new Date(2023, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1),
     reportedDate: new Date(2023, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1),
     claimAmount: NumberDecimal(amount.toFixed(2)),
-    adjustedAmount: status === "Approved" ? NumberDecimal((amount * 0.95).toFixed(2)) : NumberDecimal("0.00"),
+    adjustedAmount: status === "approved" ? NumberDecimal((amount * 0.95).toFixed(2)) : NumberDecimal("0.00"),
     status: status,
     description: claimType + " claim - " + status.toLowerCase(),
     processingTime: NumberInt(Math.floor(Math.random() * 45) + 1),
@@ -717,13 +717,13 @@ var regionalPolicies = db.policies.aggregate([
   {$group: {_id: "$region", count: {$sum: 1}}},
   {$sort: {count: -1}}
 ]).toArray();
-printjson(regionalPolicies);
+print(JSON.stringify(regionalPolicies, null, 2));
 
 // Test transaction-ready data
-print("\nTransaction-ready policies: " + db.policies.find({"transactions.version": {$exists: true}}).count());
+print("\nTransaction-ready policies: " + db.policies.countDocuments({"transactions.version": {$exists: true}}));
 
 // Test change stream collections
-print("Unprocessed notifications: " + db.policy_notifications.find({processed: false}).count());
+print("Unprocessed notifications: " + db.policy_notifications.countDocuments({processed: false}));
 
 print("\n=== Day 3 Setup Complete ===");
 print("Ready for:")

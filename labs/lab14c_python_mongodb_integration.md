@@ -13,12 +13,12 @@ From the project root directory, use the course's standardized setup scripts:
 
 **macOS/Linux:**
 ```bash
-./setup/setup.sh
+./scripts/setup.sh
 ```
 
 **Windows PowerShell:**
 ```powershell
-.\setup\setup.ps1
+.\scripts\setup.ps1
 ```
 
 To check if MongoDB is already running:
@@ -51,7 +51,7 @@ jupyter notebook
 **Cell 1 - Install packages:**
 ```python
 # Install required packages (run once)
-!pip install pymongo
+!pip install pymongo pandas matplotlib
 
 print("✅ Packages installed successfully")
 ```
@@ -130,7 +130,7 @@ def validate_email(email: str) -> bool:
 
 def validate_policy_type(policy_type: str) -> bool:
     """Validate policy type"""
-    valid_types = ['Auto', 'Property', 'Life', 'Commercial']
+    valid_types = ['Auto', 'Property', 'Life', 'Commercial', 'Cyber', 'Health']
     return policy_type in valid_types
 
 print("✅ Validation utilities created")
@@ -183,40 +183,40 @@ class Policy:
         return round(self.annual_premium / 12, 2)
 
     def to_dict(self) -> Dict[str, Any]:
-        """Convert to dictionary for MongoDB"""
+        """Convert to dictionary for MongoDB (camelCase field names)"""
         return {
             '_id': self._id,
-            'policy_number': self.policy_number,
-            'customer_id': self.customer_id,
-            'policy_type': self.policy_type,
+            'policyNumber': self.policy_number,
+            'customerId': self.customer_id,
+            'policyType': self.policy_type,
             'region': self.region,
             'state': self.state,
-            'coverage_limit': self.coverage_limit,
-            'annual_premium': self.annual_premium,
+            'coverageLimit': self.coverage_limit,
+            'annualPremium': self.annual_premium,
             'deductible': self.deductible,
-            'is_active': self.is_active,
-            'effective_date': self.effective_date,
-            'expiration_date': self.expiration_date,
-            'created_at': self.created_at
+            'isActive': self.is_active,
+            'effectiveDate': self.effective_date,
+            'expirationDate': self.expiration_date,
+            'createdAt': self.created_at
         }
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'Policy':
-        """Create Policy from MongoDB document"""
+        """Create Policy from MongoDB document (reads camelCase fields)"""
         return cls(
             _id=data.get('_id', ObjectId()),
-            policy_number=data['policy_number'],
-            customer_id=data['customer_id'],
-            policy_type=data['policy_type'],
-            region=data['region'],
-            state=data['state'],
-            coverage_limit=data['coverage_limit'],
-            annual_premium=data['annual_premium'],
-            deductible=data['deductible'],
-            is_active=data.get('is_active', True),
-            effective_date=data.get('effective_date', datetime.now()),
-            expiration_date=data.get('expiration_date'),
-            created_at=data.get('created_at', datetime.now())
+            policy_number=data['policyNumber'],
+            customer_id=data.get('customerId', ''),
+            policy_type=data['policyType'],
+            region=data.get('region', ''),
+            state=data.get('state', ''),
+            coverage_limit=data.get('coverageLimit', 0),
+            annual_premium=data.get('annualPremium', 0),
+            deductible=data.get('deductible', 0),
+            is_active=data.get('isActive', True),
+            effective_date=data.get('effectiveDate', datetime.now()),
+            expiration_date=data.get('expirationDate'),
+            created_at=data.get('createdAt', datetime.now())
         )
 
 print("✅ Policy model created successfully")
@@ -253,36 +253,43 @@ class Customer:
             return "High Risk"
 
     def to_dict(self) -> Dict[str, Any]:
-        """Convert to dictionary for MongoDB"""
+        """Convert to dictionary for MongoDB (camelCase field names)"""
         return {
             '_id': self._id,
-            'customer_id': self.customer_id,
-            'first_name': self.first_name,
-            'last_name': self.last_name,
+            'customerId': self.customer_id,
+            'firstName': self.first_name,
+            'lastName': self.last_name,
             'email': self.email,
             'phone': self.phone,
-            'state': self.state,
-            'customer_type': self.customer_type,
-            'risk_score': self.risk_score,
-            'is_active': self.is_active,
-            'registration_date': self.registration_date
+            'address': {'state': self.state},
+            'customerType': self.customer_type,
+            'riskScore': self.risk_score,
+            'isActive': self.is_active,
+            'registrationDate': self.registration_date
         }
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'Customer':
-        """Create Customer from MongoDB document"""
+        """Create Customer from MongoDB document (reads camelCase fields)"""
+        # Handle address.state - existing data stores state inside address subdocument
+        state = ''
+        if 'address' in data and isinstance(data['address'], dict):
+            state = data['address'].get('state', '')
+        elif 'state' in data:
+            state = data['state']
+
         return cls(
             _id=data.get('_id', ObjectId()),
-            customer_id=data['customer_id'],
-            first_name=data['first_name'],
-            last_name=data['last_name'],
-            email=data['email'],
+            customer_id=data.get('customerId', ''),
+            first_name=data.get('firstName', ''),
+            last_name=data.get('lastName', ''),
+            email=data.get('email', ''),
             phone=data.get('phone', ''),
-            state=data.get('state', ''),
-            customer_type=data.get('customer_type', 'individual'),
-            risk_score=data.get('risk_score', 0),
-            is_active=data.get('is_active', True),
-            registration_date=data.get('registration_date', datetime.now())
+            state=state,
+            customer_type=data.get('customerType', 'individual'),
+            risk_score=data.get('riskScore', 0),
+            is_active=data.get('isActive', True),
+            registration_date=data.get('registrationDate', datetime.now())
         )
 
 print("✅ Customer model created successfully")
@@ -301,11 +308,11 @@ class PolicyService:
         self._ensure_indexes()
 
     def _ensure_indexes(self):
-        """Create necessary indexes"""
+        """Create necessary indexes (camelCase field names match MongoDB schema)"""
         try:
-            self.collection.create_index("policy_number", unique=True)
-            self.collection.create_index([("customer_id", 1), ("is_active", 1)])
-            self.collection.create_index([("policy_type", 1), ("state", 1)])
+            self.collection.create_index("policyNumber", unique=True)
+            self.collection.create_index([("customerId", 1), ("isActive", 1)])
+            self.collection.create_index([("policyType", 1), ("state", 1)])
             print("📊 Indexes created successfully")
         except Exception as e:
             print(f"⚠️ Index warning: {e}")
@@ -326,7 +333,7 @@ class PolicyService:
 
     def get_policy(self, policy_number: str) -> Policy:
         """Get policy by policy number"""
-        doc = self.collection.find_one({'policy_number': policy_number})
+        doc = self.collection.find_one({'policyNumber': policy_number})
         if not doc:
             raise ValueError(f"Policy {policy_number} not found")
         return Policy.from_dict(doc)
@@ -337,8 +344,8 @@ class PolicyService:
             raise ValueError("Premium must be positive")
 
         result = self.collection.update_one(
-            {'policy_number': policy_number},
-            {'$set': {'annual_premium': new_premium}}
+            {'policyNumber': policy_number},
+            {'$set': {'annualPremium': new_premium}}
         )
 
         if result.matched_count == 0:
@@ -354,11 +361,13 @@ class PolicyService:
 
         query = {}
         if 'policy_type' in filters:
-            query['policy_type'] = filters['policy_type']
+            query['policyType'] = filters['policy_type']
         if 'state' in filters:
             query['state'] = filters['state']
         if 'active_only' in filters and filters['active_only']:
-            query['is_active'] = True
+            query['isActive'] = True
+        if 'customer_id' in filters:
+            query['customerId'] = filters['customer_id']
 
         cursor = self.collection.find(query)
 
@@ -372,11 +381,11 @@ class PolicyService:
         pipeline = [
             {
                 '$group': {
-                    '_id': '$policy_type',
+                    '_id': '$policyType',
                     'count': {'$sum': 1},
-                    'total_premium': {'$sum': '$annual_premium'},
-                    'average_premium': {'$avg': '$annual_premium'},
-                    'average_coverage': {'$avg': '$coverage_limit'}
+                    'total_premium': {'$sum': '$annualPremium'},
+                    'average_premium': {'$avg': '$annualPremium'},
+                    'average_coverage': {'$avg': '$coverageLimit'}
                 }
             },
             {'$sort': {'count': -1}}

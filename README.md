@@ -293,7 +293,7 @@ Get-Content scripts\lab_validation_comprehensive.js | mongosh
 - **15 claims** - Sample claims for CRUD operations
 - **20 payments** - Premium and settlement payments
 
-#### Day 2: Analytics (insurance_analytics database)
+#### Day 2: Advanced Features (insurance_company database)
 - **3 branches** - Geospatial branch data with performance metrics
 - **3 policies** - Complex policy structures for aggregation
 - **3 customers** - Risk-segmented customer profiles
@@ -352,7 +352,7 @@ mongo_mastering/
 
 ### 📅 Course Schedule
 
-#### **Day 1: MongoDB Fundamentals** (🔰 Beginner)
+#### **Day 1: MongoDB Fundamentals** (🔰 Introductory)
 - **Presentation**: NoSQL concepts, MongoDB basics, CRUD operations
 - **Labs**: Shell mastery, database management, CRUD operations
 - **Data**: Basic insurance dataset (branches, policies, customers)
@@ -744,4 +744,4 @@ scripts/
 
 **Ready to start?** Run `./setup.sh` and you'll be ready for the MongoDB course in 30 seconds! 🚀
 
-*MongoDB Mastering Course - From beginner to enterprise expert in 3 days*
+*MongoDB Mastering Course - From introductory to enterprise expert in 3 days*

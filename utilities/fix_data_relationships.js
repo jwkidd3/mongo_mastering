@@ -4,7 +4,7 @@
 print("🔧 FIXING DATA RELATIONSHIPS");
 print("=" .repeat(80));
 
-use insurance_company;
+db = db.getSiblingDB('insurance_company');
 
 // =============================================================================
 // STEP 1: VALIDATE AND FIX CLAIM-POLICY RELATIONSHIPS

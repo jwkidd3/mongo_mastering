@@ -90,9 +90,9 @@ security:
 net:
   port: 27017
   bindIp: 0.0.0.0
-  ssl:
-    mode: requireSSL
-    PEMKeyFile: /etc/mongodb/ssl/mongodb.pem
+  tls:
+    mode: requireTLS
+    certificateKeyFile: /etc/mongodb/ssl/mongodb.pem
     allowConnectionsWithoutCertificates: true
     allowInvalidCertificates: true
 
@@ -122,7 +122,7 @@ docker run -d \
   -v $(pwd)/logs:/var/log/mongodb \
   -e MONGO_INITDB_ROOT_USERNAME=admin \
   -e MONGO_INITDB_ROOT_PASSWORD=securepassword123 \
-  mongo:7.0 mongod --config /etc/mongod.conf
+  mongo:8.0 mongod --config /etc/mongod.conf
 
 # Check container status
 docker ps
@@ -146,7 +146,7 @@ docker run -d \
   -v $(pwd)/keys/mongodb.key:/etc/mongodb/keys/mongodb.key:ro \
   -v $(pwd)/ssl/mongodb.pem:/etc/mongodb/ssl/mongodb.pem:ro \
   -v $(pwd)/logs:/var/log/mongodb \
-  mongo:7.0 mongod --config /etc/mongod.conf
+  mongo:8.0 mongod --config /etc/mongod.conf
 ```
 
 ## Part 5: Verify Container and Encryption
@@ -158,7 +158,7 @@ docker run -d \
 docker exec -it mongodb-encrypted bash
 
 # Inside container - test MongoDB connection with auth
-mongo --ssl --sslAllowInvalidCertificates \
+mongosh --tls --tlsAllowInvalidCertificates \
   -u admin -p securepassword123 \
   --authenticationDatabase admin
 
@@ -179,7 +179,7 @@ exit
 
 ```bash
 # Connect from host to containerized MongoDB
-mongo --ssl --sslAllowInvalidCertificates \
+mongosh --tls --tlsAllowInvalidCertificates \
   --host localhost:27017 \
   -u admin -p securepassword123 \
   --authenticationDatabase admin
@@ -221,7 +221,7 @@ namespace MongoDBContainerClient
             Console.WriteLine("🔗 Connecting to containerized MongoDB...");
             
             // Connection string for containerized MongoDB with SSL
-            var connectionString = "mongodb://admin:securepassword123@localhost:27017/admin?ssl=true&sslVerifyCertificate=false";
+            var connectionString = "mongodb://admin:securepassword123@localhost:27017/admin?tls=true&tlsAllowInvalidCertificates=true";
             
             // Create client settings
             var settings = MongoClientSettings.FromConnectionString(connectionString);
@@ -318,7 +318,7 @@ namespace SimpleMongoTest
             try
             {
                 // Simple connection test
-                var client = new MongoClient("mongodb://admin:securepassword123@localhost:27017/admin?ssl=true&sslVerifyCertificate=false");
+                var client = new MongoClient("mongodb://admin:securepassword123@localhost:27017/admin?tls=true&tlsAllowInvalidCertificates=true");
                 
                 var database = client.GetDatabase("quicktest");
                 var collection = database.GetCollection<dynamic>("status");
@@ -356,7 +356,7 @@ dotnet run SimpleTest.cs
 
 1. **Connection String:**
    ```
-   mongodb://admin:securepassword123@localhost:27017/admin?ssl=true
+   mongodb://admin:securepassword123@localhost:27017/admin?tls=true
    ```
 
 2. **Manual Configuration:**
@@ -422,7 +422,7 @@ docker exec mongodb-encrypted ps aux | grep mongod
 ```bash
 # Backup from container to host
 docker exec mongodb-encrypted mongodump \
-  --ssl --sslAllowInvalidCertificates \
+  --tls --tlsAllowInvalidCertificates \
   -u admin -p securepassword123 \
   --authenticationDatabase admin \
   --out /data/backup
@@ -432,7 +432,7 @@ docker cp mongodb-encrypted:/data/backup ./backup-$(date +%Y%m%d)
 
 # Restore backup
 docker exec mongodb-encrypted mongorestore \
-  --ssl --sslAllowInvalidCertificates \
+  --tls --tlsAllowInvalidCertificates \
   -u admin -p securepassword123 \
   --authenticationDatabase admin \
   /data/backup
@@ -449,7 +449,7 @@ docker stop mongodb-encrypted
 docker start mongodb-encrypted
 
 # Connect and verify data is still there
-mongo --ssl --sslAllowInvalidCertificates \
+mongosh --tls --tlsAllowInvalidCertificates \
   --host localhost:27017 \
   -u admin -p securepassword123 \
   --authenticationDatabase admin \
@@ -491,7 +491,7 @@ mongo --ssl --sslAllowInvalidCertificates \
    docker ps | grep mongodb-encrypted
    
    # Test with MongoDB shell first
-   mongo --ssl --sslAllowInvalidCertificates --host localhost:27017
+   mongosh --tls --tlsAllowInvalidCertificates --host localhost:27017
    
    # Check firewall/port access
    telnet localhost 27017
@@ -525,7 +525,7 @@ else
 fi
 
 # Test connection
-if docker exec mongodb-encrypted mongo --ssl --sslAllowInvalidCertificates --eval "db.adminCommand('ping')" > /dev/null 2>&1; then
+if docker exec mongodb-encrypted mongosh --tls --tlsAllowInvalidCertificates --eval "db.adminCommand('ping')" > /dev/null 2>&1; then
     echo "✅ MongoDB is responding"
 else
     echo "❌ MongoDB is not responding"
@@ -533,14 +533,14 @@ else
 fi
 
 # Check encryption
-if docker exec mongodb-encrypted mongo --ssl --sslAllowInvalidCertificates --eval "print(db.serverStatus().encryptionAtRest ? 'Enabled' : 'Disabled')" 2>/dev/null | grep -q "Enabled"; then
+if docker exec mongodb-encrypted mongosh --tls --tlsAllowInvalidCertificates --eval "print(db.serverStatus().encryptionAtRest ? 'Enabled' : 'Disabled')" 2>/dev/null | grep -q "Enabled"; then
     echo "✅ Encryption at rest is enabled"
 else
     echo "❌ Encryption at rest is not enabled"
 fi
 
 # Test external connection
-if mongo --ssl --sslAllowInvalidCertificates --host localhost:27017 --eval "db.adminCommand('ping')" > /dev/null 2>&1; then
+if mongosh --tls --tlsAllowInvalidCertificates --host localhost:27017 --eval "db.adminCommand('ping')" > /dev/null 2>&1; then
     echo "✅ External SSL connection working"
 else
     echo "❌ External SSL connection failed"
@@ -569,7 +569,7 @@ You now have:
 - **Host:** `localhost:27017`
 - **SSL:** Required with self-signed certificate
 - **Auth:** `admin` / `securepassword123`
-- **Connection String:** `mongodb://admin:securepassword123@localhost:27017/admin?ssl=true&sslVerifyCertificate=false`
+- **Connection String:** `mongodb://admin:securepassword123@localhost:27017/admin?tls=true&tlsAllowInvalidCertificates=true`
 
 **Essential Commands:**
 ```bash

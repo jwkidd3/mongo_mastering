@@ -16,25 +16,25 @@
    // Update using $set operator
    db.policies.updateOne(
      {policyNumber: "POL-AUTO-001"},
-     {$set: {premiumAmount: 949.99, lastUpdated: new Date()}}
+     {$set: {annualPremium: 949.99, lastUpdated: new Date()}}
    )
 
    // Verify the update worked
-   db.policies.findOne({policyNumber: "POL-AUTO-001"}, {premiumAmount: 1, lastUpdated: 1})
+   db.policies.findOne({policyNumber: "POL-AUTO-001"}, {annualPremium: 1, lastUpdated: 1})
 
    // Update nested fields
    db.policies.updateOne(
      {policyNumber: "POL-LIFE-001"},
      {
        $set: {
-         "coverage.deathBenefit": 750000,
-         "coverage.cashValue": "enhanced"
+         "coverageDetails.deathBenefit": 750000,
+         "coverageDetails.cashValue": "enhanced"
        }
      }
    )
 
    // Verify the nested field update
-   db.policies.findOne({policyNumber: "POL-LIFE-001"}, {coverage: 1})
+   db.policies.findOne({policyNumber: "POL-LIFE-001"}, {coverageDetails: 1})
 
    // Unset (remove) fields
    db.policies.updateOne(
@@ -71,8 +71,8 @@
    // Conditional updates with complex criteria
    db.policies.updateMany(
      {
-       premiumAmount: {$lt: 1000},
-       active: true
+       annualPremium: {$lt: 1000},
+       isActive: true
      },
      {
        $set: {premiumCategory: "low-cost"},
@@ -83,15 +83,27 @@
    // Bulk premium adjustments
    db.policies.updateMany(
      {policyType: "Auto"},
-     {$mul: {premiumAmount: 0.95}}  // 5% discount
+     {$mul: {annualPremium: 0.95}}  // 5% discount
    )
 
    // Verify the 5% discount was applied
-   db.policies.find({policyType: "Auto"}, {policyNumber: 1, premiumAmount: 1}).limit(3)
+   db.policies.find({policyType: "Auto"}, {policyNumber: 1, annualPremium: 1}).limit(3)
    ```
 
 3. **Array Update Operations**
    ```javascript
+   // First, remove any existing copy then create the vehicle policy document for array operations
+   db.policies.deleteOne({policyNumber: "POL-VEH-001"})
+   db.policies.insertOne({
+     policyNumber: "POL-VEH-001",
+     policyType: "Auto",
+     annualPremium: 1500.00,
+     isActive: true,
+     coverageTypes: ["liability", "collision"],
+     riders: [],
+     createdAt: new Date()
+   })
+
    // Add elements to arrays
    db.policies.updateOne(
      {policyNumber: "POL-VEH-001"},
@@ -113,7 +125,7 @@
    // Remove multiple elements
    db.policies.updateOne(
      {policyNumber: "POL-VEH-001"},
-     {$pullAll: {claimHistory: ["DENIED", "FRAUDULENT"]}}  // Remove denied claims
+     {$pullAll: {claims: [0]}}  // Remove zero-claim entries
    )
 
    // Add to set (avoid duplicates)
@@ -125,7 +137,7 @@
    // Pop elements (remove first/last)
    db.policies.updateOne(
      {policyNumber: "POL-VEH-001"},
-     {$pop: {claimHistory: 1}}  // Remove most recent claim
+     {$pop: {claims: 1}}  // Remove last claim entry
    )
    ```
 
@@ -137,8 +149,8 @@
      {policyNumber: "POL-NEW-001"},
      {
        $set: {
-         customerName: "New Customer",
-         premiumAmount: 1599.99,
+         customerId: "CUST-NEW-001",
+         annualPremium: 1599.99,
          policyType: "Auto"
        },
        $setOnInsert: {
@@ -154,11 +166,11 @@
 
    // Conditional upsert with complex logic
    db.claims.updateOne(
-     {policyId: "POL-AUTO-001", claimType: "collision"},
+     {policyNumber: "POL-AUTO-001", claimType: "collision"},
      {
        $inc: {claimAmount: 500},
        $setOnInsert: {
-         policyId: "POL-AUTO-001",
+         policyNumber: "POL-AUTO-001",
          claimType: "collision",
          filedDate: new Date()
        }
@@ -171,12 +183,12 @@
    ```javascript
    // Replace entire document (except _id)
    db.policies.replaceOne(
-     {_id: "POL-HOME-001"},
+     {policyNumber: "POL-HOME-001"},
      {
        policyNumber: "POL-HOME-001-RENEWED",
-       premiumAmount: 1899.99,
-       policyType: "Home",
-       coverage: {
+       annualPremium: 1899.99,
+       policyType: "Property",
+       coverageDetails: {
          dwellingLimit: 350000,
          personalPropertyLimit: 175000
        },
@@ -187,8 +199,8 @@
    // Conditional replacement
    var existingDoc = db.policies.findOne({policyNumber: "POL-LIFE-001"})
    if (existingDoc) {
-     existingDoc.customerName = "Updated Customer Name"
-     existingDoc.premiumAmount = 2799.99
+     existingDoc.customerId = "CUST-UPDATED-001"
+     existingDoc.annualPremium = 2799.99
      existingDoc.lastModified = new Date()
      db.policies.replaceOne({_id: existingDoc._id}, existingDoc)
    }
@@ -200,12 +212,12 @@
 
    db.policies.insertOne ({
      policyNumber: "POL-MULTI-001",
-     premiumAmount: 1499.99,
+     annualPremium: 1499.99,
      policyType: "Auto",
      vehicles: [
-       { vin: "1HGBH41JXMN109186", covered: true},
-       { vin: "2HGBH41JXMN109187", covered: false},
-       { vin: "3HGBH41JXMN109188", covered: true}
+       { vin: "1HGBH41JXMN109186", covered: true, deductible: 500},
+       { vin: "2HGBH41JXMN109187", covered: false, deductible: 750},
+       { vin: "3HGBH41JXMN109188", covered: true, deductible: 1000}
      ]
   })
 
@@ -228,23 +240,23 @@
 1. **Safe Deletion Practices**
    ```javascript
    // Always test with find first
-   db.policies.find({premiumAmount: {$lt: 100}})
+   db.policies.find({annualPremium: {$lt: 100}})
 
    // Count before deletion
-   var countToDelete = db.policies.countDocuments({premiumAmount: {$lt: 100}})
+   var countToDelete = db.policies.countDocuments({annualPremium: {$lt: 100}})
    print("Will delete " + countToDelete + " documents")
 
    // Delete single document
-   db.policies.deleteOne({premiumAmount: {$lt: 100}})
+   db.policies.deleteOne({annualPremium: {$lt: 100}})
 
    // Verify the deletion worked
-   db.policies.countDocuments({premiumAmount: {$lt: 100}})
+   db.policies.countDocuments({annualPremium: {$lt: 100}})
 
    // Delete with specific _id for safety
-   db.policies.deleteOne({_id: "POL-HOME-001"})
+   db.policies.deleteOne({policyNumber: "POL-HOME-001-RENEWED"})
 
    // Verify specific document was deleted
-   db.policies.findOne({_id: "POL-HOME-001"})
+   db.policies.findOne({policyNumber: "POL-HOME-001-RENEWED"})
    ```
 
 2. **Bulk Deletion Operations**
@@ -252,7 +264,7 @@
    // Delete multiple documents
    var deleteResult = db.policies.deleteMany({
      policyType: "Discontinued",
-     active: false
+     isActive: false
    })
    print("Deleted " + deleteResult.deletedCount + " documents")
 

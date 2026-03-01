@@ -10,12 +10,12 @@ From the project root directory, use the course's standardized setup scripts:
 
 **macOS/Linux:**
 ```bash
-./setup/setup.sh
+./scripts/setup.sh
 ```
 
 **Windows PowerShell:**
 ```powershell
-.\setup\setup.ps1
+.\scripts\setup.ps1
 ```
 
 To check if MongoDB is already running:
@@ -104,7 +104,7 @@ db.resume_tokens.createIndex({ lastUpdated: -1 })
 
 ```javascript
 // Step 1: Create a test claim
-var testClaim = { _id: "claim_cs_test1", claimNumber: "CLM-2024-CS001", customerId: "cust1", policyNumber: "POL-001", claimType: "Auto", claimAmount: NumberDecimal("15000.00"), status: "Filed", incidentDate: new Date("2024-03-15"), filedDate: new Date(), description: "Vehicle collision on highway" };
+var testClaim = { _id: "claim_cs_test1", claimNumber: "CLM-2024-CS001", customerId: "CUST000001", policyNumber: "POL-AUTO-001", claimType: "Auto Accident", claimAmount: NumberDecimal("15000.00"), status: "submitted", incidentDate: new Date("2024-03-15"), filedDate: new Date(), description: "Vehicle collision on highway" };
 ```
 
 ```javascript
@@ -131,7 +131,7 @@ db.notifications.find({ claimId: "claim_cs_test1" }).pretty();
 
 ```javascript
 // Step 1: Create test policy
-var newPolicy = { _id: "policy_cs_test1", policyNumber: "POL-CS-2024-001", customerId: "cust2", policyType: "Home Insurance", coverageLimit: 250000, effectiveDate: new Date(), premiumAmount: NumberDecimal("1200.00"), status: "Active" };
+var newPolicy = { _id: "policy_cs_test1", policyNumber: "POL-CS-2024-001", customerId: "CUST000002", policyType: "Property", coverageLimit: 250000, effectiveDate: new Date(), annualPremium: NumberDecimal("1200.00"), isActive: true };
 ```
 
 ```javascript
@@ -153,22 +153,22 @@ db.notifications.find({ policyId: "policy_cs_test1" }).pretty();
 
 ```javascript
 // Step 1: Update claim status (simulates change stream trigger)
-db.claims.updateOne({ _id: "claim_cs_test1" }, { $set: { status: "Under Review", reviewDate: new Date() } });
+db.claims.updateOne({ _id: "claim_cs_test1" }, { $set: { status: "under_review", reviewDate: new Date() } });
 ```
 
 ```javascript
 // Step 2: Simulate status update notification
-db.notifications.insertOne({ recipientId: "cust1", type: "claim_status_update", priority: "medium", message: "Your claim CLM-2024-CS001 is now under review by our adjusters.", claimId: "claim_cs_test1", claimNumber: "CLM-2024-CS001", timestamp: new Date(), read: false, status: "active" });
+db.notifications.insertOne({ recipientId: "CUST000001", type: "claim_status_update", priority: "medium", message: "Your claim CLM-2024-CS001 is now under review by our adjusters.", claimId: "claim_cs_test1", claimNumber: "CLM-2024-CS001", timestamp: new Date(), read: false, status: "active" });
 ```
 
 ```javascript
 // Step 3: Update to approved status
-db.claims.updateOne({ _id: "claim_cs_test1" }, { $set: { status: "Approved", settlementAmount: NumberDecimal("14500.00") } });
+db.claims.updateOne({ _id: "claim_cs_test1" }, { $set: { status: "approved", settlementAmount: NumberDecimal("14500.00") } });
 ```
 
 ```javascript
 // Step 4: Simulate approval notification
-db.notifications.insertOne({ recipientId: "cust1", type: "settlement_approved", priority: "high", message: "Your claim CLM-2024-CS001 has been settled for $14500.00", claimId: "claim_cs_test1", claimNumber: "CLM-2024-CS001", timestamp: new Date(), read: false, status: "active" });
+db.notifications.insertOne({ recipientId: "CUST000001", type: "settlement_approved", priority: "high", message: "Your claim CLM-2024-CS001 has been settled for $14500.00", claimId: "claim_cs_test1", claimNumber: "CLM-2024-CS001", timestamp: new Date(), read: false, status: "active" });
 ```
 
 ## Part C: Fraud Detection Simulation (10 minutes)
@@ -177,7 +177,7 @@ db.notifications.insertOne({ recipientId: "cust1", type: "settlement_approved", 
 
 ```javascript
 // Step 1: Create high-value claim for fraud detection
-var suspiciousClaim = { _id: "claim_fraud_test", claimNumber: "CLM-FRAUD-001", customerId: "cust3", policyNumber: "POL-002", claimType: "Auto", claimAmount: NumberDecimal("75000.00"), status: "Filed", incidentDate: new Date(), filedDate: new Date(), description: "High-value vehicle total loss" };
+var suspiciousClaim = { _id: "claim_fraud_test", claimNumber: "CLM-FRAUD-001", customerId: "CUST000003", policyNumber: "POL-HOME-001", claimType: "Auto Accident", claimAmount: NumberDecimal("75000.00"), status: "submitted", incidentDate: new Date(), filedDate: new Date(), description: "High-value vehicle total loss" };
 ```
 
 ```javascript
@@ -219,7 +219,7 @@ db.activity_log.insertOne({ operation: "delete", collection: "test_collection", 
 
 ```javascript
 // Step 2: Log claim processing activity
-db.activity_log.insertOne({ operation: "claim_processed", collection: "claims", documentId: "claim_cs_test1", details: { previousStatus: "Filed", newStatus: "Approved", processedBy: "adjuster1" }, timestamp: new Date(), userId: "system" });
+db.activity_log.insertOne({ operation: "claim_processed", collection: "claims", documentId: "claim_cs_test1", details: { previousStatus: "submitted", newStatus: "approved", processedBy: "adjuster1" }, timestamp: new Date(), userId: "system" });
 ```
 
 ```javascript
@@ -234,8 +234,8 @@ db.activity_log.find().sort({ timestamp: -1 }).limit(5).pretty();
 ```javascript
 // Real-time claims dashboard
 print("=== Real-time Claims Dashboard ===");
-print("Active Claims: " + db.claims.countDocuments({ status: { $in: ["Filed", "Under Review"] } }));
-print("Approved Claims Today: " + db.claims.countDocuments({ status: "Approved", reviewDate: { $gte: new Date(new Date().setHours(0,0,0,0)) } }));
+print("Active Claims: " + db.claims.countDocuments({ status: { $in: ["submitted", "under_review"] } }));
+print("Approved Claims Today: " + db.claims.countDocuments({ status: "approved", reviewDate: { $gte: new Date(new Date().setHours(0,0,0,0)) } }));
 print("Pending Notifications: " + db.notifications.countDocuments({ read: false }));
 print("Active Fraud Alerts: " + db.fraud_alerts.countDocuments({ status: "active" }));
 ```

@@ -1,6 +1,6 @@
 # Manual Day 2 Data Setup
 
-This guide provides step-by-step instructions for manually loading Day 2 analytics data if the automated `day2_data_loader.js` script cannot be used.
+This guide provides step-by-step instructions for manually loading Day 2 data if the automated `day2_data_loader.js` script cannot be used.
 
 ## Prerequisites
 
@@ -19,7 +19,7 @@ mongosh
 ### 2. Switch to Analytics Database
 
 ```javascript
-use insurance_analytics
+use insurance_company
 ```
 
 ### 3. Create Policy Types Collection (Hierarchical Structure)
@@ -52,8 +52,8 @@ db.policy_types.insertMany([
     ]
   },
   {
-    _id: "home_policies",
-    category: "Home",
+    _id: "property_policies",
+    category: "Property",
     description: "Property insurance policies",
     subcategories: [
       {
@@ -90,8 +90,8 @@ db.policy_types.insertMany([
     ]
   },
   {
-    _id: "business_policies",
-    category: "Business",
+    _id: "commercial_policies",
+    category: "Commercial",
     description: "Commercial insurance policies",
     subcategories: [
       {
@@ -204,7 +204,7 @@ db.branches.insertMany([
 ```javascript
 // Create 50 policies for aggregation testing
 var policies = [];
-var policyTypes = ["Auto", "Home", "Life", "Business"];
+var policyTypes = ["Auto", "Property", "Life", "Commercial"];
 var statuses = [true, false];
 var regions = ["North", "West", "East"];
 
@@ -217,9 +217,9 @@ for (var i = 1; i <= 50; i++) {
   var basePremium = 0;
   switch(policyType) {
     case "Auto": basePremium = 1200; break;
-    case "Home": basePremium = 1500; break;
+    case "Property": basePremium = 1500; break;
     case "Life": basePremium = 2400; break;
-    case "Business": basePremium = 4500; break;
+    case "Commercial": basePremium = 4500; break;
   }
 
   var variation = Math.random() * 1000 - 500; // ±500 variation
@@ -302,13 +302,13 @@ db.customers.insertMany(customers);
 ```javascript
 // Create 200 claims for analytics
 var claims = [];
-var claimTypes = ["Auto", "Home", "Life", "Business"];
-var statuses = ["Approved", "Denied", "Under Review", "Pending"];
+var claimTypes = ["Auto", "Property", "Life", "Commercial"];
+var statuses = ["approved", "denied", "under_review", "pending"];
 var descriptions = {
   "Auto": ["Collision damage", "Theft", "Vandalism", "Hail damage"],
-  "Home": ["Storm damage", "Fire damage", "Theft", "Water damage"],
+  "Property": ["Storm damage", "Fire damage", "Theft", "Water damage"],
   "Life": ["Death benefit claim", "Disability claim"],
-  "Business": ["Liability claim", "Property damage", "Cyber attack"]
+  "Commercial": ["Liability claim", "Property damage", "Cyber attack"]
 };
 
 for (var i = 1; i <= 200; i++) {
@@ -318,10 +318,10 @@ for (var i = 1; i <= 200; i++) {
 
   // Amount based on type and status
   var baseAmount = claimType === "Life" ? 100000 :
-                   claimType === "Business" ? 25000 :
-                   claimType === "Home" ? 15000 : 8000;
+                   claimType === "Commercial" ? 25000 :
+                   claimType === "Property" ? 15000 : 8000;
 
-  var amount = status === "Denied" ? 0 :
+  var amount = status === "denied" ? 0 :
                baseAmount + (Math.random() * baseAmount * 0.5);
 
   claims.push({
@@ -333,7 +333,7 @@ for (var i = 1; i <= 200; i++) {
     incidentDate: new Date(2023, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1),
     reportedDate: new Date(2023, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1),
     claimAmount: NumberDecimal(amount.toFixed(2)),
-    adjustedAmount: status === "Approved" ? NumberDecimal((amount * 0.95).toFixed(2)) : NumberDecimal("0.00"),
+    adjustedAmount: status === "approved" ? NumberDecimal((amount * 0.95).toFixed(2)) : NumberDecimal("0.00"),
     status: status,
     description: description,
     processingTime: NumberInt(Math.floor(Math.random() * 30) + 1), // Days
@@ -361,7 +361,7 @@ db.agents.insertMany([
     licenseNumber: "TX-ANALYTICS-001",
     hireDate: new Date("2020-01-15"),
     branchId: "ABR-001",
-    specialties: ["Auto", "Home", "Analytics"],
+    specialties: ["Auto", "Property", "Analytics"],
     commissionRate: NumberDecimal("0.055"),
     performance: {
       policiesSold: NumberInt(247),
@@ -382,7 +382,7 @@ db.agents.insertMany([
     licenseNumber: "TX-ANALYTICS-002",
     hireDate: new Date("2019-06-01"),
     branchId: "ABR-002",
-    specialties: ["Life", "Business", "Risk Assessment"],
+    specialties: ["Life", "Commercial", "Risk Assessment"],
     commissionRate: NumberDecimal("0.065"),
     performance: {
       policiesSold: NumberInt(189),
@@ -582,11 +582,11 @@ var aggResult = db.policies.aggregate([
   {$sort: {count: -1}}
 ]).toArray()
 
-printjson(aggResult)
+print(JSON.stringify(aggResult, null, 2))
 
 // Test text search
 print("\n=== Text Search Test ===")
-var searchResult = db.reviews.find({$text: {$search: "excellent professional"}}).count()
+var searchResult = db.reviews.countDocuments({$text: {$search: "excellent professional"}})
 print("Text search results: " + searchResult)
 ```
 

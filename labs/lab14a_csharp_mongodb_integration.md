@@ -10,12 +10,12 @@ From the project root directory, use the course's standardized setup scripts:
 
 **macOS/Linux:**
 ```bash
-./setup/setup.sh
+./scripts/setup.sh
 ```
 
 **Windows PowerShell:**
 ```powershell
-.\setup\setup.ps1
+.\scripts\setup.ps1
 ```
 
 To check if MongoDB is already running:
@@ -211,6 +211,7 @@ namespace InsuranceManagementSystem.Models
         public string Country { get; set; } = "USA";
     }
 }
+```
 
 **Create Models/Claim.cs:**
 ```csharp
@@ -231,8 +232,8 @@ namespace InsuranceManagementSystem.Models
         [BsonElement("customerId")]
         public string CustomerId { get; set; } = string.Empty;
 
-        [BsonElement("policyId")]
-        public string PolicyId { get; set; } = string.Empty;
+        [BsonElement("policyNumber")]
+        public string PolicyNumber { get; set; } = string.Empty;
 
         [BsonElement("claimType")]
         public string ClaimType { get; set; } = string.Empty;
@@ -255,7 +256,7 @@ namespace InsuranceManagementSystem.Models
         public decimal? SettlementAmount { get; set; }
 
         [BsonElement("status")]
-        public string Status { get; set; } = "Filed";
+        public string Status { get; set; } = "submitted";
 
         [BsonElement("description")]
         public string Description { get; set; } = string.Empty;
@@ -517,6 +518,7 @@ namespace InsuranceManagementSystem.Services
         }
     }
 }
+```
 
 **Create Services/ClaimService.cs:**
 ```csharp
@@ -563,9 +565,9 @@ namespace InsuranceManagementSystem.Services
             return await _claims.Find(c => c.CustomerId == customerId).ToListAsync();
         }
 
-        public async Task<List<Claim>> GetClaimsByPolicyAsync(string policyId)
+        public async Task<List<Claim>> GetClaimsByPolicyAsync(string policyNumber)
         {
-            return await _claims.Find(c => c.PolicyId == policyId).ToListAsync();
+            return await _claims.Find(c => c.PolicyNumber == policyNumber).ToListAsync();
         }
 
         public async Task<List<Claim>> GetClaimsByStatusAsync(string status)
@@ -580,7 +582,7 @@ namespace InsuranceManagementSystem.Services
 
         public async Task<List<Claim>> GetOpenClaimsAsync()
         {
-            var openStatuses = new[] { "Filed", "Under Review", "Investigating" };
+            var openStatuses = new[] { "submitted", "under_review", "investigating" };
             var filter = Builders<Claim>.Filter.In(c => c.Status, openStatuses);
             return await _claims.Find(filter).ToListAsync();
         }
@@ -608,7 +610,7 @@ namespace InsuranceManagementSystem.Services
             var filter = Builders<Claim>.Filter.Eq(c => c.Id, id);
             var update = Builders<Claim>.Update
                 .Set(c => c.AdjusterId, adjusterId)
-                .Set(c => c.Status, "Under Review");
+                .Set(c => c.Status, "under_review");
             var result = await _claims.UpdateOneAsync(filter, update);
             return result.ModifiedCount > 0;
         }
@@ -617,7 +619,7 @@ namespace InsuranceManagementSystem.Services
         {
             var filter = Builders<Claim>.Filter.Eq(c => c.Id, id);
             var update = Builders<Claim>.Update
-                .Set(c => c.Status, "Approved")
+                .Set(c => c.Status, "approved")
                 .Set(c => c.SettlementAmount, settlementAmount)
                 .Set(c => c.ApprovedBy, approvedBy)
                 .Set(c => c.ApprovalDate, DateTime.UtcNow);
@@ -629,7 +631,7 @@ namespace InsuranceManagementSystem.Services
         {
             var filter = Builders<Claim>.Filter.Eq(c => c.Id, id);
             var update = Builders<Claim>.Update
-                .Set(c => c.Status, "Denied")
+                .Set(c => c.Status, "denied")
                 .Set(c => c.DenialReason, denialReason);
             var result = await _claims.UpdateOneAsync(filter, update);
             return result.ModifiedCount > 0;
@@ -840,7 +842,7 @@ class Program
             {
                 ClaimNumber = "CLM-2024-CS-001",
                 CustomerId = "cust_001",
-                PolicyId = allPolicies.First().Id!,
+                PolicyNumber = allPolicies.First().PolicyNumber,
                 ClaimType = "Auto Accident",
                 State = "FL",
                 IncidentDate = DateTime.UtcNow.AddDays(-10),
@@ -851,7 +853,7 @@ class Program
             {
                 ClaimNumber = "CLM-2024-CS-002",
                 CustomerId = "cust_002",
-                PolicyId = allPolicies.Skip(1).First().Id!,
+                PolicyNumber = allPolicies.Skip(1).First().PolicyNumber,
                 ClaimType = "Property Damage",
                 State = "NY",
                 IncidentDate = DateTime.UtcNow.AddDays(-5),
@@ -1070,9 +1072,9 @@ namespace InsuranceManagementSystem.Services
                 Console.WriteLine($"✅ Successfully fetched {claims.Count} claims");
 
                 // Test resilient critical operation (claim approval)
-                if (claims.Any(c => c.Status == "Under Review"))
+                if (claims.Any(c => c.Status == "under_review"))
                 {
-                    var claimToApprove = claims.First(c => c.Status == "Under Review");
+                    var claimToApprove = claims.First(c => c.Status == "under_review");
                     var approved = await ExecuteWithRetryAsync(async () =>
                     {
                         Console.WriteLine($"Processing critical claim approval for {claimToApprove.ClaimNumber}...");
@@ -1108,7 +1110,7 @@ dotnet run
    - `claims` collection with claim documents
    - `customers` collection (if implemented)
 4. View the documents and their insurance-specific structure
-5. Observe the policy and claim relationships through the `customerId` and `policyId` fields
+5. Observe the policy and claim relationships through the `customerId` and `policyNumber` fields
 
 ## Lab 14A Deliverables
 ✅ **C# MongoDB integration** for insurance management with strongly-typed models:

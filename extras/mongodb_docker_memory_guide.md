@@ -34,7 +34,7 @@ MongoDB versions 3.6.13+ and 4.0.9+ now respect container memory limits for Wire
 version: '3.8'
 services:
   mongodb:
-    image: mongo:7.0
+    image: mongo:8.0
     container_name: mongodb-course
     restart: unless-stopped
     
@@ -83,7 +83,7 @@ volumes:
 version: '3.8'
 services:
   mongodb-memory-optimized:
-    image: mongo:7.0
+    image: mongo:8.0
     container_name: mongodb-course-memory
     restart: unless-stopped
     
@@ -502,11 +502,13 @@ docker exec mongodb-course-memory mongosh --eval "db.serverStatus().mem"
 
 # Watch cache hit ratio
 docker exec mongodb-course-memory mongosh --eval "
-setInterval(() => {
-    const cache = db.serverStatus().wiredTiger.cache;
-    const hitRatio = ((cache['pages requested from the cache'] - cache['pages read into cache']) / cache['pages requested from the cache'] * 100).toFixed(2);
-    print(\`\${new Date().toLocaleTimeString()} - Cache Hit Ratio: \${hitRatio}%\`);
-}, 5000);
+// Monitor cache hit ratio (run for 5 iterations)
+for (var i = 0; i < 5; i++) {
+    var cache = db.serverStatus().wiredTiger.cache;
+    var hitRatio = ((cache['pages requested from the cache'] - cache['pages read into cache']) / cache['pages requested from the cache'] * 100).toFixed(2);
+    print(new Date().toLocaleTimeString() + ' - Cache Hit Ratio: ' + hitRatio + '%');
+    sleep(5000);
+}
 "
 ```
 

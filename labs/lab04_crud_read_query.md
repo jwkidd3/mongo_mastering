@@ -19,8 +19,8 @@
 
    // Find with conditions
    db.policies.find({policyType: "Auto"})
-   db.policies.find({premiumAmount: 899.99})
-   db.policies.find({active: true})
+   db.policies.find({annualPremium: 899.99})
+   db.policies.find({isActive: true})
 
    // Count documents
    db.policies.countDocuments()
@@ -33,26 +33,26 @@
 2. **Comparison Operators**
    ```javascript
    // Equality and inequality
-   db.policies.find({premiumAmount: {$eq: 899.99}})
-   db.policies.find({premiumAmount: {$ne: 899.99}})
+   db.policies.find({annualPremium: {$eq: 899.99}})
+   db.policies.find({annualPremium: {$ne: 899.99}})
 
    // Range queries
-   db.policies.find({premiumAmount: {$gt: 1000}})
-   db.policies.find({premiumAmount: {$gte: 1000}})
-   db.policies.find({premiumAmount: {$lt: 2000}})
-   db.policies.find({premiumAmount: {$lte: 2000}})
+   db.policies.find({annualPremium: {$gt: 1000}})
+   db.policies.find({annualPremium: {$gte: 1000}})
+   db.policies.find({annualPremium: {$lt: 2000}})
+   db.policies.find({annualPremium: {$lte: 2000}})
 
    // Range combinations
    db.policies.find({
-     premiumAmount: {$gte: 500, $lte: 2000}
+     annualPremium: {$gte: 500, $lte: 2000}
    })
 
    // Array membership
    db.policies.find({
-     policyType: {$in: ["Auto", "Home"]}
+     policyType: {$in: ["Auto", "Property"]}
    })
    db.policies.find({
-     policyType: {$nin: ["Auto", "Home"]}
+     policyType: {$nin: ["Auto", "Property"]}
    })
    ```
 
@@ -61,14 +61,14 @@
    // AND operations (implicit and explicit)
    db.policies.find({
      policyType: "Auto",
-     premiumAmount: {$lt: 1500}
+     annualPremium: {$lt: 1500}
    })
 
    db.policies.find({
      $and: [
        {policyType: "Auto"},
-       {premiumAmount: {$lt: 1500}},
-       {active: true}
+       {annualPremium: {$lt: 1500}},
+       {isActive: true}
      ]
    })
 
@@ -76,20 +76,20 @@
    db.policies.find({
      $or: [
        {policyType: "Auto"},
-       {premiumAmount: {$lt: 1000}}
+       {annualPremium: {$lt: 1000}}
      ]
    })
 
    // NOT operations
    db.policies.find({
-     premiumAmount: {$not: {$gt: 3000}}
+     annualPremium: {$not: {$gt: 3000}}
    })
 
    // NOR operations
    db.policies.find({
      $nor: [
        {policyType: "Auto"},
-       {premiumAmount: {$gt: 3000}}
+       {annualPremium: {$gt: 3000}}
      ]
    })
    ```
@@ -98,11 +98,11 @@
 1. **Field Existence and Type Queries**
    ```javascript
    // Field existence
-   db.policies.find({coverage: {$exists: true}})
+   db.policies.find({coverageDetails: {$exists: true}})
    db.policies.find({discount: {$exists: false}})
 
    // Type checking
-   db.policies.find({premiumAmount: {$type: "double"}})
+   db.policies.find({annualPremium: {$type: "double"}})
    db.policies.find({_id: {$type: "string"}})
    db.policies.find({beneficiaries: {$type: "array"}})
 
@@ -119,7 +119,7 @@
        policyNumber: "POL-VEH-001",
        coverageTypes: ["collision", "comprehensive", "liability"],
        policyType: "Auto",
-       premiumAmount: 1250,
+       annualPremium: 1250,
        claims: [4, 2, 1, 0, 0],
        vehicles: [
          {make: "Toyota", model: "Camry", year: 2020},
@@ -129,8 +129,8 @@
      {
        policyNumber: "POL-HOME-002",
        coverageTypes: ["dwelling", "personal_property"],
-       policyType: "Home",
-       premiumAmount: 1850,
+       policyType: "Property",
+       annualPremium: 1850,
        claims: [1, 0, 2],
        properties: [
          {type: "primary_residence", sqft: 2400},
@@ -179,16 +179,16 @@
 1. **Projection and Field Selection**
    ```javascript
    // Include specific fields
-   db.policies.find({}, {policyNumber: 1, premiumAmount: 1})
+   db.policies.find({}, {policyNumber: 1, annualPremium: 1})
 
    // Exclude _id
-   db.policies.find({}, {policyNumber: 1, premiumAmount: 1, _id: 0})
+   db.policies.find({}, {policyNumber: 1, annualPremium: 1, _id: 0})
 
    // Exclude specific fields
-   db.policies.find({}, {coverage: 0, beneficiaries: 0})
+   db.policies.find({}, {coverageDetails: 0, beneficiaries: 0})
 
    // Nested field projection
-   db.policies.find({}, {"coverage.deathBenefit": 1, policyNumber: 1})
+   db.policies.find({}, {"coverageDetails.deathBenefit": 1, policyNumber: 1})
 
    // Array element projection
    db.policies.find({}, {policyNumber: 1, "coverageTypes.1": 1})
@@ -197,11 +197,11 @@
 2. **Sorting, Limiting, and Skipping**
    ```javascript
    // Sort by single field
-   db.policies.find().sort({premiumAmount: 1})     // Ascending
-   db.policies.find().sort({premiumAmount: -1})    // Descending
+   db.policies.find().sort({annualPremium: 1})     // Ascending
+   db.policies.find().sort({annualPremium: -1})    // Descending
 
    // Sort by multiple fields
-   db.policies.find().sort({policyType: 1, premiumAmount: -1})
+   db.policies.find().sort({policyType: 1, annualPremium: -1})
 
    // Limit results
    db.policies.find().limit(5)
@@ -211,7 +211,7 @@
 
    // Combine operations
    db.policies.find({policyType: "Auto"})
-     .sort({premiumAmount: -1})
+     .sort({annualPremium: -1})
      .limit(3)
      .pretty()
    ```
@@ -222,24 +222,24 @@
    var cursor = db.policies.find({policyType: "Auto"})
    while (cursor.hasNext()) {
      var doc = cursor.next()
-     print("Policy: " + doc.policyNumber + ", Premium: $" + doc.premiumAmount)
+     print("Policy: " + doc.policyNumber + ", Premium: $" + doc.annualPremium)
    }
 
    // forEach iteration
    db.policies.find({policyType: "Auto"}).forEach(
      function(doc) {
-       print(doc.policyNumber + " premium: $" + doc.premiumAmount)
+       print(doc.policyNumber + " premium: $" + doc.annualPremium)
      }
    )
 
    // Convert to array
-   var policiesArray = db.policies.find({premiumAmount: {$lt: 1500}}).toArray()
+   var policiesArray = db.policies.find({annualPremium: {$lt: 1500}}).toArray()
    print("Found " + policiesArray.length + " policies under $1500")
 
    // Cursor information
    var cursor = db.policies.find()
    print("Cursor has next: " + cursor.hasNext())
-   print("Cursor size: " + cursor.size())
+   print("Total documents: " + db.policies.countDocuments())
    print("Document count: " + db.policies.countDocuments())
    ```
 

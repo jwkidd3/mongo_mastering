@@ -32,7 +32,7 @@ mongosh --eval "db.getSiblingDB('insurance_company').policies.countDocuments()"
 
 **Expected output:** Branches: 5, Policies: 10
 
-💡 **See [LOAD_DATA.md](../LOAD_DATA.md) for detailed instructions and troubleshooting**
+💡 **See [Manual Setup](../data/manual_day1_setup.md) for detailed instructions and troubleshooting**
 
 ## Tasks
 
@@ -100,7 +100,7 @@ mongosh --eval "db.getSiblingDB('insurance_company').policies.countDocuments()"
 
    // Collection helpers
    show collections  // List collections in current database
-   db.createCollection("policies")
+   db.createCollection("lab1_test")  // Use test name to avoid conflict with pre-loaded data
 
    // Index helpers
    db.policies.getIndexes()
@@ -115,7 +115,7 @@ mongosh --eval "db.getSiblingDB('insurance_company').policies.countDocuments()"
    ```javascript
    // Command execution methods
    db.runCommand({ping: 1})
-   db.adminCommand({listCollections: 1})
+   db.runCommand({listCollections: 1})
 
    // Profiling commands
    db.setProfilingLevel(2)
@@ -145,7 +145,7 @@ mongosh --eval "db.getSiblingDB('insurance_company').policies.countDocuments()"
    prompt = function() { return db.getName() + "> ";}
 
    // Disable line wrapping for long output
-   DBQuery.shellBatchSize = 10
+   config.set("displayBatchSize", 10)
    ```
 
 ## Challenge Exercise

@@ -13,7 +13,7 @@ print("=======================================================\n");
 print("🚀 Starting comprehensive data loading process...");
 print("This will load data for all three days of the course.\n");
 
-const startTime = new Date();
+var startTime = new Date();
 
 // ===========================================
 // DAY 1: FUNDAMENTALS DATA (Labs 1-5)
@@ -38,7 +38,7 @@ print("✅ Day 1 complete data loaded successfully");
 print("\n[█████████████░░░░░░░] 67% - Day 2: Advanced Features Data");
 print("\n📊 DAY 2: Advanced MongoDB Features");
 print("Labs: 6-10 (Advanced Queries, Aggregation, Indexing, Performance)");
-print("Database: insurance_analytics\n");
+print("Database: insurance_company (Day 2 additions)\n");
 
 print("🔄 Loading day2_data_loader.js...");
 print("━".repeat(60));
@@ -69,8 +69,8 @@ print("✅ Day 3 complete production data loaded successfully");
 
 print("\n🔧 Final setup and verification...");
 
-const endTime = new Date();
-const loadingTime = (endTime - startTime) / 1000;
+var endTime = new Date();
+var loadingTime = (endTime - startTime) / 1000;
 
 print("\n============================================================");
 print("🎉 COMPREHENSIVE DATA LOADING COMPLETE!");
@@ -89,11 +89,9 @@ print("   • Customers: " + db.customers.countDocuments());
 print("   • Branches: " + db.branches.countDocuments());
 print("");
 
-db = db.getSiblingDB('insurance_analytics');
-print("📊 insurance_analytics database:");
-print("   • Policies: " + db.policies.countDocuments());
-print("   • Customers: " + db.customers.countDocuments());
 print("   • Claims: " + db.claims.countDocuments());
+print("   • Agents: " + db.agents.countDocuments());
+print("   • Reviews: " + db.reviews.countDocuments());
 print("");
 
 print("🎯 READY FOR ALL LABS:");

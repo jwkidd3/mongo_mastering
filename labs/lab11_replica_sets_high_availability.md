@@ -4,7 +4,7 @@
 
 ## Prerequisites: Environment Setup
 
-### Step 1: Verify MongoDB Environment
+### Prerequisites: Verify MongoDB Environment
 
 **⚠️ Only run if MongoDB environment is not already running**
 
@@ -12,12 +12,12 @@ From the project root directory, use the course's standardized setup scripts:
 
 **macOS/Linux:**
 ```bash
-./setup/setup.sh
+./scripts/setup.sh
 ```
 
 **Windows PowerShell:**
 ```powershell
-.\setup\setup.ps1
+.\scripts\setup.ps1
 ```
 
 To check if MongoDB is already running:
@@ -58,9 +58,9 @@ use insurance_company
 
 // Insert new policies to primary
 db.policies.insertMany([
-  { policyNumber: "POL-TEST-001", status: "Active", premium: 5000, type: "Auto", timestamp: new Date() },
-  { policyNumber: "POL-TEST-002", status: "Pending", premium: 8500, type: "Home", timestamp: new Date() },
-  { policyNumber: "POL-TEST-003", status: "Active", premium: 3200, type: "Life", timestamp: new Date() }
+  { policyNumber: "POL-TEST-001", status: "Active", annualPremium: 5000, policyType: "Auto", timestamp: new Date() },
+  { policyNumber: "POL-TEST-002", status: "Pending", annualPremium: 8500, policyType: "Property", timestamp: new Date() },
+  { policyNumber: "POL-TEST-003", status: "Active", annualPremium: 3200, policyType: "Life", timestamp: new Date() }
 ])
 
 // Verify the write
@@ -72,13 +72,13 @@ db.policies.countDocuments({ policyNumber: /POL-TEST/ })
 Connect directly to a secondary member:
 
 ```bash
-mongosh --port 27018
+mongosh --port 27018 --directConnection
 ```
 
 Enable secondary reads (required on secondaries):
 ```javascript
 // Allow reads on secondary
-rs.secondaryOk()
+db.getMongo().setReadPref("secondaryPreferred")
 
 // Switch to the database
 use insurance_company
@@ -108,7 +108,7 @@ db.policies.find({ policyNumber: /POL-TEST/ }).toArray()
 
 **Key Concept:**
 - Secondaries replicate data from the primary
-- By default, secondaries reject reads (you must run `rs.secondaryOk()`)
+- By default, secondaries reject reads (you must run `db.getMongo().setReadPref("secondaryPreferred")`)
 - Reading from secondaries distributes load but may return slightly stale data
 
 ## Part C: Failover Testing (15 minutes)
@@ -162,7 +162,7 @@ db.hello()
 db.policies.countDocuments({ policyNumber: /POL-TEST/ })
 
 // Insert new policy to new primary
-db.policies.insertOne({ policyNumber: "POL-TEST-004", status: "Active", premium: 7500, type: "Commercial", timestamp: new Date() })
+db.policies.insertOne({ policyNumber: "POL-TEST-004", status: "Active", annualPremium: 7500, policyType: "Commercial", timestamp: new Date() })
 
 // Verify the new write
 db.policies.find({ policyNumber: "POL-TEST-004" })
@@ -181,12 +181,12 @@ db.policies.countDocuments({ policyNumber: /POL-TEST/ })
 Exit and connect to secondary to verify replication:
 ```bash
 exit
-mongosh --port 27018
+mongosh --port 27018 --directConnection
 ```
 
 ```javascript
 // Enable secondary reads
-rs.secondaryOk()
+db.getMongo().setReadPref("secondaryPreferred")
 
 // Switch to insurance_company database
 use insurance_company
@@ -210,13 +210,13 @@ use insurance_company
 
 // Write with majority concern (waits for majority acknowledgment)
 db.policies.insertOne(
-  { policyNumber: "POL-TEST-005", status: "Active", premium: 9000, type: "Auto", timestamp: new Date() },
+  { policyNumber: "POL-TEST-005", status: "Active", annualPremium: 9000, policyType: "Auto", timestamp: new Date() },
   { writeConcern: { w: "majority", wtimeout: 5000 } }
 )
 
 // Write with w:1 (only primary acknowledgment)
 db.policies.insertOne(
-  { policyNumber: "POL-TEST-006", status: "Active", premium: 4500, type: "Life", timestamp: new Date() },
+  { policyNumber: "POL-TEST-006", status: "Active", annualPremium: 4500, policyType: "Life", timestamp: new Date() },
   { writeConcern: { w: 1 } }
 )
 ```
@@ -229,10 +229,19 @@ db.policies.insertOne(
 
 ```javascript
 // Read with majority concern (only majority-acknowledged data)
-db.policies.find({ policyNumber: /POL-TEST/ }).readConcern("majority")
+// Note: readConcern cannot be chained on a cursor; use db.runCommand() instead
+db.runCommand({
+  find: "policies",
+  filter: { policyNumber: /POL-TEST/ },
+  readConcern: { level: "majority" }
+})
 
 // Read with local concern (fastest, may include non-replicated data)
-db.policies.find({ policyNumber: /POL-TEST/ }).readConcern("local")
+db.runCommand({
+  find: "policies",
+  filter: { policyNumber: /POL-TEST/ },
+  readConcern: { level: "local" }
+})
 ```
 
 ## Lab 11 Deliverables

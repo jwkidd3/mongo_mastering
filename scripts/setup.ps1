@@ -230,7 +230,7 @@ $connected = $false
 while ($attempt -le $maxAttempts -and -not $connected) {
     try {
         # Use simpler command for better Windows compatibility
-        $testCommand = "var status=rs.isMaster();if(status.ismaster){print('Connected');quit(0);}else{quit(1);}"
+        $testCommand = "var status=db.hello();if(status.isWritablePrimary){print('Connected');quit(0);}else{quit(1);}"
         $testResult = cmd /c "mongosh --quiet --eval `"$testCommand`" 2>nul"
         if ($LASTEXITCODE -eq 0) {
             $connected = $true
@@ -311,7 +311,7 @@ Write-Host ""
 Write-Host "Next steps:" -ForegroundColor Yellow
 Write-Host "  1. Load course data: cd ..\data && mongosh < day1_data_loader.js" -ForegroundColor White
 Write-Host "  2. Test connection: mongosh" -ForegroundColor White
-Write-Host "  3. See LOAD_DATA.md for detailed data loading instructions" -ForegroundColor White
+Write-Host "  3. See data\manual_day1_setup.md for detailed data loading instructions" -ForegroundColor White
 Write-Host "  4. When done: .\teardown.ps1" -ForegroundColor White
 Write-Host ""
 Write-Host "Troubleshooting:" -ForegroundColor Yellow

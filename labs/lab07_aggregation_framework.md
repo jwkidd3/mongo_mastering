@@ -1,4 +1,4 @@
-# Lab 2: MongoDB Aggregation Framework (45 minutes)
+# Lab 7: MongoDB Aggregation Framework (45 minutes)
 
 ## Learning Objectives
 - Build complex aggregation pipelines for data analysis
@@ -6,9 +6,15 @@
 - Implement business intelligence queries using aggregation
 
 ## Prerequisites
-- Sample insurance database with collections: `policies`, `claims`, `customers`, `agents`, `vehicles`, `properties`, `payments`
+- Sample insurance database with collections: `policies`, `claims`, `customers`, `agents`, `branches`, `payments`, `reviews`
+- Data counts after running both Day 1 and Day 2 loaders: 13 policies, 20 customers, 15 claims, 10 agents, 5 branches, 3 reviews
 
 ## Tasks
+
+**First, switch to the correct database:**
+```javascript
+use insurance_company
+```
 
 ### Part A: Basic Aggregation Pipelines ($match, $group, $sort) (15 minutes)
 
@@ -62,7 +68,7 @@
        $lookup: {
          from: "customers",
          localField: "customerId",
-         foreignField: "_id",
+         foreignField: "customerId",
          as: "customerInfo"
        }
      },
@@ -87,7 +93,7 @@
      {
        $lookup: {
          from: "claims",
-         localField: "_id",
+         localField: "customerId",
          foreignField: "customerId",
          as: "claims"
        }
@@ -95,7 +101,7 @@
      {
        $lookup: {
          from: "policies",
-         localField: "_id",
+         localField: "customerId",
          foreignField: "customerId",
          as: "policies"
        }
@@ -114,13 +120,20 @@
              else: 0
            }
          },
+         // Guard against division by zero for customers with no policies
          riskLevel: {
-           $switch: {
-             branches: [
-               { case: { $gte: [{ $divide: [{ $size: "$claims" }, { $size: "$policies" }] }, 0.5] }, then: "High" },
-               { case: { $gte: [{ $divide: [{ $size: "$claims" }, { $size: "$policies" }] }, 0.2] }, then: "Medium" }
-             ],
-             default: "Low"
+           $cond: {
+             if: { $eq: [{ $size: "$policies" }, 0] },
+             then: "No Policies",
+             else: {
+               $switch: {
+                 branches: [
+                   { case: { $gte: [{ $divide: [{ $size: "$claims" }, { $size: "$policies" }] }, 0.5] }, then: "High" },
+                   { case: { $gte: [{ $divide: [{ $size: "$claims" }, { $size: "$policies" }] }, 0.2] }, then: "Medium" }
+                 ],
+                 default: "Low"
+               }
+             }
            }
          }
        }
@@ -160,7 +173,7 @@
        $lookup: {
          from: "customers",
          localField: "customerId",
-         foreignField: "_id",
+         foreignField: "customerId",
          as: "customer"
        }
      },
@@ -269,10 +282,12 @@ Build a pipeline that:
 2. **Data Validation**
    ```javascript
    // Verify aggregation results match expected business logic
+   // policyType values are mixed-case: "Auto", "Property", "Life", "Commercial", etc.
    db.policies.aggregate([
-     { $match: { policyType: "AUTO" } },
+     { $match: { policyType: "Auto" } },
      { $count: "autoCount" }
    ])
+   // Expected: autoCount = 4 (POL-AUTO-001, POL-AUTO-002, POL-AUTO-003, POL-AUTO-2024-001)
    ```
 
 ## Expected Outcomes

@@ -4,7 +4,7 @@
 
 ## Prerequisites: Environment Setup
 
-### Step 1: Verify MongoDB Environment
+### Prerequisites: Verify MongoDB Environment
 
 **⚠️ Only run if MongoDB environment is not already running**
 
@@ -12,12 +12,12 @@ From the project root directory, use the course's standardized setup scripts:
 
 **macOS/Linux:**
 ```bash
-./setup/setup.sh
+./scripts/setup.sh
 ```
 
 **Windows PowerShell:**
 ```powershell
-.\setup\setup.ps1
+.\scripts\setup.ps1
 ```
 
 To check if MongoDB is already running:
@@ -105,22 +105,27 @@ print("Documents per shard (3 shards): " + docsPerShard)
 Based on this data analysis, insurance companies typically benefit from:
 
 1. **Geographic Sharding**: Distribute customers by state/region for data locality
-2. **Product Sharding**: Separate policy types (Auto, Home, Life) for specialized processing
+2. **Product Sharding**: Separate policy types (Auto, Property, Life) for specialized processing
 3. **Hash-based Sharding**: Use `_id` field for guaranteed even distribution
 4. **Range-based Sharding**: Optimize time-series queries using date fields
 
 ### Step 3: Sharding Commands Simulation
 
 In a real sharded environment, you would use these commands:
-  var claimsByLocation = db.claims.aggregate([
-    { $group: { _id: "$state", count: { $sum: 1 } } },
+
+```javascript
+// Analyze claims distribution by claim type for sharding decisions
+var claimsCount = db.claims.countDocuments()
+if (claimsCount > 0) {
+  var claimsByType = db.claims.aggregate([
+    { $group: { _id: "$claimType", count: { $sum: 1 } } },
     { $sort: { count: -1 } }
   ]).toArray()
 
-  // Display claims distribution by location (step-by-step approach)
-  for (var k = 0; k < claimsByLocation.length; k++) {
-    var location = claimsByLocation[k];
-    print("  " + (location._id || "Unknown") + ": " + location.count + " claims");
+  // Display claims distribution by type (step-by-step approach)
+  for (var k = 0; k < claimsByType.length; k++) {
+    var claimType = claimsByType[k];
+    print("  " + (claimType._id || "Unknown") + ": " + claimType.count + " claims");
   }
 } else {
   print("  No claims data available for analysis")
@@ -146,7 +151,7 @@ print("   Benefits: Efficient queries by policy type")
 print("   Use Case: Policy type-specific analytics")
 ```
 
-### Step 3: Sharding Strategy Simulation
+### Step 4: Sharding Strategy Simulation
 
 **Simulate Different Sharding Approaches:**
 
@@ -257,7 +262,7 @@ for (var j = 0; j < policiesByTypeShard.length; j++) {
 }
 ```
 
-### Step 4: Query Routing Simulation
+### Step 5: Query Routing Simulation
 
 **Understand How Queries Would Route:**
 ```javascript
@@ -308,7 +313,7 @@ simulateQueryRouting()
 
 ## Part B: Sharding Strategy Deep Dive (15 minutes)
 
-### Step 5: Sharding Command Simulation (Current Environment: Replica Set)
+### Step 6: Sharding Command Simulation (Current Environment: Replica Set)
 
 ```javascript
 // NOTE: Our current environment is a replica set, not a sharded cluster
@@ -332,8 +337,8 @@ print("   // Range sharding for policies")
 print("   sh.shardCollection('insurance_company.policies', { region: 1, policyType: 1 })")
 print("")
 
-print("   // Geographic sharding for claims")
-print("   sh.shardCollection('insurance_company.claims', { state: 1, incidentDate: 1 })")
+print("   // Compound sharding for claims by type and date")
+print("   sh.shardCollection('insurance_company.claims', { claimType: 1, incidentDate: 1 })")
 print("")
 
 print("3. Check sharding status:")
@@ -348,7 +353,7 @@ print("3. Simulate query routing")
 print("4. Test index strategies for sharded queries")
 ```
 
-### Step 6: Load Test Data (Optional - Data Already Loaded)
+### Step 7: Load Test Data (Optional - Data Already Loaded)
 
 **Note:** The comprehensive data loader has already populated the insurance_company database with customer, policy, claim, and agent data. This step is optional and shows how you would generate additional test data if needed.
 
@@ -359,15 +364,15 @@ print("Generating additional test customer data...");
 var customerTypes = ["Individual", "Business"];
 var states = ["CA", "NY", "TX", "FL", "IL", "PA", "OH", "GA", "NC", "MI"];
 
-for (let i = 1; i <= 1000; i++) {
+for (var i = 1; i <= 1000; i++) {
   var customerType = customerTypes[Math.floor(Math.random() * customerTypes.length)];
   var state = states[Math.floor(Math.random() * states.length)];
 
   db.test_customers_sharding.insertOne({
     _id: "test_cust" + i,
-    name: customerType === "Individual" ? `Customer ${i}` : `Business Corp ${i}`,
-    email: `customer${i}@example.com`,
-    phone: `555-${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`,
+    name: customerType === "Individual" ? "Customer " + i : "Business Corp " + i,
+    email: "customer" + i + "@example.com",
+    phone: "555-" + String(Math.floor(Math.random() * 10000)).padStart(4, '0'),
     type: customerType,
     state: state,
     registrationDate: new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28)),
@@ -377,7 +382,7 @@ for (let i = 1; i <= 1000; i++) {
   });
 
   if (i % 200 === 0) {
-    print(`Inserted ${i} test customers`);
+    print("Inserted " + i + " test customers");
   }
 }
 ```
@@ -398,7 +403,7 @@ var regions = ["Northeast", "Southeast", "Midwest", "Southwest", "West"];
 var policyTypes = ["Auto", "Property", "Life", "Commercial", "Health"];
 var states = ["CA", "NY", "TX", "FL", "IL", "PA", "OH", "GA", "NC", "MI"];
 
-for (let i = 1; i <= 1500; i++) {
+for (var i = 1; i <= 1500; i++) {
   var region = regions[Math.floor(Math.random() * regions.length)];
   var policyType = policyTypes[Math.floor(Math.random() * policyTypes.length)];
   var state = states[Math.floor(Math.random() * states.length)];
@@ -432,7 +437,7 @@ for (let i = 1; i <= 1500; i++) {
   });
 
   if (i % 300 === 0) {
-    print(`Inserted ${i} policies`);
+    print("Inserted " + i + " policies");
   }
 }
 ```
@@ -443,9 +448,9 @@ for (let i = 1; i <= 1500; i++) {
 print("Generating additional test claims data...");
 var states = ["CA", "NY", "TX", "FL", "IL", "PA", "OH", "GA", "NC", "MI"];
 var claimTypes = ["Auto Accident", "Property Damage", "Theft", "Fire", "Medical", "Liability"];
-var statuses = ["Filed", "Under Review", "Investigating", "Approved", "Denied", "Settled"];
+var statuses = ["submitted", "under_review", "investigating", "approved", "denied", "pending"];
 
-for (let i = 1; i <= 800; i++) {
+for (var i = 1; i <= 800; i++) {
   var state = states[Math.floor(Math.random() * states.length)];
   var claimType = claimTypes[Math.floor(Math.random() * claimTypes.length)];
   var status = statuses[Math.floor(Math.random() * statuses.length)];
@@ -453,7 +458,7 @@ for (let i = 1; i <= 800; i++) {
   var policyId = "test_policy" + Math.floor(Math.random() * 1500 + 1);
 
   var claimAmount = Math.round((Math.random() * 50000 + 500) * 100) / 100;
-  var settlementAmount = status === "Settled" ? Math.round(claimAmount * (0.7 + Math.random() * 0.3) * 100) / 100 : null;
+  var settlementAmount = status === "approved" ? Math.round(claimAmount * (0.7 + Math.random() * 0.3) * 100) / 100 : null;
 
   db.test_claims_sharding.insertOne({
     _id: "test_claim" + i,
@@ -467,28 +472,28 @@ for (let i = 1; i <= 800; i++) {
     claimAmount: claimAmount,
     settlementAmount: settlementAmount,
     status: status,
-    description: `${claimType} incident in ${state}`,
-    adjusterId: status !== "Filed" ? `adjuster${Math.floor(Math.random() * 20 + 1)}` : null,
-    investigationNotes: status === "Investigating" ? "Under investigation" : null
+    description: claimType + " incident in " + state,
+    adjusterId: status !== "submitted" ? "adjuster" + Math.floor(Math.random() * 20 + 1) : null,
+    investigationNotes: status === "investigating" ? "Under investigation" : null
   });
 
   if (i % 200 === 0) {
-    print(`Inserted ${i} claims`);
+    print("Inserted " + i + " claims");
   }
 }
 
 // Generate additional test agent data for territory-based sharding
 print("Generating additional test agent data...");
 var territories = ["North-CA", "South-CA", "NYC", "Upstate-NY", "Dallas-TX", "Houston-TX", "Miami-FL", "Tampa-FL"];
-for (let i = 1; i <= 150; i++) {
+for (var i = 1; i <= 150; i++) {
   var territory = territories[Math.floor(Math.random() * territories.length)];
 
   db.test_agents_sharding.insertOne({
     territory: territory,
     agentId: "test_agent" + i,
-    name: `Agent ${i}`,
-    email: `agent${i}@insurance.com`,
-    phone: `555-${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`,
+    name: "Agent " + i,
+    email: "agent" + i + "@insurance.com",
+    phone: "555-" + String(Math.floor(Math.random() * 10000)).padStart(4, '0'),
     hireDate: new Date(2020 + Math.floor(Math.random() * 5), Math.floor(Math.random() * 12), Math.floor(Math.random() * 28)),
     performanceMetrics: {
       policiesSold: Math.floor(Math.random() * 200 + 50),
@@ -499,12 +504,12 @@ for (let i = 1; i <= 150; i++) {
   });
 
   if (i % 50 === 0) {
-    print(`Inserted ${i} agents`);
+    print("Inserted " + i + " agents");
   }
 }
 ```
 
-### Step 7: Analyze Distribution (Simulation for Replica Set)
+### Step 8: Analyze Distribution (Simulation for Replica Set)
 
 **In a Sharded Environment, You Would:**
 1. Navigate to `config` database in Compass
@@ -555,7 +560,7 @@ print("  Shard 2: ~" + Math.max(0, totalDocs - (2 * docsPerShard)) + " documents
 
 ## Part C: Zone Sharding and Management (5 minutes)
 
-### Step 8: Zone Sharding Concepts (Simulation)
+### Step 9: Zone Sharding Concepts (Simulation)
 
 ```javascript
 // Zone sharding commands that would be used in a sharded environment
@@ -564,21 +569,21 @@ print("In a sharded cluster, you would configure zones like this:")
 print("")
 
 print("1. Add shard tags for geographic regions:")
-print("   sh.addShardTag('shard1rs', 'EASTERN-REGION')")
-print("   sh.addShardTag('shard2rs', 'WESTERN-REGION')")
+print("   sh.addShardToZone('shard1rs', 'EASTERN-REGION')")
+print("   sh.addShardToZone('shard2rs', 'WESTERN-REGION')")
 print("")
 
 print("2. Create zone ranges for policies by region:")
-print("   sh.addTagRange('insurance_company.policies',")
+print("   sh.updateZoneKeyRange('insurance_company.policies',")
 print("     { region: 'Northeast', policyType: MinKey },")
 print("     { region: 'Northeast', policyType: MaxKey },")
 print("     'EASTERN-REGION')")
 print("")
 
-print("3. Create zone ranges for claims by state:")
-print("   sh.addTagRange('insurance_company.claims',")
-print("     { state: 'NY', incidentDate: MinKey },")
-print("     { state: 'NY', incidentDate: MaxKey },")
+print("3. Create zone ranges for claims by type:")
+print("   sh.updateZoneKeyRange('insurance_company.claims',")
+print("     { claimType: 'Auto', incidentDate: MinKey },")
+print("     { claimType: 'Auto', incidentDate: MaxKey },")
 print("     'EASTERN-REGION')")
 print("")
 
@@ -616,7 +621,7 @@ stateDistribution.forEach(function(result) {
 2. View `shards` collection to see shard tags
 3. View `tags` collection to see zone ranges
 
-### Step 9: Chunk Management Concepts (Simulation)
+### Step 10: Chunk Management Concepts (Simulation)
 
 ```javascript
 // Manual chunk operations that would be used in a sharded environment
@@ -674,7 +679,7 @@ print("3. Restart the balancer")
 print("4. Monitor for proper chunk distribution")
 ```
 
-## Lab 3 Deliverables
+## Lab 12 Deliverables
 ✅ **Complete sharded cluster** with config servers and multiple shards for insurance company
 ✅ **Insurance-specific sharding strategies** implemented:
    - Hashed sharding for customer distribution

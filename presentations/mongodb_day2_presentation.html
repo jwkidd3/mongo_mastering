@@ -317,6 +317,9 @@
                 <div class="agenda-item fragment">
                     <strong>5. Schema Design Patterns</strong>
                 </div>
+                <div class="agenda-item fragment">
+                    <strong>6. MongoDB Transactions</strong>
+                </div>
             </section>
 
             <!-- Section 1: Advanced Querying -->
@@ -447,7 +450,7 @@ db.stores.find({
                 </section>
 
                 <!-- Lab 6: Advanced Query Techniques -->
-                <section class="lab-slide">
+                <section class="lab-slide" data-background-color="#2d6a4f">
                     <h3>🧪 Lab 6: Advanced Query Techniques Mastery</h3>
 
                     <div class="objectives">
@@ -652,7 +655,7 @@ db.orders.aggregate([
                 </section>
 
                 <!-- Lab 7: Aggregation Framework -->
-                <section class="lab-slide">
+                <section class="lab-slide" data-background-color="#2d6a4f">
                     <h3>🧪 Lab 7: MongoDB Aggregation Framework</h3>
 
                     <div class="objectives">
@@ -847,7 +850,7 @@ db.products.find({category: "Electronics"}).explain("executionStats")
 // Key metrics to watch:
 // - totalDocsExamined vs totalDocsReturned
 // - executionTimeMillis
-// - indexesUsed</code></pre>
+// - winningPlan (IXSCAN vs COLLSCAN)</code></pre>
                     <div class="fragment">
                         <p class="code-title">Detailed Execution Plans</p>
                         <pre><code class="language-javascript">// Winning plan details
@@ -969,7 +972,7 @@ db.products.find().skip(10000).limit(20)  // Slower
                 </section>
 
                 <!-- Lab 8: Indexing and Performance Optimization -->
-                <section class="lab-slide">
+                <section class="lab-slide" data-background-color="#2d6a4f">
                     <h3>🧪 Lab 8: Indexing Strategies and Performance Optimization</h3>
 
                     <div class="objectives">
@@ -1173,7 +1176,7 @@ db.products.find().skip(10000).limit(20)  // Slower
                 </section>
 
                 <!-- Lab 9: Data Modeling and Schema Design -->
-                <section class="lab-slide">
+                <section class="lab-slide" data-background-color="#2d6a4f">
                     <h3>🧪 Lab 9: Data Modeling and Schema Design</h3>
 
                     <div class="objectives">
@@ -1379,7 +1382,7 @@ function performTransaction(maxRetries = 3) {
                 </section>
 
                 <!-- Lab 10: MongoDB Transactions -->
-                <section class="lab-slide">
+                <section class="lab-slide" data-background-color="#2d6a4f">
                     <h3>🧪 Lab 10: MongoDB Transactions</h3>
 
                     <div class="objectives">

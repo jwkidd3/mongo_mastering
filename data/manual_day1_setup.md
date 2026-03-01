@@ -124,7 +124,7 @@ db.policies.insertMany([
   {
     _id: "policy_002",
     policyNumber: "HOME-2023-001",
-    policyType: "Home",
+    policyType: "Property",
     customerId: "CUST-002",
     annualPremium: NumberDecimal("899.50"),
     deductible: NumberInt(1000),
@@ -298,7 +298,7 @@ db.agents.insertMany([
     licenseNumber: "TX-INS-12345",
     hireDate: new Date("2020-01-15"),
     branchId: "BR-001",
-    specialties: ["Auto", "Home"],
+    specialties: ["Auto", "Property"],
     commissionRate: NumberDecimal("0.05"),
     status: "Active"
   },
@@ -312,7 +312,7 @@ db.agents.insertMany([
     licenseNumber: "TX-INS-67890",
     hireDate: new Date("2019-06-01"),
     branchId: "BR-002",
-    specialties: ["Life", "Business"],
+    specialties: ["Life", "Commercial"],
     commissionRate: NumberDecimal("0.06"),
     status: "Active"
   }
@@ -332,7 +332,7 @@ db.claims.insertMany([
     incidentDate: new Date("2023-06-15"),
     reportedDate: new Date("2023-06-16"),
     claimAmount: NumberDecimal("3500.00"),
-    status: "Approved",
+    status: "approved",
     description: "Rear-end collision damage"
   },
   {
@@ -340,11 +340,11 @@ db.claims.insertMany([
     claimNumber: "CLM-2023-002",
     policyNumber: "HOME-2023-001",
     customerId: "CUST-002",
-    claimType: "Home",
+    claimType: "Property Damage",
     incidentDate: new Date("2023-07-20"),
     reportedDate: new Date("2023-07-21"),
     claimAmount: NumberDecimal("8500.00"),
-    status: "Under Review",
+    status: "under_review",
     description: "Storm damage to roof"
   },
   {
@@ -356,7 +356,7 @@ db.claims.insertMany([
     incidentDate: new Date("2023-08-10"),
     reportedDate: new Date("2023-08-11"),
     claimAmount: NumberDecimal("1200.00"),
-    status: "Denied",
+    status: "denied",
     description: "Parking lot minor damage"
   }
 ])
@@ -412,10 +412,10 @@ print("Payments: " + db.payments.countDocuments())
 
 // Sample queries to verify relationships
 print("\nSample Policy:")
-printjson(db.policies.findOne())
+db.policies.findOne()
 
 print("\nActive Customers:")
-print(db.customers.find({status: "Active"}).count())
+print(db.customers.countDocuments({status: "Active"}))
 ```
 
 ## Expected Results

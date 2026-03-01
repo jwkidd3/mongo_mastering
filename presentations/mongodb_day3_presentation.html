@@ -1,178 +1,285 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MongoDB Day 3: Advanced Features & Production</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MongoDB Mastering Course - Day 3</title>
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/theme/night.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/theme/white.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/highlight/monokai.min.css">
+
     <style>
         .reveal {
-            font-family: "Source Sans Pro", Helvetica, sans-serif;
-            font-size: 32px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        .reveal h1, .reveal h2, .reveal h3 {
-            color: #13DAEC;
+
+        .reveal h1, .reveal h2, .reveal h3, .reveal h4 {
+            color: #2C5F41;
+            text-transform: none;
         }
-        .reveal h1 { font-size: 2.2em; }
-        .reveal h2 { font-size: 1.8em; }
-        .reveal h3 { font-size: 1.4em; }
-        .reveal .slides section .fragment.highlight-green {
-            opacity: 1;
-            visibility: inherit;
+
+        .reveal h1 {
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
         }
-        .reveal .slides section .fragment.highlight-green.visible {
-            background-color: #17ff2e;
-            color: #000;
+
+        .reveal .title-slide {
+            background: linear-gradient(135deg, #2C5F41 0%, #4A8B3B 100%);
+            color: white !important;
+            padding: 2em;
+            border-radius: 15px;
         }
-        .reveal .slides section .fragment.highlight-red {
-            opacity: 1;
-            visibility: inherit;
+
+        .reveal .title-slide h1,
+        .reveal .title-slide h2 {
+            color: white !important;
         }
-        .reveal .slides section .fragment.highlight-red.visible {
-            background-color: #ff2c2d;
-            color: #fff;
-        }
-        .code-container {
-            position: relative;
-        }
-        .code-title {
-            background: #13DAEC;
-            color: #000;
-            padding: 5px 10px;
-            font-size: 0.7em;
-            font-weight: bold;
-            margin-bottom: 0;
-        }
-        .two-column {
-            display: flex;
-            align-items: flex-start;
-            gap: 20px;
-        }
-        .column {
-            flex: 1;
-        }
-        .small-text {
-            font-size: 0.75em;
-        }
-        .smaller-text {
-            font-size: 0.65em;
-        }
-        .large-text {
-            font-size: 1.2em;
-        }
-        .highlight {
-            background-color: #13DAEC;
-            color: #000;
-            padding: 2px 5px;
-            border-radius: 3px;
-        }
-        .architecture-diagram {
-            border: 2px solid #13DAEC;
-            padding: 15px;
-            margin: 10px;
+
+        .reveal .section-title {
+            background: linear-gradient(135deg, #4A8B3B 0%, #6BAF47 100%);
+            color: white !important;
+            padding: 1.5em;
             border-radius: 10px;
-            background: rgba(19, 218, 236, 0.1);
+            margin-bottom: 0.5em;
+        }
+
+        .reveal .section-title h2 {
+            color: white !important;
+            margin: 0;
+        }
+
+        .reveal .duration {
+            background: #2C5F41;
+            color: white;
+            padding: 0.5em 1em;
+            border-radius: 20px;
             font-size: 0.8em;
-        }
-        .pros-cons {
-            display: flex;
-            gap: 15px;
-        }
-        .pros, .cons {
-            flex: 1;
-            padding: 10px;
-            border-radius: 5px;
-            font-size: 0.75em;
-        }
-        .pros {
-            background: rgba(0, 255, 0, 0.1);
-            border: 1px solid #00ff00;
-        }
-        .cons {
-            background: rgba(255, 0, 0, 0.1);
-            border: 1px solid #ff0000;
-        }
-        pre {
-            font-size: 0.55em !important;
-        }
-        code {
-            max-height: 450px;
-        }
-        .reveal ul, .reveal ol {
+            display: inline-block;
             margin: 0.5em 0;
         }
-        .reveal li {
+
+        .reveal .highlight-box {
+            background: linear-gradient(120deg, #a8e6cf 0%, #dcedc1 100%);
+            padding: 0.8em;
+            border-radius: 8px;
+            border-left: 4px solid #4A8B3B;
+            margin: 0.5em 0;
+        }
+
+        .reveal .lab-slide .highlight-box {
+            padding: 0.4em;
             margin: 0.3em 0;
         }
 
+        .reveal .info-box {
+            background: #e8f4f8;
+            border: 2px solid #4A8B3B;
+            border-radius: 8px;
+            padding: 1em;
+            margin: 1em 0;
+        }
+
+        .reveal .warning-box {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 8px;
+            padding: 1em;
+            margin: 1em 0;
+        }
+
         .reveal .lab-slide {
-            background: linear-gradient(135deg, #1a252f 0%, #2c3e50 100%);
-            border: 3px solid #13DAEC;
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+            border: 3px solid #ff8a80;
             border-radius: 15px;
-            padding: 0.5em;
-            color: #ffffff !important;
-            font-size: 0.7em;
+            padding: 0.6em;
+            font-size: 0.75em;
             overflow-y: auto;
             max-height: 90vh;
         }
 
         .reveal .lab-slide h3 {
-            color: #13DAEC !important;
+            color: #d32f2f !important;
             margin-top: 0;
-            margin-bottom: 0.3em;
-            text-shadow: 0 0 10px rgba(19, 218, 236, 0.5);
-            font-size: 1.0em;
+            margin-bottom: 0.5em;
+            font-size: 1.2em;
         }
 
         .reveal .lab-slide h4 {
-            color: #ffffff !important;
             margin-top: 0;
             margin-bottom: 0.2em;
-            font-size: 0.85em;
+            font-size: 0.95em;
         }
 
         .reveal .lab-slide ul {
-            margin: 0.2em 0;
+            margin: 0.3em 0;
         }
 
         .reveal .lab-slide li {
-            color: #ffffff !important;
             margin: 0.1em 0;
             line-height: 1.2;
         }
 
         .reveal .lab-slide pre {
-            font-size: 0.75em;
-            margin: 0.2em 0;
+            font-size: 0.8em;
+            margin: 0.3em 0;
         }
 
         .reveal .lab-slide code {
-            font-size: 0.8em;
+            font-size: 0.85em;
         }
 
         .reveal .objectives {
-            background: rgba(19, 218, 236, 0.15);
-            border-left: 4px solid #13DAEC;
-            padding: 0.7em;
-            margin: 0.4em 0;
-            color: #ffffff !important;
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 0.8em;
+            margin: 0.5em 0;
+        }
+
+        .reveal table {
+            margin: auto;
+            border-collapse: collapse;
+            border-spacing: 0;
+            font-size: 0.8em;
+        }
+
+        .reveal table th {
+            background: #4A8B3B;
+            color: white;
+            font-weight: bold;
+        }
+
+        .reveal table th,
+        .reveal table td {
+            text-align: left;
+            padding: 0.5em;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .reveal table tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+
+        .reveal pre code {
+            max-height: 500px;
+            font-size: 0.6em;
+            line-height: 1.2;
+        }
+
+        .reveal .slides section .fragment {
+            opacity: 0.3;
+        }
+
+        .reveal .slides section .fragment.visible {
+            opacity: 1;
+        }
+
+        .reveal .progress {
+            background: rgba(44, 95, 65, 0.2);
+        }
+
+        .reveal .progress span {
+            background: #4A8B3B;
+        }
+
+        .reveal .controls {
+            color: #4A8B3B;
+        }
+
+        .reveal .slide-number {
+            background-color: #2C5F41;
+            color: white;
+        }
+
+        .reveal .two-column {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .reveal .two-column > div {
+            flex: 1;
+            margin: 0 0.5em;
+        }
+
+        .reveal .mongodb-logo {
+            color: #4A8B3B;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+
+        .reveal .small-text {
+            font-size: 0.7em;
+        }
+
+        .reveal .code-title {
+            background: #2C5F41;
+            color: white;
+            padding: 0.5em;
+            margin: 0;
+            border-radius: 5px 5px 0 0;
+            font-size: 0.8em;
+        }
+
+        .reveal .agenda-item {
+            padding: 0.5em;
+            margin: 0.3em 0;
+            background: #f8f9fa;
+            border-left: 4px solid #4A8B3B;
+            border-radius: 0 5px 5px 0;
+        }
+
+        .reveal .architecture-diagram {
+            border: 2px solid #4A8B3B;
+            padding: 15px;
+            margin: 10px;
+            border-radius: 10px;
+            background: rgba(74, 139, 59, 0.1);
+            font-size: 0.8em;
+        }
+
+        .reveal .pros-cons {
+            display: flex;
+            gap: 15px;
+        }
+
+        .reveal .pros, .reveal .cons {
+            flex: 1;
+            padding: 10px;
             border-radius: 5px;
+            font-size: 0.75em;
         }
 
-        .reveal .highlight-box {
-            background: rgba(39, 174, 96, 0.25);
-            padding: 0.4em;
-            border-radius: 8px;
-            border-left: 4px solid #27ae60;
-            margin: 0.2em 0;
-            color: #ffffff !important;
+        .reveal .pros {
+            background: rgba(74, 139, 59, 0.1);
+            border: 1px solid #4A8B3B;
         }
 
-        .reveal .lab-slide .highlight-box {
-            padding: 0.3em;
-            margin: 0.2em 0;
+        .reveal .cons {
+            background: rgba(255, 193, 7, 0.1);
+            border: 1px solid #ffc107;
+        }
+
+        .reveal .large-text {
+            font-size: 1.2em;
+        }
+
+        .reveal .smaller-text {
+            font-size: 0.65em;
+        }
+
+        .reveal .highlight {
+            background-color: #a8e6cf;
+            color: #000;
+            padding: 2px 5px;
+            border-radius: 3px;
+        }
+
+        .reveal ul, .reveal ol {
+            margin: 0.5em 0;
+        }
+
+        .reveal li {
+            margin: 0.3em 0;
         }
     </style>
 </head>
@@ -180,13 +287,13 @@
     <div class="reveal">
         <div class="slides">
             <!-- Title Slide -->
-            <section>
+            <section class="title-slide">
                 <h1>MongoDB Mastering Course</h1>
                 <h2>Day 3: Advanced Features & Production</h2>
-                <p>
-                    <strong>Topics:</strong> Replication • Sharding • Change Streams • Production Deployment
+                <p style="margin-top: 2em; font-size: 1.2em;">
+                    <span class="mongodb-logo">Replication • Sharding • Change Streams • Production Deployment</span>
                 </p>
-                <p class="small-text">
+                <p style="margin-top: 1em; opacity: 0.9;">
                     Docker-based Environment
                 </p>
             </section>
@@ -225,11 +332,11 @@
             </section>
 
 
-            <!-- Part 1: Replica Sets -->
+            <!-- Section 1: Replica Sets -->
             <section>
-                <section>
-                    <h1>Part 1: Replica Sets & High Availability</h1>
-                    <p class="large-text">Building Resilient MongoDB Deployments</p>
+                <section class="section-title">
+                    <h2>1. Replica Sets & High Availability</h2>
+                    <p>Building Resilient MongoDB Deployments</p>
                 </section>
 
                 <section>
@@ -336,7 +443,7 @@ rs.remove("mongo4:27017")</code></pre>
     { 
       _id: 2, host: "mongo3:27017", 
       priority: 0, hidden: true, // Hidden member
-      slaveDelay: 3600          // 1 hour delay
+      secondaryDelaySecs: 3600   // 1 hour delay
     },
     {
       _id: 3, host: "arbiter:27017",
@@ -410,9 +517,12 @@ db.users.updateOne(
                         <div class="column">
                             <h3>Read Concerns</h3>
                             <div class="code-container">
-                                <pre><code class="javascript">// Majority read concern
-db.orders.find({ status: "pending" })
-  .readConcern("majority")
+                                <pre><code class="javascript">// Read with majority concern
+db.runCommand({
+  find: "orders",
+  filter: { status: "pending" },
+  readConcern: { level: "majority" }
+})
 
 // Snapshot read concern
 session.startTransaction({
@@ -420,9 +530,12 @@ session.startTransaction({
   writeConcern: { w: "majority" }
 })
 
-// Linearizable read concern
-db.inventory.findOne({ _id: productId })
-  .readConcern("linearizable")</code></pre>
+// Read with linearizable concern
+db.runCommand({
+  find: "inventory",
+  filter: { _id: productId },
+  readConcern: { level: "linearizable" }
+})</code></pre>
                             </div>
                         </div>
                     </div>
@@ -454,7 +567,7 @@ rs.reconfig(config, { force: true })</code></pre>
                 </section>
 
                 <!-- Lab 11: Replica Sets & High Availability -->
-                <section class="lab-slide">
+                <section class="lab-slide" data-background-color="#2d6a4f">
                     <h3>🧪 Lab 11: Replica Sets & High Availability</h3>
 
                     <div class="objectives">
@@ -477,11 +590,11 @@ rs.reconfig(config, { force: true })</code></pre>
                 </section>
             </section>
 
-            <!-- Part 2: Sharding -->
+            <!-- Section 2: Sharding -->
             <section>
-                <section>
-                    <h1>Part 2: Sharding & Horizontal Scaling</h1>
-                    <p class="large-text">Scaling MongoDB Beyond Single Machines</p>
+                <section class="section-title">
+                    <h2>2. Sharding & Horizontal Scaling</h2>
+                    <p>Scaling MongoDB Beyond Single Machines</p>
                 </section>
 
                 <section>
@@ -541,7 +654,7 @@ rs.reconfig(config, { force: true })</code></pre>
                 <section>
                     <h2>Shard Key Selection</h2>
                     <div class="fragment">
-                        <p><strong>Critical Decision:</strong> Cannot be changed after sharding!</p>
+                        <p><strong>Critical Decision:</strong> Can be changed via reshardCollection (MongoDB 5.0+) but resource-intensive</p>
                         <h3>Good Shard Key Characteristics:</h3>
                         <ul class="small-text">
                             <li><span class="highlight">High Cardinality:</span> Many possible values</li>
@@ -611,7 +724,7 @@ sh.addShard("shard1RS/shard1-1:27018,shard1-2:27018")
 sh.addShard("shard2RS/shard2-1:27018,shard2-2:27018")
 
 // 5. Enable sharding on database
-sh.enableSharding("ecommerce")
+sh.enableSharding("ecommerce") // Note: Not required in MongoDB 6.0+ (auto-enabled)
 
 // 6. Shard collections
 sh.shardCollection("ecommerce.orders", { customerId: 1, orderDate: 1 })
@@ -627,26 +740,26 @@ sh.shardCollection("ecommerce.products", { _id: "hashed" })</code></pre>
 services:
   # Config Servers
   config1:
-    image: mongo:7.0
+    image: mongo:8.0
     command: mongod --configsvr --replSet configRS --port 27017 --bind_ip_all
     
   # Shard 1
   shard1-1:
-    image: mongo:7.0
+    image: mongo:8.0
     command: mongod --shardsvr --replSet shard1RS --port 27017 --bind_ip_all
     
   shard1-2:
-    image: mongo:7.0
+    image: mongo:8.0
     command: mongod --shardsvr --replSet shard1RS --port 27017 --bind_ip_all
     
   # Shard 2
   shard2-1:
-    image: mongo:7.0
+    image: mongo:8.0
     command: mongod --shardsvr --replSet shard2RS --port 27017 --bind_ip_all
     
   # Query Router
   mongos:
-    image: mongo:7.0
+    image: mongo:8.0
     command: mongos --configdb configRS/config1:27017 --bind_ip_all --port 27017
     ports: ["27017:27017"]
     depends_on: [config1, shard1-1, shard2-1]</code></pre>
@@ -661,7 +774,7 @@ services:
 sh.status()
 
 // View chunk distribution
-db.chunks.find({ ns: "ecommerce.orders" })
+db.getSiblingDB("config").chunks.find({ ns: "ecommerce.orders" })
 
 // Manual chunk operations
 sh.splitAt("ecommerce.orders", { customerId: "customer1000" })
@@ -675,9 +788,9 @@ sh.stopBalancer()
 sh.getBalancerState()
 
 // Zone sharding (geographic)
-sh.addShardTag("shard1RS", "US-EAST")
-sh.addShardTag("shard2RS", "US-WEST")
-sh.addTagRange("ecommerce.users", 
+sh.addShardToZone("shard1RS", "US-EAST")
+sh.addShardToZone("shard2RS", "US-WEST")
+sh.updateZoneKeyRange("ecommerce.users",
   { region: "east" }, { region: "east\uffff" }, "US-EAST")</code></pre>
                     </div>
                 </section>
@@ -716,7 +829,7 @@ sh.addTagRange("ecommerce.users",
                 </section>
 
                 <!-- Lab 12: Sharding & Horizontal Scaling -->
-                <section class="lab-slide">
+                <section class="lab-slide" data-background-color="#2d6a4f">
                     <h3>🧪 Lab 12: Sharding & Horizontal Scaling</h3>
 
                     <div class="objectives">
@@ -739,11 +852,11 @@ sh.addTagRange("ecommerce.users",
                 </section>
             </section>
 
-            <!-- Part 3: Change Streams -->
+            <!-- Section 3: Change Streams -->
             <section>
-                <section>
-                    <h1>Part 3: Change Streams</h1>
-                    <p class="large-text">Real-time Applications with MongoDB</p>
+                <section class="section-title">
+                    <h2>3. Change Streams</h2>
+                    <p>Real-time Applications with MongoDB</p>
                 </section>
 
                 <section>
@@ -967,7 +1080,7 @@ class OrderProcessor {
                 </section>
 
                 <!-- Lab 13: Change Streams & Real-time Applications -->
-                <section class="lab-slide">
+                <section class="lab-slide" data-background-color="#2d6a4f">
                     <h3>🧪 Lab 13: Change Streams & Real-time Applications</h3>
 
                     <div class="objectives">
@@ -990,11 +1103,11 @@ class OrderProcessor {
                 </section>
             </section>
 
-            <!-- Part 4: Production Deployment -->
+            <!-- Section 4: Production Deployment -->
             <section>
-                <section>
-                    <h1>Part 4: Production Deployment</h1>
-                    <p class="large-text">MongoDB in Production Environments</p>
+                <section class="section-title">
+                    <h2>4. Production Deployment</h2>
+                    <p>MongoDB in Production Environments</p>
                 </section>
 
                 <section>
@@ -1169,7 +1282,7 @@ mongorestore --host mongodb://host:27017 \
 version: '3.8'
 services:
   mongodb:
-    image: mongo:7.0
+    image: mongo:8.0
     container_name: mongodb-prod
     restart: unless-stopped
     environment:
@@ -1236,7 +1349,7 @@ secrets:
                 </section>
 
                 <!-- Lab 14a/14b/14c: Application Integration -->
-                <section class="lab-slide">
+                <section class="lab-slide" data-background-color="#2d6a4f">
                     <h3>🧪 Labs 14a/14b/14c: Application Integration Project</h3>
 
                     <div class="objectives">
@@ -1390,59 +1503,95 @@ secrets:
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/highlight/highlight.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/notes/notes.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/markdown/markdown.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/highlight/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/search/search.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/zoom/zoom.min.js"></script>
+
     <script>
         Reveal.initialize({
             hash: true,
-            transition: 'slide',
-            transitionSpeed: 'default',
-            backgroundTransition: 'fade',
             controls: true,
             progress: true,
             center: true,
+            transition: 'slide',
+            transitionSpeed: 'default',
+            backgroundTransition: 'fade',
+
+            // Learn about plugins: https://revealjs.com/plugins/
+            plugins: [ RevealMarkdown, RevealHighlight, RevealNotes, RevealSearch, RevealZoom ],
+
+            // Presentation size
+            width: 1200,
+            height: 800,
+            margin: 0.1,
+            minScale: 0.2,
+            maxScale: 1.5,
+
+            // Keyboard shortcuts
+            keyboard: {
+                13: 'next', // Enter
+                27: function() { // Escape
+                    if (Reveal.isOverview()) {
+                        Reveal.toggleOverview();
+                    }
+                }
+            },
+
+            // Touch navigation
             touch: true,
             loop: false,
             rtl: false,
-            navigationMode: 'default',
-            shuffle: false,
+
+            // Fragments
             fragments: true,
-            fragmentInURL: false,
-            embedded: false,
-            help: true,
-            pause: true,
-            showNotes: false,
-            autoPlayMedia: null,
-            preloadIframes: null,
-            autoAnimateEasing: 'ease',
-            autoAnimateUnmatched: true,
-            autoAnimateStyles: [
-                'opacity',
-                'color',
-                'background-color',
-                'padding',
-                'font-size',
-                'line-height',
-                'letter-spacing',
-                'border-width',
-                'border-color',
-                'border-radius',
-                'outline',
-                'outline-offset'
-            ],
+            fragmentInURL: true,
+
+            // Auto-slide
             autoSlide: 0,
             autoSlideStoppable: true,
-            autoSlideMethod: null,
-            defaultTiming: null,
+
+            // Mouse wheel navigation
             mouseWheel: false,
-            previewLinks: false,
-            postMessage: true,
-            postMessageEvents: false,
-            focusBodyOnPageVisibilityChange: true,
-            keyboard: true,
-            overview: true,
-            disableLayout: false,
-            plugins: [RevealHighlight, RevealNotes]
+
+            // Rolling links
+            rollingLinks: false,
+
+            // Hide address bar on mobile
+            hideAddressBar: true,
+
+            // Parallax background
+            parallaxBackgroundImage: '',
+            parallaxBackgroundSize: '',
+
+            // Custom highlight theme
+            highlight: {
+                highlightOnLoad: true,
+                beforeHighlight: function(hljs) {
+                    // Custom language definitions can be added here
+                }
+            }
+        });
+
+        // Custom keyboard shortcuts
+        Reveal.addKeyBinding({keyCode: 79, key: 'O', description: 'Toggle overview'}, function() {
+            Reveal.toggleOverview();
+        });
+
+        // Print mode
+        if (window.location.search.match(/print-pdf/gi)) {
+            var link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.type = 'text/css';
+            link.href = 'https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/css/print/pdf.min.css';
+            document.getElementsByTagName('head')[0].appendChild(link);
+        }
+
+        // Add slide numbers
+        Reveal.configure({
+            slideNumber: 'c/t',
+            showSlideNumber: 'all'
         });
     </script>
 </body>

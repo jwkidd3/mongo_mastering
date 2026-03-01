@@ -1,4 +1,4 @@
-# Lab 1: Advanced Query Techniques Mastery (45 minutes)
+# Lab 6: Advanced Query Techniques Mastery (45 minutes)
 
 ## Learning Objectives
 - Master advanced MongoDB query operators
@@ -24,30 +24,43 @@ mongosh < data/day2_data_loader.js
 
 **Test data loaded correctly:**
 ```bash
-mongosh --eval "db.getSiblingDB('insurance_analytics').policies.countDocuments()"
-mongosh --eval "db.getSiblingDB('insurance_analytics').customers.countDocuments()"
+mongosh --eval "db.getSiblingDB('insurance_company').policies.countDocuments()"
+mongosh --eval "db.getSiblingDB('insurance_company').customers.countDocuments()"
 ```
 
-**Expected output:** Policies: 3, Customers: 3
+**Expected output:** Policies: 13, Customers: 20
 
-💡 **See [LOAD_DATA.md](../LOAD_DATA.md) for detailed instructions and troubleshooting**
+> **Note:** The Day 2 loader upserts 3 policies, 3 customers, 3 claims, 3 agents, and 3 branches on top of Day 1 data. Because the upserted records share the same keys (e.g., same claimNumbers, agentIds, branch _ids), the totals are:
+> - Policies: 13 (10 from Day 1 + 3 new from Day 2)
+> - Customers: 20 (Day 1 had 20; Day 2 upserts 3 with same customerIds)
+> - Claims: 15 (Day 1 had 15; Day 2 upserts 3 with same claimNumbers)
+> - Agents: 10 (Day 1 had 10; Day 2 upserts 3 with same agentIds)
+> - Branches: 5 (Day 1 had 5; Day 2 upserts 3 with same _ids)
+> - Reviews: 3 (Day 2 only)
 
-**Collections available:** `policies`, `claims`, `customers`, `agents`, `vehicles`, `properties`, `payments`
+💡 **See [Manual Setup](../data/manual_day2_setup.md) for detailed instructions and troubleshooting**
+
+**Collections available:** `policies`, `claims`, `customers`, `agents`, `branches`, `payments`, `reviews`
 
 ## Tasks
+
+**First, switch to the correct database:**
+```javascript
+use insurance_company
+```
 
 ### Part A: Advanced Comparison and Logical Operators (15 minutes)
 
 1. **Complex AND/OR Queries**
    ```javascript
-   // Find policies where premium > 500 AND (policy type is HOME OR AUTO)
+   // Find policies where premium > 500 AND (policy type is Property OR Auto)
    db.policies.find({
      $and: [
        { annualPremium: { $gt: 500 } },
        {
          $or: [
-           { policyType: "HOME" },
-           { policyType: "AUTO" }
+           { policyType: "Property" },
+           { policyType: "Auto" }
          ]
        }
      ]
@@ -56,10 +69,14 @@ mongosh --eval "db.getSiblingDB('insurance_analytics').customers.countDocuments(
 
 2. **Array Element Matching**
    ```javascript
-   // Find claims with severity level "major" or "moderate"
+   // Find claims with severity level "major", "moderate", or "critical"
+   // Note: severityLevel only exists on 3 claims added by the Day 2 loader.
+   // Claims without this field will not match (MongoDB skips documents
+   // where the queried field is missing).
    db.claims.find({
      severityLevel: { $in: ["major", "moderate", "critical"] }
    })
+   // Expected: 3 results (the 3 Day 2 claims that have severityLevel)
    ```
 
 3. **Date Range Queries**
@@ -77,16 +94,21 @@ mongosh --eval "db.getSiblingDB('insurance_analytics').customers.countDocuments(
 
 1. **Text Index Creation and Search**
    ```javascript
+   // Drop existing text index first (data loader creates one)
+   db.policies.dropIndex("name_text_policyType_text")
+
    // Create text index on policies collection
    db.policies.createIndex({
      policyType: "text",
-     description: "text",
+     name: "text",
      coverageTypes: "text"
    })
 
    // Search for auto insurance policies
+   // The text index covers policyType and name fields.
+   // Search terms should match actual field content like "Auto", "Coverage", "Protection".
    db.policies.find({
-     $text: { $search: "auto vehicle car" }
+     $text: { $search: "Auto Coverage Protection" }
    }).sort({ score: { $meta: "textScore" } })
    ```
 
@@ -107,7 +129,7 @@ mongosh --eval "db.getSiblingDB('insurance_analytics').customers.countDocuments(
    ```javascript
    // Find claims with case-insensitive status search
    db.claims.find({
-     status: { $regex: "pending|approved", $options: "i" }
+     status: { $regex: "under_review|approved", $options: "i" }
    })
    ```
 
@@ -157,8 +179,10 @@ mongosh --eval "db.getSiblingDB('insurance_analytics').customers.countDocuments(
    })
 
    // Search for reviews mentioning service quality
+   // The text index covers reviewText and categories fields.
+   // Good search terms: "excellent service", "claims process", "poor experience", "coverage"
    db.reviews.find({
-     $text: { $search: "service excellent customer" }
+     $text: { $search: "excellent service claims process" }
    }).sort({ score: { $meta: "textScore" } })
    ```
 
@@ -182,7 +206,7 @@ Compare the performance of these equivalent queries using `.explain("executionSt
 1. **Query Result Validation**
    ```javascript
    // Verify text search results contain search terms
-   db.reviews.find({ $text: { $search: "service excellent customer" } })
+   db.reviews.find({ $text: { $search: "excellent service claims process" } })
      .forEach(doc => print("Rating: " + doc.rating + " - " + doc.reviewText.substring(0, 50) + "..."))
    ```
 

@@ -31,7 +31,7 @@
             border-radius: 15px;
         }
 
-        .reveal .title-slide h1, 
+        .reveal .title-slide h1,
         .reveal .title-slide h2 {
             color: white !important;
         }
@@ -250,24 +250,24 @@
                 <div class="section-title">
                     <h2>Course Overview</h2>
                 </div>
-                
+
                 <div class="agenda-item fragment">
                     <strong>1. Introduction to NoSQL & MongoDB</strong>
                 </div>
                 <div class="agenda-item fragment">
-                    <strong>2. Basic Operations & CRUD</strong>
+                    <strong>2. MongoDB Shell & Server Navigation</strong>
                 </div>
                 <div class="agenda-item fragment">
-                    <strong>3. Query Fundamentals</strong>
+                    <strong>3. Database & Collection Management</strong>
                 </div>
                 <div class="agenda-item fragment">
-                    <strong>4. Advanced Querying</strong>
+                    <strong>4. CRUD - Create & Insert Operations</strong>
                 </div>
                 <div class="agenda-item fragment">
-                    <strong>5. Data Modeling Basics</strong>
+                    <strong>5. CRUD - Read & Query Operations</strong>
                 </div>
                 <div class="agenda-item fragment">
-                    <strong>6. Hands-on Labs</strong>
+                    <strong>6. CRUD - Update & Delete Operations</strong>
                 </div>
             </section>
 
@@ -313,7 +313,7 @@
                             <tr class="fragment">
                                 <td>ACID</td>
                                 <td>Full ACID compliance</td>
-                                <td>Eventual consistency</td>
+                                <td>Tunable consistency (ACID transactions supported)</td>
                             </tr>
                             <tr class="fragment">
                                 <td>Relationships</td>
@@ -485,10 +485,10 @@ Database
 
             </section>
 
-            <!-- Section 2: CRUD Operations -->
+            <!-- Section 2: MongoDB Shell & Server Navigation -->
             <section>
                 <section class="section-title">
-                    <h2>2. Basic Operations & CRUD</h2>
+                    <h2>2. MongoDB Shell & Server Navigation</h2>
                 </section>
 
                 <section>
@@ -508,6 +508,259 @@ show collections      // Show collections
 db                    // Show current database
 db.stats()           // Database statistics
                     </code></pre>
+                </section>
+
+                <section>
+                    <h3>Server Information Commands</h3>
+                    <p class="code-title">Exploring the MongoDB Server</p>
+                    <pre><code class="language-javascript">
+// Server version
+db.version()
+
+// Detailed build information
+db.runCommand({buildInfo: 1})
+
+// Server status and metrics
+db.serverStatus()
+
+// Current connection authentication details
+db.runCommand({connectionStatus: 1})
+
+// Verify server connectivity
+db.runCommand({ping: 1})
+                    </code></pre>
+                    <div class="info-box fragment">
+                        <p><strong>Tip:</strong> Use <code>db.serverStatus().connections</code> to check active connections, or <code>db.serverStatus().opcounters</code> to monitor operation counts.</p>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Database Discovery</h3>
+                    <p class="code-title">Navigating Databases and Collections</p>
+                    <pre><code class="language-javascript">
+// List all databases with sizes
+show dbs
+db.adminCommand({listDatabases: 1})
+
+// Current database name
+db.getName()
+
+// Database statistics (storage, counts, indexes)
+db.stats()
+
+// List collections in current database
+show collections
+db.runCommand({listCollections: 1})
+
+// Collection-level statistics
+db.policies.stats()
+                    </code></pre>
+                </section>
+
+                <section>
+                    <h3>JavaScript Environment in mongosh</h3>
+                    <p class="code-title">Using JavaScript Inside the Shell</p>
+                    <pre><code class="language-javascript">
+// Variables and expressions
+let x = 10
+let greeting = "Hello MongoDB"
+print(greeting)
+
+// Math operations
+Math.round(3.7)         // 4
+Math.random()           // Random number between 0 and 1
+
+// Loops
+for (let i = 0; i < 5; i++) {
+    print("Iteration: " + i)
+}
+
+// Configure shell display options
+config.set("displayBatchSize", 10)
+
+// Custom prompt
+prompt = function() {
+    return db.getName() + " > "
+}
+                    </code></pre>
+                </section>
+
+                <!-- Lab 1: MongoDB Shell Mastery -->
+                <section class="lab-slide" data-background-color="#2d6a4f">
+                    <h3>🧪 Lab 1: MongoDB Shell Mastery</h3>
+
+                    <div class="objectives">
+                        <h4>Objectives</h4>
+                        <ul>
+                            <li>Master shell navigation and server information commands</li>
+                            <li>Explore server info commands and database discovery</li>
+                            <li>Use the JavaScript environment within mongosh</li>
+                        </ul>
+                    </div>
+
+                    <div class="highlight-box">
+                        <h4>📊 Before Starting - Load Course Data</h4>
+                        <pre style="font-size: 0.75em; margin: 0.2em 0;"><code class="bash">cd data
+mongosh < day1_data_loader.js</code></pre>
+                        <p style="font-size: 0.65em; margin: 0.2em 0;">✅ Wait for "DAY 1 INSURANCE DATA LOADING COMPLETE!" message</p>
+                    </div>
+
+                    <div class="highlight-box">
+                        <h4>Lab Activities</h4>
+                        <ul>
+                            <li><strong>Part A:</strong> Shell Connection and Basic Navigation</li>
+                            <li><strong>Part B:</strong> JavaScript Environment and Helper Methods</li>
+                            <li><strong>Part C:</strong> Command History and Shell Configuration</li>
+                        </ul>
+                    </div>
+                </section>
+            </section>
+
+            <!-- Section 3: Database & Collection Management -->
+            <section>
+                <section class="section-title">
+                    <h2>3. Database & Collection Management</h2>
+                </section>
+
+                <section>
+                    <h3>Database Operations</h3>
+                    <p class="code-title">Creating and Managing Databases</p>
+                    <pre><code class="language-javascript">
+// Switch to a database (creates it implicitly on first insert)
+use insurance_db
+
+// Insert a document to actually create the database
+db.test.insertOne({init: true})
+
+// View database statistics
+db.stats()
+
+// Drop the current database (use with caution!)
+db.dropDatabase()
+                    </code></pre>
+                    <div class="info-box fragment">
+                        <p><strong>Lazy Creation:</strong> MongoDB does not create a database until you insert the first document. Running <code>use myDB</code> alone only switches context -- no database is created on disk until data is written.</p>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Collection Management</h3>
+                    <div class="two-column">
+                        <div>
+                            <p class="code-title">Creating Collections</p>
+                            <pre><code class="language-javascript small-text">
+// Implicit creation on first insert
+db.policies.insertOne({name: "Auto"})
+
+// Explicit creation with options
+db.createCollection("logs", {
+    capped: true,
+    size: 5242880,   // 5 MB
+    max: 5000        // max documents
+})
+
+// Create with validation
+db.createCollection("customers", {
+    validator: {
+        $jsonSchema: {
+            bsonType: "object",
+            required: ["name", "email"]
+        }
+    }
+})
+                            </code></pre>
+                        </div>
+                        <div>
+                            <p class="code-title">Managing Collections</p>
+                            <pre><code class="language-javascript small-text">
+// Collection statistics
+db.policies.stats()
+
+// Rename a collection
+db.policies.renameCollection("insurance_policies")
+
+// Drop a collection
+db.old_data.drop()
+
+// Compact a collection (reclaim space)
+db.runCommand({
+    compact: "policies"
+})
+
+// List all collections
+db.getCollectionNames()
+
+// Count documents in collection
+db.policies.countDocuments()
+                            </code></pre>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Data Validation</h3>
+                    <p class="code-title">JSON Schema Validation</p>
+                    <pre><code class="language-javascript small-text">
+// Create collection with validation
+db.createCollection("users", {
+    validator: {
+        $jsonSchema: {
+            bsonType: "object",
+            required: ["name", "email", "age"],
+            properties: {
+                name: {
+                    bsonType: "string",
+                    description: "must be a string and is required"
+                },
+                email: {
+                    bsonType: "string",
+                    pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$",
+                    description: "must be a valid email address"
+                },
+                age: {
+                    bsonType: "int",
+                    minimum: 0,
+                    maximum: 150,
+                    description: "must be an integer between 0 and 150"
+                }
+            },
+            additionalProperties: false
+        }
+    },
+    validationLevel: "strict",
+    validationAction: "error"
+})
+                    </code></pre>
+                </section>
+
+                <!-- Lab 2: Database & Collection Management -->
+                <section class="lab-slide" data-background-color="#2d6a4f">
+                    <h3>🧪 Lab 2: Database & Collection Management</h3>
+
+                    <div class="objectives">
+                        <h4>Objectives</h4>
+                        <ul>
+                            <li>Create and manage databases and collections</li>
+                            <li>Understand collection options and configurations</li>
+                            <li>Practice database administration commands</li>
+                        </ul>
+                    </div>
+
+                    <div class="highlight-box">
+                        <h4>Focus Areas</h4>
+                        <ul>
+                            <li>Database creation and deletion</li>
+                            <li>Collection management and options</li>
+                            <li>Data import and export operations</li>
+                        </ul>
+                    </div>
+                </section>
+            </section>
+
+            <!-- Section 4: CRUD - Create & Insert Operations -->
+            <section>
+                <section class="section-title">
+                    <h2>4. CRUD - Create & Insert Operations</h2>
                 </section>
 
                 <section>
@@ -553,6 +806,107 @@ db.users.insertMany([
                 </section>
 
                 <section>
+                    <h3>MongoDB Data Types</h3>
+                    <p class="code-title">BSON Types for Document Fields</p>
+                    <pre><code class="language-javascript">
+{
+    name: "Policy Example",               // String
+    policyNumber: NumberInt(10045),        // 32-bit Integer
+    coverageLimit: NumberLong(1000000),    // 64-bit Long
+    premium: NumberDecimal("249.99"),      // 128-bit Decimal
+    isActive: true,                        // Boolean
+    effectiveDate: new Date(),             // Date (current)
+    expirationDate: ISODate("2027-01-15"), // ISODate
+    coverageTypes: ["liability", "collision"], // Array
+    holder: {                              // Embedded Object
+        firstName: "Jane",
+        lastName: "Doe"
+    },
+    _id: ObjectId(),                       // ObjectId (auto-generated)
+    notes: null                            // Null
+}
+                    </code></pre>
+                </section>
+
+                <section>
+                    <h3>Insert Options and Error Handling</h3>
+                    <div class="two-column">
+                        <div>
+                            <p class="code-title">Ordered vs Unordered Inserts</p>
+                            <pre><code class="language-javascript small-text">
+// Ordered (default) - stops on first error
+db.policies.insertMany([
+    {_id: 1, type: "Auto"},
+    {_id: 1, type: "Property"},  // Dup error
+    {_id: 2, type: "Life"}      // Skipped
+], {ordered: true})
+
+// Unordered - continues past errors
+db.policies.insertMany([
+    {_id: 1, type: "Auto"},
+    {_id: 1, type: "Property"},  // Error logged
+    {_id: 2, type: "Life"}      // Still inserted
+], {ordered: false})
+                            </code></pre>
+                        </div>
+                        <div>
+                            <p class="code-title">Error Handling</p>
+                            <pre><code class="language-javascript small-text">
+// Try-catch for insert errors
+try {
+    db.policies.insertOne({
+        _id: "existing_id",
+        type: "Auto"
+    })
+} catch (e) {
+    print("Error: " + e.message)
+}
+
+// Check write result
+let result = db.policies.insertMany(
+    docs, {ordered: false}
+)
+print("Inserted: " +
+    result.insertedIds.length)
+                            </code></pre>
+                        </div>
+                    </div>
+                    <div class="info-box fragment">
+                        <p><strong>Write Concern:</strong> Controls the level of acknowledgment for write operations. The default <code>{w: 1}</code> waits for primary acknowledgment. Use <code>{w: "majority"}</code> for stronger durability guarantees in replica sets.</p>
+                    </div>
+                </section>
+
+                <!-- Lab 3: CRUD Operations - Create & Insert -->
+                <section class="lab-slide" data-background-color="#2d6a4f">
+                    <h3>🧪 Lab 3: CRUD Operations - Create & Insert</h3>
+
+                    <div class="objectives">
+                        <h4>Objectives</h4>
+                        <ul>
+                            <li>Master document insertion techniques</li>
+                            <li>Practice single and batch insert operations</li>
+                            <li>Understand MongoDB data types and structure</li>
+                        </ul>
+                    </div>
+
+                    <div class="highlight-box">
+                        <h4>Insurance Data Management</h4>
+                        <ul>
+                            <li>Customer profile creation and data insertion</li>
+                            <li>Multiple document insertion workflows</li>
+                            <li>Data validation and error handling</li>
+                        </ul>
+                    </div>
+                </section>
+            </section>
+
+            <!-- Section 5: CRUD - Read & Query Operations -->
+            <section>
+                <section class="section-title">
+                    <h2>5. CRUD - Read & Query Operations</h2>
+                </section>
+
+                <section>
                     <h3>Read Operations</h3>
                     <p class="code-title">Finding Documents</p>
                     <pre><code class="language-javascript">
@@ -577,6 +931,301 @@ db.users.find({"address.city": "New York"})
 // Count documents
 db.users.countDocuments({department: "Engineering"})
                     </code></pre>
+                </section>
+
+                <section>
+                    <h3>Comparison Operators</h3>
+                    <p class="code-title">Equality and Inequality</p>
+                    <pre><code class="language-javascript">
+// Equal to (default behavior)
+db.products.find({price: 29.99})
+db.products.find({price: {$eq: 29.99}})  // Explicit
+
+// Comparison operators
+db.products.find({price: {$gt: 50}})      // Greater than
+db.products.find({rating: {$gte: 4.0}})   // Greater than or equal
+db.products.find({stock: {$lt: 10}})      // Less than
+db.products.find({discount: {$lte: 0.2}}) // Less than or equal
+db.products.find({status: {$ne: "discontinued"}}) // Not equal
+
+// Range queries
+db.products.find({
+    price: {$gte: 20, $lte: 100}
+})
+                    </code></pre>
+                </section>
+
+                <section>
+                    <h3>In, Not In, and Logical Operators</h3>
+                    <div class="two-column">
+                        <div>
+                            <p class="code-title">$in and $nin</p>
+                            <pre><code class="language-javascript small-text">
+// $in - Match any value in array
+db.products.find({
+    category: {
+        $in: ["electronics", "books"]
+    }
+})
+
+// $nin - Match none of the values
+db.products.find({
+    status: {
+        $nin: ["discontinued",
+               "out-of-stock"]
+    }
+})
+
+// Mixed data types in $in
+db.items.find({
+    identifier: {
+        $in: [123, "ABC",
+              ObjectId("507f...")]
+    }
+})
+                            </code></pre>
+                        </div>
+                        <div>
+                            <p class="code-title">$or and $and</p>
+                            <pre><code class="language-javascript small-text">
+// Implicit $and
+db.products.find({
+    category: "electronics",
+    price: {$lt: 100},
+    inStock: true
+})
+
+// Explicit $and
+db.products.find({
+    $and: [
+        {category: "electronics"},
+        {price: {$lt: 100}}
+    ]
+})
+
+// $or - Match any condition
+db.products.find({
+    $or: [
+        {category: "electronics"},
+        {price: {$lt: 20}}
+    ]
+})
+                            </code></pre>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Element and Array Operators</h3>
+                    <div class="two-column">
+                        <div>
+                            <p class="code-title">Element Operators</p>
+                            <pre><code class="language-javascript small-text">
+// $exists - Check if field exists
+db.users.find({
+    email: {$exists: true}
+})
+db.users.find({
+    phone: {$exists: false}
+})
+
+// $type - Check field data type
+db.users.find({age: {$type: "number"}})
+db.users.find({age: {$type: "string"}})
+
+// Multiple types
+db.mixed.find({
+    value: {$type: ["number", "string"]}
+})
+
+// BSON type numbers
+// 1=double, 2=string, 3=object,
+// 4=array, 7=objectId, 8=boolean,
+// 9=date, 10=null
+                            </code></pre>
+                        </div>
+                        <div>
+                            <p class="code-title">Array Operators</p>
+                            <pre><code class="language-javascript small-text">
+// Match array element
+db.users.find({hobbies: "reading"})
+
+// Exact array match (order matters)
+db.users.find({
+    hobbies: ["reading", "swimming"]
+})
+
+// Array length
+db.users.find({hobbies: {$size: 3}})
+
+// $all - Match all elements
+db.users.find({
+    hobbies: {
+        $all: ["reading", "swimming"]
+    }
+})
+
+// $elemMatch - Multiple conditions
+db.products.find({
+    reviews: {$elemMatch: {
+        rating: {$gte: 4},
+        helpful: {$gte: 10}
+    }}
+})
+                            </code></pre>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Projection, Sorting, and Pagination</h3>
+                    <div class="two-column">
+                        <div>
+                            <p class="code-title">Projection Basics</p>
+                            <pre><code class="language-javascript small-text">
+// Include specific fields (1 = include)
+db.users.find({}, {name: 1, email: 1})
+
+// Exclude specific fields (0 = exclude)
+db.users.find({}, {password: 0, ssn: 0})
+
+// Suppress _id
+db.users.find({},
+    {name: 1, email: 1, _id: 0})
+
+// Nested document projection
+db.users.find({}, {
+    "address.city": 1,
+    "address.country": 1
+})
+
+// Array slice projection
+db.students.find({}, {
+    name: 1,
+    scores: {$slice: 3}  // First 3
+})
+                            </code></pre>
+                        </div>
+                        <div>
+                            <p class="code-title">Sorting and Limiting</p>
+                            <pre><code class="language-javascript small-text">
+// Ascending sort
+db.products.find().sort({price: 1})
+
+// Descending sort
+db.products.find().sort({price: -1})
+
+// Multiple field sort
+db.products.find().sort({
+    category: 1,
+    price: -1
+})
+
+// Limiting and skipping
+db.products.find().limit(10)
+db.products.find().skip(20)
+
+// Pagination pattern
+db.products.find()
+    .sort({_id: 1})
+    .skip(20)
+    .limit(10)
+                            </code></pre>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Regular Expressions and Cursor Methods</h3>
+                    <div class="two-column">
+                        <div>
+                            <p class="code-title">Regex Pattern Matching</p>
+                            <pre><code class="language-javascript small-text">
+// Basic regex patterns
+db.users.find({name: /^John/})
+// Starts with "John"
+
+db.users.find({name: /son$/})
+// Ends with "son"
+
+// Case-insensitive matching
+db.users.find({name: /john/i})
+
+// Using $regex operator
+db.users.find({
+    name: {
+        $regex: "john",
+        $options: "i"
+    }
+})
+
+// Advanced patterns
+db.products.find({
+    sku: /^[A-Z]{2}\d{4}$/
+})
+                            </code></pre>
+                        </div>
+                        <div>
+                            <p class="code-title">Cursor Methods</p>
+                            <pre><code class="language-javascript small-text">
+// Convert to array
+var results = db.products
+    .find({category: "books"})
+    .toArray()
+
+// Iterate with forEach
+db.products.find({price: {$lt: 50}})
+    .forEach(function(doc) {
+        print(doc.name + ": $"
+              + doc.price)
+    })
+
+// Count results
+db.products.countDocuments(
+    {category: "electronics"})
+
+// Check if results exist
+var has = db.products
+    .find({category: "rare"})
+    .hasNext()
+
+// Get explain plan
+db.products.find(
+    {category: "electronics"})
+    .explain()
+                            </code></pre>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Lab 4: CRUD Operations - Read & Query -->
+                <section class="lab-slide" data-background-color="#2d6a4f">
+                    <h3>🧪 Lab 4: CRUD Operations - Read & Query</h3>
+
+                    <div class="objectives">
+                        <h4>Objectives</h4>
+                        <ul>
+                            <li>Master MongoDB query language</li>
+                            <li>Practice comparison and logical operators</li>
+                            <li>Implement complex query combinations</li>
+                        </ul>
+                    </div>
+
+                    <div class="highlight-box">
+                        <h4>Policy Search and Analysis</h4>
+                        <ul>
+                            <li>Complex insurance policy queries</li>
+                            <li>Advanced filtering and search techniques</li>
+                            <li>Data analysis and reporting queries</li>
+                        </ul>
+                    </div>
+                </section>
+            </section>
+
+            <!-- Section 6: CRUD - Update & Delete Operations -->
+            <section>
+                <section class="section-title">
+                    <h2>6. CRUD - Update & Delete Operations</h2>
                 </section>
 
                 <section>
@@ -678,662 +1327,8 @@ db.users.deleteMany({
                     </div>
                 </section>
 
-                <!-- Lab 1: MongoDB Shell Mastery -->
-                <section class="lab-slide">
-                    <h3>🧪 Lab 1: MongoDB Shell Mastery</h3>
-
-                    <div class="objectives">
-                        <h4>Objectives</h4>
-                        <ul>
-                            <li>Master MongoDB shell navigation and commands</li>
-                            <li>Practice database and collection management</li>
-                            <li>Understand MongoDB architecture and data structure</li>
-                        </ul>
-                    </div>
-
-                    <div class="highlight-box">
-                        <h4>📊 Before Starting - Load Course Data</h4>
-                        <pre style="font-size: 0.75em; margin: 0.2em 0;"><code class="bash">cd data
-mongosh < day1_data_loader.js</code></pre>
-                        <p style="font-size: 0.65em; margin: 0.2em 0;">✅ Wait for "DAY 1 INSURANCE DATA LOADING COMPLETE!" message</p>
-                    </div>
-
-                    <div class="highlight-box">
-                        <h4>Lab Activities</h4>
-                        <ul>
-                            <li><strong>Part A:</strong> MongoDB Shell Navigation</li>
-                            <li><strong>Part B:</strong> Database and Collection Operations</li>
-                            <li><strong>Part C:</strong> Document Structure Exploration</li>
-                        </ul>
-                    </div>
-                </section>
-            </section>
-
-            <!-- Section 3: Query Fundamentals -->
-            <section>
-                <section class="section-title">
-                    <h2>3. Query Fundamentals</h2>
-                </section>
-
-                <section>
-                    <h3>Comparison Operators</h3>
-                    <p class="code-title">Equality and Inequality</p>
-                    <pre><code class="language-javascript">
-// Equal to (default behavior)
-db.products.find({price: 29.99})
-db.products.find({price: {$eq: 29.99}})  // Explicit
-
-// Comparison operators
-db.products.find({price: {$gt: 50}})      // Greater than
-db.products.find({rating: {$gte: 4.0}})   // Greater than or equal
-db.products.find({stock: {$lt: 10}})      // Less than
-db.products.find({discount: {$lte: 0.2}}) // Less than or equal
-db.products.find({status: {$ne: "discontinued"}}) // Not equal
-
-// Range queries
-db.products.find({
-    price: {$gte: 20, $lte: 100}
-})
-                    </code></pre>
-                </section>
-
-                <section>
-                    <h3>In and Not In Arrays</h3>
-                    <p class="code-title">Multiple Value Matching</p>
-                    <pre><code class="language-javascript">
-// $in - Match any value in array
-db.products.find({
-    category: {$in: ["electronics", "books", "clothing"]}
-})
-
-// $nin - Match none of the values in array
-db.products.find({
-    status: {$nin: ["discontinued", "out-of-stock"]}
-})
-
-// Mixed data types in $in
-db.items.find({
-    identifier: {$in: [123, "ABC", ObjectId("507f1f77bcf86cd799439011")]}
-})
-
-// Date ranges
-db.orders.find({
-    orderDate: {
-        $gte: ISODate("2023-01-01"),
-        $lt: ISODate("2024-01-01")
-    }
-})
-                    </code></pre>
-                </section>
-
-                <section>
-                    <h3>Logical Operators</h3>
-                    <div class="two-column">
-                        <div>
-                            <p class="code-title">AND Operations</p>
-                            <pre><code class="language-javascript small-text">
-// Implicit $and
-db.products.find({
-    category: "electronics",
-    price: {$lt: 100},
-    inStock: true
-})
-
-// Explicit $and
-db.products.find({
-    $and: [
-        {category: "electronics"},
-        {price: {$lt: 100}},
-        {inStock: true}
-    ]
-})
-                            </code></pre>
-                        </div>
-                        <div>
-                            <p class="code-title">OR Operations</p>
-                            <pre><code class="language-javascript small-text">
-// $or - Match any condition
-db.products.find({
-    $or: [
-        {category: "electronics"},
-        {category: "books"},
-        {price: {$lt: 20}}
-    ]
-})
-
-// Combining $and and $or
-db.products.find({
-    category: "electronics",
-    $or: [
-        {price: {$lt: 50}},
-        {rating: {$gte: 4.5}}
-    ]
-})
-                            </code></pre>
-                        </div>
-                    </div>
-                </section>
-
-                <section>
-                    <h3>Element Operators</h3>
-                    <p class="code-title">Field Existence and Type Checking</p>
-                    <pre><code class="language-javascript">
-// $exists - Check if field exists
-db.users.find({email: {$exists: true}})    // Has email field
-db.users.find({phone: {$exists: false}})   // No phone field
-
-// $type - Check field data type
-db.users.find({age: {$type: "number"}})
-db.users.find({age: {$type: "string"}})
-
-// Multiple types
-db.mixed.find({value: {$type: ["number", "string"]}})
-
-// BSON type numbers
-db.users.find({age: {$type: 1}})    // 1 = double
-db.users.find({name: {$type: 2}})   // 2 = string
-
-// Common BSON types: 1=double, 2=string, 3=object, 4=array, 
-//                   7=objectId, 8=boolean, 9=date, 10=null
-                    </code></pre>
-                </section>
-
-                <section>
-                    <h3>Array Operators</h3>
-                    <div class="two-column">
-                        <div>
-                            <p class="code-title">Basic Array Queries</p>
-                            <pre><code class="language-javascript small-text">
-// Match array element
-db.users.find({hobbies: "reading"})
-
-// Exact array match
-db.users.find({
-    hobbies: ["reading", "swimming"]
-})
-
-// Array length
-db.users.find({hobbies: {$size: 3}})
-
-// $all - Match all elements
-db.users.find({
-    hobbies: {$all: ["reading", "swimming"]}
-})
-                            </code></pre>
-                        </div>
-                        <div>
-                            <p class="code-title">Advanced Array Queries</p>
-                            <pre><code class="language-javascript small-text">
-// $elemMatch - Multiple conditions
-db.products.find({
-    reviews: {
-        $elemMatch: {
-            rating: {$gte: 4},
-            helpful: {$gte: 10}
-        }
-    }
-})
-
-// Array element by position
-db.users.find({"scores.0": {$gte: 90}})
-
-// Has third element
-db.users.find({"scores.2": {$exists: true}})
-                            </code></pre>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Lab 2: Database & Collection Management -->
-                <section class="lab-slide">
-                    <h3>🧪 Lab 2: Database & Collection Management</h3>
-
-                    <div class="objectives">
-                        <h4>Objectives</h4>
-                        <ul>
-                            <li>Create and manage databases and collections</li>
-                            <li>Understand collection options and configurations</li>
-                            <li>Practice database administration commands</li>
-                        </ul>
-                    </div>
-
-                    <div class="highlight-box">
-                        <h4>Focus Areas</h4>
-                        <ul>
-                            <li>Database creation and deletion</li>
-                            <li>Collection management and options</li>
-                            <li>Data import and export operations</li>
-                        </ul>
-                    </div>
-                </section>
-            </section>
-
-            <!-- Section 4: Advanced Querying -->
-            <section>
-                <section class="section-title">
-                    <h2>4. Advanced Querying</h2>
-                </section>
-
-                <section>
-                    <h3>Regular Expression Queries</h3>
-                    <p class="code-title">Pattern Matching</p>
-                    <pre><code class="language-javascript">
-// Basic regex patterns
-db.users.find({name: /^John/})      // Starts with "John"
-db.users.find({name: /son$/})       // Ends with "son"
-db.users.find({name: /john/})       // Contains "john"
-
-// Case-insensitive matching
-db.users.find({name: /john/i})      // Case-insensitive
-db.users.find({email: /GMAIL/i})    // Case-insensitive email
-
-// Using $regex operator
-db.users.find({
-    name: {
-        $regex: "john",
-        $options: "i"
-    }
-})
-
-// Advanced patterns
-db.products.find({sku: /^[A-Z]{2}\d{4}$/})  // 2 letters + 4 digits
-db.users.find({phone: /^\d{3}-\d{3}-\d{4}$/}) // Phone format
-                    </code></pre>
-                </section>
-
-                <section>
-                    <h3>Projection Techniques</h3>
-                    <div class="two-column">
-                        <div>
-                            <p class="code-title">Basic Projection</p>
-                            <pre><code class="language-javascript small-text">
-// Include specific fields (1 = include)
-db.users.find({}, {name: 1, email: 1})
-
-// Exclude specific fields (0 = exclude)
-db.users.find({}, {password: 0, ssn: 0})
-
-// _id is included by default
-db.users.find({}, {name: 1, email: 1, _id: 0})
-
-// Nested document projection
-db.users.find({}, {
-    "address.city": 1,
-    "address.country": 1
-})
-                            </code></pre>
-                        </div>
-                        <div>
-                            <p class="code-title">Array Projection</p>
-                            <pre><code class="language-javascript small-text">
-// $slice - Limit array elements
-db.students.find({}, {
-    name: 1,
-    scores: {$slice: 3}    // First 3
-})
-
-db.students.find({}, {
-    name: 1,
-    scores: {$slice: -2}   // Last 2
-})
-
-// $elemMatch projection
-db.students.find({}, {
-    name: 1,
-    courses: {$elemMatch: {grade: "A"}}
-})
-
-// $ positional operator
-db.students.find(
-    {"courses.grade": "A"},
-    {"courses.$": 1}
-)
-                            </code></pre>
-                        </div>
-                    </div>
-                </section>
-
-                <section>
-                    <h3>Sorting and Limiting</h3>
-                    <p class="code-title">Result Manipulation</p>
-                    <pre><code class="language-javascript">
-// Single field sort
-db.products.find().sort({price: 1})     // Ascending
-db.products.find().sort({price: -1})    // Descending
-
-// Multiple field sort
-db.products.find().sort({
-    category: 1,    // First by category (asc)
-    price: -1       // Then by price (desc)
-})
-
-// Limiting and skipping
-db.products.find().limit(10)
-db.products.find().skip(20)
-
-// Pagination pattern
-db.products.find()
-    .sort({_id: 1})
-    .skip(20)
-    .limit(10)
-
-// Method chaining
-db.products.find({category: "electronics"})
-    .sort({rating: -1, price: 1})
-    .skip(10)
-    .limit(5)
-                    </code></pre>
-                </section>
-
-                <section>
-                    <h3>Cursor Methods</h3>
-                    <p class="code-title">Working with Results</p>
-                    <pre><code class="language-javascript">
-// Convert to array
-var results = db.products.find({category: "books"}).toArray()
-
-// Iterate with forEach
-db.products.find({price: {$lt: 50}}).forEach(function(doc) {
-    print(doc.name + ": $" + doc.price)
-})
-
-// Count results
-db.products.countDocuments({category: "electronics"})
-
-// Check if results exist
-var hasResults = db.products.find({category: "rare"}).hasNext()
-
-// Get explain plan
-db.products.find({category: "electronics"}).explain()
-
-// Map results
-var productNames = db.products.find({}, {name: 1}).map(function(doc) {
-    return doc.name.toUpperCase()
-})
-                    </code></pre>
-                </section>
-
-                <!-- Lab 3: CRUD Operations - Create & Insert -->
-                <section class="lab-slide">
-                    <h3>🧪 Lab 3: CRUD Operations - Create & Insert</h3>
-
-                    <div class="objectives">
-                        <h4>Objectives</h4>
-                        <ul>
-                            <li>Master document insertion techniques</li>
-                            <li>Practice single and batch insert operations</li>
-                            <li>Understand MongoDB data types and structure</li>
-                        </ul>
-                    </div>
-
-                    <div class="highlight-box">
-                        <h4>Customer Management System</h4>
-                        <ul>
-                            <li>Customer profile creation and data insertion</li>
-                            <li>Multiple document insertion workflows</li>
-                            <li>Data validation and error handling</li>
-                        </ul>
-                    </div>
-                </section>
-            </section>
-
-            <!-- Section 5: Data Modeling -->
-            <section>
-                <section class="section-title">
-                    <h2>5. Data Modeling Basics</h2>
-                </section>
-
-                <section>
-                    <h3>Flexible Schema Benefits</h3>
-                    <p class="code-title">Different Document Structures in Same Collection</p>
-                    <pre><code class="language-javascript">
-// Basic user
-{
-    _id: ObjectId("..."),
-    username: "john_doe",
-    email: "john@example.com",
-    created_at: ISODate("2023-01-15")
-}
-
-// Premium user with additional fields
-{
-    _id: ObjectId("..."),
-    username: "premium_user",
-    email: "premium@example.com",
-    subscription: {
-        type: "premium",
-        expires: ISODate("2024-01-15"),
-        features: ["advanced_search", "priority_support"]
-    },
-    preferences: {
-        theme: "dark",
-        notifications: true
-    },
-    created_at: ISODate("2023-01-15")
-}
-                    </code></pre>
-                </section>
-
-                <section>
-                    <h3>Embedding vs Referencing</h3>
-                    <div class="two-column">
-                        <div>
-                            <div class="highlight-box">
-                                <h4>✅ Use Embedding When:</h4>
-                                <ul>
-                                    <li class="fragment">Data is accessed together</li>
-                                    <li class="fragment">Data doesn't grow unbounded</li>
-                                    <li class="fragment">Data is not shared across documents</li>
-                                    <li class="fragment">1:1 or 1:few relationships</li>
-                                </ul>
-                            </div>
-                        </div>
-                        <div>
-                            <div class="warning-box">
-                                <h4>⚠️ Use References When:</h4>
-                                <ul>
-                                    <li class="fragment">Data is large or grows unbounded</li>
-                                    <li class="fragment">Data is shared across documents</li>
-                                    <li class="fragment">Need to query referenced data independently</li>
-                                    <li class="fragment">Many:many relationships</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <section>
-                    <h3>Embedding Example</h3>
-                    <p class="code-title">User Profile with Address (1:1 Relationship)</p>
-                    <pre><code class="language-javascript">
-{
-    _id: ObjectId("..."),
-    name: "John Doe",
-    email: "john@example.com",
-    address: {
-        street: "123 Main St",
-        city: "New York",
-        state: "NY",
-        zip: "10001"
-    },
-    preferences: {
-        theme: "dark",
-        notifications: {
-            email: true,
-            sms: false,
-            push: true
-        }
-    },
-    created_at: ISODate("2023-01-15")
-}
-                    </code></pre>
-                    <div class="fragment small-text">
-                        <p><strong>Benefits:</strong> Single query, atomic updates, natural data grouping</p>
-                    </div>
-                </section>
-
-                <section>
-                    <h3>Referencing Example</h3>
-                    <p class="code-title">E-commerce with Separate Collections</p>
-                    <div class="two-column">
-                        <div>
-                            <pre><code class="language-javascript small-text">
-// Users collection
-{
-    _id: ObjectId("user1"),
-    name: "John Doe",
-    email: "john@example.com"
-}
-
-// Products collection
-{
-    _id: ObjectId("product1"),
-    name: "Laptop",
-    price: 999.99,
-    category: "Electronics"
-}
-                            </code></pre>
-                        </div>
-                        <div>
-                            <pre><code class="language-javascript small-text">
-// Orders collection
-{
-    _id: ObjectId("order1"),
-    user_id: ObjectId("user1"),
-    items: [
-        {
-            product_id: ObjectId("product1"),
-            quantity: 1,
-            price: 999.99
-        }
-    ],
-    total: 999.99,
-    order_date: ISODate("2023-01-15")
-}
-                            </code></pre>
-                        </div>
-                    </div>
-                    <div class="fragment small-text">
-                        <p><strong>Benefits:</strong> Normalized data, independent queries, better for many:many relationships</p>
-                    </div>
-                </section>
-
-                <section>
-                    <h3>Schema Design Patterns</h3>
-                    <div class="info-box">
-                        <h4>Common Design Patterns</h4>
-                        <ul>
-                            <li class="fragment"><strong>Attribute Pattern</strong> - Varying product attributes</li>
-                            <li class="fragment"><strong>Bucket Pattern</strong> - Time-series data grouping</li>
-                            <li class="fragment"><strong>Outlier Pattern</strong> - Handle unusually large documents</li>
-                            <li class="fragment"><strong>Computed Pattern</strong> - Pre-calculated values</li>
-                            <li class="fragment"><strong>Extended Reference</strong> - Frequently accessed subset</li>
-                            <li class="fragment"><strong>Subset Pattern</strong> - Split large documents</li>
-                            <li class="fragment"><strong>Polymorphic Pattern</strong> - Different document types</li>
-                        </ul>
-                    </div>
-                </section>
-
-                <section>
-                    <h3>Attribute Pattern Example</h3>
-                    <p class="code-title">Handling Varying Product Attributes</p>
-                    <pre><code class="language-javascript">
-// Instead of sparse documents with many optional fields
-{
-    _id: ObjectId("..."),
-    name: "Laptop",
-    price: 999.99,
-    category: "Electronics",
-    attributes: [
-        {key: "screen_size", value: "15 inch"},
-        {key: "processor", value: "Intel i7"},
-        {key: "ram", value: "16GB"},
-        {key: "storage", value: "512GB SSD"}
-    ]
-}
-
-// Enables indexing on attributes
-db.products.createIndex({"attributes.key": 1, "attributes.value": 1})
-
-// Query by attribute
-db.products.find({
-    "attributes": {
-        $elemMatch: {
-            key: "processor",
-            value: /Intel/i
-        }
-    }
-})
-                    </code></pre>
-                </section>
-
-                <section>
-                    <h3>Data Validation</h3>
-                    <p class="code-title">JSON Schema Validation</p>
-                    <pre><code class="language-javascript small-text">
-// Create collection with validation
-db.createCollection("users", {
-    validator: {
-        $jsonSchema: {
-            bsonType: "object",
-            required: ["name", "email", "age"],
-            properties: {
-                name: {
-                    bsonType: "string",
-                    description: "must be a string and is required"
-                },
-                email: {
-                    bsonType: "string",
-                    pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$",
-                    description: "must be a valid email address"
-                },
-                age: {
-                    bsonType: "int",
-                    minimum: 0,
-                    maximum: 150,
-                    description: "must be an integer between 0 and 150"
-                }
-            },
-            additionalProperties: false
-        }
-    },
-    validationLevel: "strict",
-    validationAction: "error"
-})
-                    </code></pre>
-                </section>
-
-                <!-- Lab 4: CRUD Operations - Read & Query -->
-                <section class="lab-slide">
-                    <h3>🧪 Lab 4: CRUD Operations - Read & Query</h3>
-
-                    <div class="objectives">
-                        <h4>Objectives</h4>
-                        <ul>
-                            <li>Master MongoDB query language</li>
-                            <li>Practice comparison and logical operators</li>
-                            <li>Implement complex query combinations</li>
-                        </ul>
-                    </div>
-
-                    <div class="highlight-box">
-                        <h4>Policy Search and Analysis</h4>
-                        <ul>
-                            <li>Complex insurance policy queries</li>
-                            <li>Advanced filtering and search techniques</li>
-                            <li>Data analysis and reporting queries</li>
-                        </ul>
-                    </div>
-                </section>
-            </section>
-
-            <!-- Section 6: Final Integration Lab -->
-            <section>
-                <section class="section-title">
-                    <h2>6. Final Integration Lab</h2>
-                </section>
-
-                <section class="lab-slide">
+                <!-- Lab 5: CRUD Operations - Update & Delete -->
+                <section class="lab-slide" data-background-color="#2d6a4f">
                     <h3>🧪 Lab 5: CRUD Operations - Update & Delete</h3>
 
                     <div class="objectives">
@@ -1346,12 +1341,12 @@ db.createCollection("users", {
                     </div>
 
                     <div class="highlight-box">
-                        <h4>Customer Data Management</h4>
+                        <h4>Insurance Data Management</h4>
                         <ul>
-                            <li>Customer profile updates and modifications</li>
-                            <li>Bulk update operations for data maintenance</li>
-                            <li>Safe deletion practices and data archival</li>
-                            <li>Data integrity and consistency maintenance</li>
+                            <li>Policy updates and modifications</li>
+                            <li>Bulk update operations</li>
+                            <li>Safe deletion practices</li>
+                            <li>Data integrity maintenance</li>
                         </ul>
                     </div>
                 </section>
@@ -1369,12 +1364,11 @@ db.createCollection("users", {
                         <ol>
                             <li class="fragment"><strong>NoSQL Fundamentals</strong> - When and why to choose document databases</li>
                             <li class="fragment"><strong>MongoDB Architecture</strong> - Documents, collections, BSON format</li>
+                            <li class="fragment"><strong>MongoDB Shell</strong> - Navigation, server commands, JavaScript environment</li>
+                            <li class="fragment"><strong>Database Management</strong> - Creating and configuring databases and collections</li>
                             <li class="fragment"><strong>CRUD Operations</strong> - Complete create, read, update, delete mastery</li>
                             <li class="fragment"><strong>Query Language</strong> - Comparison, logical, element, and array operators</li>
                             <li class="fragment"><strong>Advanced Querying</strong> - Regex, projection, sorting, and pagination</li>
-                            <li class="fragment"><strong>Data Modeling</strong> - Embedding vs referencing decisions</li>
-                            <li class="fragment"><strong>Schema Patterns</strong> - Attribute, bucket, computed patterns</li>
-                            <li class="fragment"><strong>Data Validation</strong> - JSON Schema implementation</li>
                         </ol>
                     </div>
                 </section>
@@ -1501,17 +1495,17 @@ db.createCollection("users", {
             transition: 'slide',
             transitionSpeed: 'default',
             backgroundTransition: 'fade',
-            
+
             // Learn about plugins: https://revealjs.com/plugins/
             plugins: [ RevealMarkdown, RevealHighlight, RevealNotes, RevealSearch, RevealZoom ],
-            
+
             // Presentation size
             width: 1200,
             height: 800,
             margin: 0.1,
             minScale: 0.2,
             maxScale: 1.5,
-            
+
             // Keyboard shortcuts
             keyboard: {
                 13: 'next', // Enter
@@ -1521,33 +1515,33 @@ db.createCollection("users", {
                     }
                 }
             },
-            
+
             // Touch navigation
             touch: true,
             loop: false,
             rtl: false,
-            
+
             // Fragments
             fragments: true,
             fragmentInURL: true,
-            
+
             // Auto-slide
             autoSlide: 0,
             autoSlideStoppable: true,
-            
+
             // Mouse wheel navigation
             mouseWheel: false,
-            
+
             // Rolling links
             rollingLinks: false,
-            
+
             // Hide address bar on mobile
             hideAddressBar: true,
-            
+
             // Parallax background
             parallaxBackgroundImage: '',
             parallaxBackgroundSize: '',
-            
+
             // Custom highlight theme
             highlight: {
                 highlightOnLoad: true,

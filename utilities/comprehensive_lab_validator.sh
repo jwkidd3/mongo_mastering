@@ -252,10 +252,10 @@ test_mongo_command \
         validator: {
             \$jsonSchema: {
                 bsonType: 'object',
-                required: ['policyNumber', 'premiumAmount'],
+                required: ['policyNumber', 'annualPremium'],
                 properties: {
                     policyNumber: { bsonType: 'string' },
-                    premiumAmount: { bsonType: 'number', minimum: 0 }
+                    annualPremium: { bsonType: 'number', minimum: 0 }
                 }
             }
         }
@@ -276,7 +276,7 @@ test_mongo_command \
     "use insurance_company; db.test_policies.insertOne({
         policyNumber: 'POL-AUTO-101',
         policyType: 'AUTO',
-        premiumAmount: 899.99,
+        annualPremium: 899.99,
         customerId: 'CUST001',
         createdAt: new Date()
     })" \
@@ -288,7 +288,7 @@ test_mongo_command \
         _id: new ObjectId(),
         policyNumber: 'POL-HOME-102',
         policyType: 'HOME',
-        premiumAmount: NumberDecimal('1299.99')
+        annualPremium: NumberDecimal('1299.99')
     })" \
     ""
 
@@ -405,7 +405,7 @@ test_mongo_command \
     "Lab 5 - Update with \$inc operator" \
     "use insurance_company; db.test_policies.updateOne(
         {policyNumber: 'POL-AUTO-101'},
-        {\$inc: {premiumAmount: 50}}
+        {\$inc: {annualPremium: 50}}
     )" \
     ""
 
@@ -437,7 +437,7 @@ test_mongo_command \
     "Lab 5 - Upsert operation" \
     "use insurance_company; db.test_policies.updateOne(
         {policyNumber: 'POL-LIFE-999'},
-        {\$set: {policyType: 'LIFE', premiumAmount: 500}},
+        {\$set: {policyType: 'LIFE', annualPremium: 500}},
         {upsert: true}
     )" \
     ""
@@ -449,7 +449,7 @@ test_mongo_command \
         {
             policyNumber: 'POL-LIFE-999',
             policyType: 'LIFE',
-            premiumAmount: 600,
+            annualPremium: 600,
             beneficiary: 'John Doe'
         }
     )" \
@@ -471,7 +471,7 @@ echo "========================================================================"
 
 test_mongo_command \
     "Lab 6 - Complex AND/OR query" \
-    "use insurance_analytics; db.policies.find({
+    "use insurance_company; db.policies.find({
         \$and: [
             {annualPremium: {\$gt: 500}},
             {\$or: [
@@ -484,7 +484,7 @@ test_mongo_command \
 
 test_mongo_command \
     "Lab 6 - Date range query" \
-    "use insurance_analytics; db.policies.find({
+    "use insurance_company; db.policies.find({
         createdAt: {
             \$gte: new Date('2024-01-01'),
             \$lt: new Date('2025-01-01')
@@ -494,7 +494,7 @@ test_mongo_command \
 
 test_mongo_command \
     "Lab 6 - Create text index" \
-    "use insurance_analytics; db.policies.createIndex({
+    "use insurance_company; db.policies.createIndex({
         policyType: 'text',
         description: 'text'
     })" \
@@ -502,21 +502,21 @@ test_mongo_command \
 
 test_mongo_command \
     "Lab 6 - Text search query" \
-    "use insurance_analytics; db.policies.find({
+    "use insurance_company; db.policies.find({
         \$text: {\$search: 'auto vehicle car'}
     })" \
     ""
 
 test_mongo_command \
     "Lab 6 - Regex pattern matching" \
-    "use insurance_analytics; db.customers.find({
+    "use insurance_company; db.customers.find({
         phone: /^\\+1-555-/
     })" \
     ""
 
 test_mongo_command \
     "Lab 6 - Case-insensitive search" \
-    "use insurance_analytics; db.claims.find({
+    "use insurance_company; db.claims.find({
         status: {\$regex: 'pending|approved', \$options: 'i'}
     })" \
     ""
@@ -768,7 +768,7 @@ test_mongo_command \
     "Lab 11 Step 2 - Insert test policies to primary" \
     "use insurance_company; db.policies.insertMany([
         { policyNumber: 'POL-TEST-001', status: 'Active', premium: 5000, type: 'Auto', timestamp: new Date() },
-        { policyNumber: 'POL-TEST-002', status: 'Pending', premium: 8500, type: 'Home', timestamp: new Date() },
+        { policyNumber: 'POL-TEST-002', status: 'Pending', premium: 8500, type: 'Property', timestamp: new Date() },
         { policyNumber: 'POL-TEST-003', status: 'Active', premium: 3200, type: 'Life', timestamp: new Date() }
     ])" \
     ""
@@ -851,12 +851,12 @@ test_mongo_command \
 # Step 10: Read Concerns
 test_mongo_command \
     "Lab 11 Step 10 - Read with majority concern (only majority-acknowledged data)" \
-    "use insurance_company; var docs = db.policies.find({ policyNumber: /POL-TEST/ }).readConcern('majority').toArray(); if (docs.length > 0) { print('SUCCESS: Read ' + docs.length + ' policies with majority concern'); } else { throw new Error('No policies found'); }" \
+    "use insurance_company; var result = db.runCommand({ find: 'policies', filter: { policyNumber: /POL-TEST/ }, readConcern: { level: 'majority' } }); if (result.cursor.firstBatch.length > 0) { print('SUCCESS: Read ' + result.cursor.firstBatch.length + ' policies with majority concern'); } else { throw new Error('No policies found'); }" \
     ""
 
 test_mongo_command \
     "Lab 11 Step 10 - Read with local concern (fastest, may include non-replicated data)" \
-    "use insurance_company; var docs = db.policies.find({ policyNumber: /POL-TEST/ }).readConcern('local').toArray(); if (docs.length > 0) { print('SUCCESS: Read ' + docs.length + ' policies with local concern'); } else { throw new Error('No policies found'); }" \
+    "use insurance_company; var result = db.runCommand({ find: 'policies', filter: { policyNumber: /POL-TEST/ }, readConcern: { level: 'local' } }); if (result.cursor.firstBatch.length > 0) { print('SUCCESS: Read ' + result.cursor.firstBatch.length + ' policies with local concern'); } else { throw new Error('No policies found'); }" \
     ""
 
 # Cleanup
@@ -1150,10 +1150,10 @@ test_mongo_command \
         _id: 'policy_cs_test1',
         policyNumber: 'POL-CS-2024-001',
         customerId: 'cust2',
-        policyType: 'Home Insurance',
+        policyType: 'Property',
         coverageLimit: 250000,
         effectiveDate: new Date(),
-        premiumAmount: NumberDecimal('1200.00'),
+        annualPremium: NumberDecimal('1200.00'),
         status: 'Active'
     })" \
     ""
