@@ -5,6 +5,32 @@
 - Understand embedding vs referencing trade-offs
 - Implement schema validation
 
+## Prerequisites: Environment Setup
+
+**⚠️ Only run if MongoDB environment is not already running**
+
+From the project root directory, use the course's standardized setup scripts:
+
+**macOS/Linux:**
+```bash
+./scripts/setup.sh
+```
+
+**Windows PowerShell:**
+```powershell
+.\scripts\setup.ps1
+```
+
+To check if MongoDB is already running:
+```bash
+mongosh --eval "db.runCommand('ping')"
+```
+
+**Load Course Data:**
+```bash
+mongosh < data/comprehensive_data_loader.js
+```
+
 ## Tasks
 
 ### Part A: Schema Design Patterns (25 minutes)
@@ -77,6 +103,9 @@
    ```javascript
    use insurance_company
 
+   // Drop existing collection for rerun safety
+   db.insurance_claims.drop()
+
    // Create claims collection with embedded investigation data
    db.insurance_claims.insertMany([
      {
@@ -128,6 +157,9 @@
 
 2. **Create Validation Rules**
    ```javascript
+   // Drop existing collection for rerun safety
+   db.policyholders.drop()
+
    // Create collection with schema validation
    db.createCollection("policyholders", {
      validator: {
@@ -215,6 +247,38 @@
      }}
    ]);
    ```
+
+## Cleanup and Environment Teardown
+
+### Clean Up Test Data (Optional)
+
+```javascript
+// Remove test collections created during this lab
+db.policyholders.drop()
+db.insurance_claims.drop()
+print("✅ Test data cleaned up")
+```
+
+### Environment Teardown
+When finished with the lab, use the standardized teardown script:
+
+**macOS/Linux:**
+```bash
+cd scripts
+./teardown.sh
+```
+
+**Windows PowerShell:**
+```powershell
+cd scripts
+.\teardown.ps1
+```
+
+## Lab 9 Deliverables
+✅ **Schema Design Patterns**: Analyzed embedding vs referencing for insurance claims data
+✅ **Schema Validation**: Implemented collection-level validation rules for policyholders
+✅ **Validation Testing**: Verified both valid and invalid documents against validation rules
+✅ **Embedded Data Queries**: Queried nested documents and array fields in insurance schemas
 
 ## Challenge Exercise
 Design an insurance fraud detection system schema that supports suspicious claims, investigation workflows, agent alerts, and case management. Consider cardinality, query patterns, and compliance requirements.

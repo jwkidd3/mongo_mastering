@@ -6,12 +6,44 @@
 - Handle insertion errors and bulk operations
 - Work with different data types in document creation
 
+## Prerequisites: Environment Setup
+
+**⚠️ Only run if MongoDB environment is not already running**
+
+From the project root directory, use the course's standardized setup scripts:
+
+**macOS/Linux:**
+```bash
+./scripts/setup.sh
+```
+
+**Windows PowerShell:**
+```powershell
+.\scripts\setup.ps1
+```
+
+To check if MongoDB is already running:
+```bash
+mongosh --eval "db.runCommand('ping')"
+```
+
+**Load Course Data:**
+```bash
+mongosh < data/comprehensive_data_loader.js
+```
+
 ## Tasks
 
 ### Part A: Single Document Insertion (15 minutes)
 1. **Basic insertOne() Operations**
    ```javascript
    use insurance_company
+
+   // Clean up from any previous lab run
+   db.policies.deleteMany({policyNumber: {$in: ["POL-AUTO-101", "POL-LIFE-101", "POL-COM-101", "POL-MULTI-101", "POL-ACK-101", "POL-BATCH-101", "POL-BATCH-102"]}})
+   db.policies.deleteOne({_id: "POL-HOME-101"})
+   db.customers.deleteMany({customerId: {$in: ["CUST-LAB-001", "CUST-LAB-002", "CUST-LAB-003"]}})
+   db.claims.deleteMany({claimNumber: {$in: ["CLM-101", "CLM-102", "CLM-103", "CLM-104", "CLM-105"]}})
 
    // Simple document insertion
    db.policies.insertOne({
@@ -74,7 +106,7 @@
        created: new Date(),
        version: NumberInt(1)
      },
-     encrypted_data: BinData(0, "SGVsbG8gV29ybGQ=")
+     encryptedData: BinData(0, "SGVsbG8gV29ybGQ=")
    })
    ```
 
@@ -138,7 +170,9 @@
 
 3. **Large Dataset Generation**
    ```javascript
-   // Generate large dataset for testing
+   // Generate large dataset for testing (uses separate collection to avoid polluting policies data)
+   db.bulk_test_policies.drop()
+
    var bulkPolicies = []
    for (var i = 1; i <= 1000; i++) {
      bulkPolicies.push({
@@ -156,8 +190,8 @@
    var batchSize = 100
    for (var j = 0; j < bulkPolicies.length; j += batchSize) {
      var batch = bulkPolicies.slice(j, j + batchSize)
-     db.policies.insertMany(batch)
-     print("Inserted batch: " + (j / batchSize + 1))
+     db.bulk_test_policies.insertMany(batch)
+     print("Inserted bulk_test_policies batch: " + (j / batchSize + 1))
    }
    ```
 
@@ -210,3 +244,39 @@
 
 ## Challenge Exercise
 Create a realistic insurance policy database with 5000 policies across multiple insurance types (Auto, Property, Life, Commercial). Include proper data types, nested documents for coverage details, arrays for beneficiaries, and implement error handling for edge cases. Measure and report insertion performance.
+
+## Cleanup and Environment Teardown
+
+### Clean Up Test Data (Optional)
+
+```javascript
+// Remove test data created during this lab
+use insurance_company
+db.policies.deleteMany({policyNumber: {$in: ["POL-AUTO-101", "POL-LIFE-101", "POL-COM-101", "POL-MULTI-101", "POL-ACK-101", "POL-BATCH-101", "POL-BATCH-102"]}})
+db.policies.deleteOne({_id: "POL-HOME-101"})
+db.customers.deleteMany({customerId: {$in: ["CUST-LAB-001", "CUST-LAB-002", "CUST-LAB-003"]}})
+db.claims.deleteMany({claimNumber: {$in: ["CLM-101", "CLM-102", "CLM-103", "CLM-104", "CLM-105"]}})
+db.bulk_test_policies.drop()
+print("✅ Test data cleaned up")
+```
+
+### Environment Teardown
+When finished with the lab, use the standardized teardown script:
+
+**macOS/Linux:**
+```bash
+cd scripts
+./teardown.sh
+```
+
+**Windows PowerShell:**
+```powershell
+cd scripts
+.\teardown.ps1
+```
+
+## Lab 3 Deliverables
+✅ **Single Document Inserts**: Created policies using insertOne() with various field types
+✅ **Custom _id Values**: Inserted documents with explicit _id fields
+✅ **Batch Operations**: Used insertMany() for efficient bulk data creation
+✅ **Write Concerns**: Explored acknowledged and ordered insert options

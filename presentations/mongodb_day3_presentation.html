@@ -211,6 +211,14 @@
             font-size: 0.7em;
         }
 
+        .reveal .code-container {
+            margin: 0.5em 0;
+        }
+
+        .reveal .code-container pre {
+            margin-top: 0;
+        }
+
         .reveal .code-title {
             background: #2C5F41;
             color: white;
@@ -401,7 +409,7 @@
                     <h2>Setting Up Replica Set</h2>
                     <div class="code-container">
                         <div class="code-title">Replica Set Initialization</div>
-                        <pre><code class="javascript">// Connect to primary node
+                        <pre><code class="language-javascript">// Connect to primary node
 mongosh --host localhost:27017
 
 // Initialize replica set
@@ -429,7 +437,7 @@ rs.remove("mongo4:27017")</code></pre>
                     <h2>Advanced Configuration</h2>
                     <div class="code-container">
                         <div class="code-title">Replica Set with Special Members</div>
-                        <pre><code class="javascript">rs.initiate({
+                        <pre><code class="language-javascript">rs.initiate({
   _id: "myReplicaSet",
   members: [
     { 
@@ -473,7 +481,7 @@ rs.remove("mongo4:27017")</code></pre>
                     <div class="fragment">
                         <div class="code-container">
                             <div class="code-title">Using Read Preferences</div>
-                            <pre><code class="javascript">// Read from secondary
+                            <pre><code class="language-javascript">// Read from secondary
 db.products.find().readPref("secondary")
 
 // Read with tag preferences
@@ -494,7 +502,7 @@ mongodb://host1,host2,host3/mydb?readPreference=secondaryPreferred</code></pre>
                         <div class="column">
                             <h3>Write Concerns</h3>
                             <div class="code-container">
-                                <pre><code class="javascript">// Majority write concern
+                                <pre><code class="language-javascript">// Majority write concern
 db.users.insertOne(
   { name: "John" },
   { writeConcern: { w: "majority" } }
@@ -517,7 +525,7 @@ db.users.updateOne(
                         <div class="column">
                             <h3>Read Concerns</h3>
                             <div class="code-container">
-                                <pre><code class="javascript">// Read with majority concern
+                                <pre><code class="language-javascript">// Read with majority concern
 db.runCommand({
   find: "orders",
   filter: { status: "pending" },
@@ -545,13 +553,13 @@ db.runCommand({
                     <h2>Monitoring Replica Sets</h2>
                     <div class="code-container">
                         <div class="code-title">Essential Monitoring Commands</div>
-                        <pre><code class="javascript">// Replica set status
+                        <pre><code class="language-javascript">// Replica set status
 rs.status()
 
 // Check replication lag
-db.runCommand({ replSetGetStatus: 1 }).members.forEach(member => {
+db.runCommand({ replSetGetStatus: 1 }).members.forEach(function(member) {
   if (member.state === 2) { // Secondary
-    console.log(`${member.name}: ${member.optimeDate}`)
+    print(member.name + ": " + member.optimeDate)
   }
 })
 
@@ -671,7 +679,7 @@ rs.reconfig(config, { force: true })</code></pre>
                         <div class="column">
                             <h3>❌ Poor Shard Keys</h3>
                             <div class="code-container">
-                                <pre><code class="javascript">// Monotonically increasing
+                                <pre><code class="language-javascript">// Monotonically increasing
 { _id: ObjectId() }
 { timestamp: Date }
 { incrementalId: Number }
@@ -688,7 +696,7 @@ rs.reconfig(config, { force: true })</code></pre>
                         <div class="column">
                             <h3>✅ Good Shard Keys</h3>
                             <div class="code-container">
-                                <pre><code class="javascript">// Hashed keys
+                                <pre><code class="language-javascript">// Hashed keys
 { _id: "hashed" }
 
 // Compound keys
@@ -709,7 +717,7 @@ rs.reconfig(config, { force: true })</code></pre>
                     <h2>Sharded Cluster Setup</h2>
                     <div class="code-container">
                         <div class="code-title">Setting Up Sharding</div>
-                        <pre><code class="javascript">// 1. Start config servers (replica set)
+                        <pre><code class="language-javascript">// 1. Start config servers (replica set)
 mongod --configsvr --replSet configRS --port 27019 --dbpath /data/config
 
 // 2. Start shard servers (replica sets)
@@ -736,8 +744,7 @@ sh.shardCollection("ecommerce.products", { _id: "hashed" })</code></pre>
                     <h2>Docker Sharding Setup</h2>
                     <div class="code-container">
                         <div class="code-title">Docker Compose for Sharding</div>
-                        <pre><code class="yaml">version: '3.8'
-services:
+                        <pre><code class="language-yaml">services:
   # Config Servers
   config1:
     image: mongo:8.0
@@ -770,7 +777,7 @@ services:
                     <h2>Managing Sharded Clusters</h2>
                     <div class="code-container">
                         <div class="code-title">Sharding Administration</div>
-                        <pre><code class="javascript">// Check sharding status
+                        <pre><code class="language-javascript">// Check sharding status
 sh.status()
 
 // View chunk distribution
@@ -931,8 +938,8 @@ sh.updateZoneKeyRange("ecommerce.users",
                 <section>
                     <h2>Basic Change Stream Usage</h2>
                     <div class="code-container">
-                        <div class="code-title">Watching Collection Changes</div>
-                        <pre><code class="javascript">// Watch all changes on a collection
+                        <div class="code-title">Watching Collection Changes (Node.js Application)</div>
+                        <pre><code class="language-javascript">// Watch all changes on a collection
 const changeStream = db.orders.watch();
 
 changeStream.on('change', (change) => {
@@ -969,8 +976,8 @@ const highValueStream = db.orders.watch([
                 <section>
                     <h2>Advanced Change Stream Features</h2>
                     <div class="code-container">
-                        <div class="code-title">Resumable Change Streams</div>
-                        <pre><code class="javascript">// Resume from specific point
+                        <div class="code-title">Resumable Change Streams (Node.js Application)</div>
+                        <pre><code class="language-javascript">// Resume from specific point
 const resumeToken = getLastProcessedToken();
 const changeStream = db.orders.watch([], {
   resumeAfter: resumeToken,
@@ -1001,8 +1008,8 @@ const changeStream = db.orders.watch([], {
                 <section>
                     <h2>Order Processing Example</h2>
                     <div class="code-container">
-                        <div class="code-title">Order Workflow with Change Streams</div>
-                        <pre><code class="javascript">// Order processing pipeline
+                        <div class="code-title">Order Workflow with Change Streams (Node.js Application)</div>
+                        <pre><code class="language-javascript">// Order processing pipeline
 class OrderProcessor {
   constructor() {
     this.setupChangeStreams();
@@ -1179,7 +1186,7 @@ class OrderProcessor {
                     <h2>Security Configuration</h2>
                     <div class="code-container">
                         <div class="code-title">Production Security Setup</div>
-                        <pre><code class="bash"># Enable authentication and TLS
+                        <pre><code class="language-bash"># Enable authentication and TLS
 mongod --auth \
        --tlsMode requireTLS \
        --tlsCertificateKeyFile /etc/ssl/mongodb.pem \
@@ -1249,7 +1256,7 @@ db.createUser({
                     <h2>Backup & Recovery</h2>
                     <div class="code-container">
                         <div class="code-title">Backup Strategies</div>
-                        <pre><code class="bash"># mongodump - Logical backup
+                        <pre><code class="language-bash"># mongodump - Logical backup
 mongodump --host mongodb://user:pass@host:27017/mydb \
           --gzip \
           --out /backup/$(date +%Y%m%d)
@@ -1278,8 +1285,7 @@ mongorestore --host mongodb://host:27017 \
                     <h2>Docker Production Setup</h2>
                     <div class="code-container">
                         <div class="code-title">Production Docker Configuration</div>
-                        <pre><code class="yaml"># docker-compose.prod.yml
-version: '3.8'
+                        <pre><code class="language-yaml"># docker-compose.prod.yml
 services:
   mongodb:
     image: mongo:8.0

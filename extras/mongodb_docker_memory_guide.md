@@ -31,7 +31,6 @@ MongoDB versions 3.6.13+ and 4.0.9+ now respect container memory limits for Wire
 
 ```yaml
 # docker-compose.yml for MongoDB course
-version: '3.8'
 services:
   mongodb:
     image: mongo:8.0
@@ -80,7 +79,6 @@ volumes:
 
 ```yaml
 # docker-compose.yml - OPTIMIZED FOR KEEPING DATA IN MEMORY
-version: '3.8'
 services:
   mongodb-memory-optimized:
     image: mongo:8.0

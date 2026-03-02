@@ -464,7 +464,7 @@ db.stores.find({
 
                     <div class="highlight-box">
                         <h4>📊 Before Starting - Load Course Data</h4>
-                        <pre style="font-size: 0.75em; margin: 0.2em 0;"><code class="bash">cd data
+                        <pre style="font-size: 0.75em; margin: 0.2em 0;"><code class="language-bash">cd data
 mongosh < day2_data_loader.js</code></pre>
                         <p style="font-size: 0.65em; margin: 0.2em 0;">✅ Wait for "DAY 2 ANALYTICS DATA LOADING COMPLETE!" message</p>
                     </div>
@@ -1274,7 +1274,7 @@ db.products.find().skip(10000).limit(20)  // Slower
                     <h3>Transaction Syntax</h3>
                     <pre><code class="language-javascript">
 // Start a session
-const session = db.getMongo().startSession();
+var session = db.getMongo().startSession();
 
 try {
     // Begin transaction
@@ -1284,7 +1284,7 @@ try {
     });
 
     // Perform operations within transaction
-    const sessionDb = session.getDatabase("insurance_company");
+    var sessionDb = session.getDatabase("insurance_company");
     sessionDb.policies.insertOne({
         policyNumber: "POL-12345",
         amount: NumberDecimal("1500.00"),
@@ -1344,17 +1344,18 @@ try {
                 <section>
                     <h3>Error Handling and Retry Logic</h3>
                     <pre><code class="language-javascript">
-function performTransaction(maxRetries = 3) {
-    let retryCount = 0;
+function performTransaction(maxRetries) {
+    var retryCount = 0;
+    if (!maxRetries) { maxRetries = 3; }
 
     while (retryCount < maxRetries) {
-        const session = db.getMongo().startSession();
+        var session = db.getMongo().startSession();
 
         try {
             session.startTransaction();
 
             // Your transaction operations here
-            const sessionDb = session.getDatabase("insurance_company");
+            var sessionDb = session.getDatabase("insurance_company");
             // ... perform operations ...
 
             session.commitTransaction();
@@ -1368,7 +1369,7 @@ function performTransaction(maxRetries = 3) {
             if (error.hasOwnProperty('errorLabels') &&
                 error.errorLabels.includes('TransientTransactionError')) {
                 retryCount++;
-                print(`Retrying transaction (${retryCount}/${maxRetries})`);
+                print("Retrying transaction (" + retryCount + "/" + maxRetries + ")");
                 continue;
             } else {
                 throw error; // Non-retryable error

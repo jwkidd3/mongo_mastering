@@ -765,7 +765,7 @@ You should see output similar to:
 ### Step 3: Verify Data in MongoDB
 ```bash
 # Connect to MongoDB shell
-docker exec -it mongodb mongosh
+docker exec -it mongo1 mongosh
 
 # Check the new data
 use insurance_company
@@ -843,4 +843,10 @@ npm install --save-dev jest
 - **Deploy to cloud** platforms (MongoDB Atlas, Heroku)
 - **Add real-time features** using change streams
 
-**🎉 Congratulations!** You've successfully integrated MongoDB with JavaScript/Node.js for a complete insurance management system.
+## Lab 14B Deliverables
+✅ **Project Setup**: Initialized Node.js project with MongoDB driver
+✅ **Connection Management**: Implemented connection pooling and error handling
+✅ **Data Models**: Created insurance domain models (Policy, Customer, Claim)
+✅ **CRUD Operations**: Built complete create, read, update, delete workflows
+✅ **Aggregation Pipelines**: Implemented analytics queries for insurance data
+✅ **Error Handling**: Applied comprehensive error management patterns

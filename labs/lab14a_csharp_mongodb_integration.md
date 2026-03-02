@@ -77,7 +77,7 @@ namespace InsuranceManagementSystem.Models
         public string CustomerId { get; set; } = string.Empty;
 
         [BsonElement("policyType")]
-        public string PolicyType { get; set; } = string.Empty; // Auto, Property, Life, Commercial
+        public string PolicyType { get; set; } = string.Empty; // Auto, Property, Life, Commercial, Cyber, Health
 
         [BsonElement("region")]
         public string Region { get; set; } = string.Empty;

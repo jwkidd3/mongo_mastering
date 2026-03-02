@@ -34,10 +34,10 @@ print("✓ Cleaned Day 3-specific collections");
 print("Note: Preserving Day 1/2 data in policies, customers, claims, agents, branches");
 
 // ===========================================
-// Lab 1: MongoDB Transactions
+// Lab 10: MongoDB Transactions
 // ===========================================
 
-print("\n💳 Loading data for Lab 1: MongoDB Transactions");
+print("\n💳 Loading data for Lab 10: MongoDB Transactions");
 print("----------------------------------------------");
 
 // Create core policies for transaction testing
@@ -75,10 +75,10 @@ db.payments.createIndex({ timestamp: -1 });
 print("✓ Created transaction indexes");
 
 // ===========================================
-// Lab 2: Replica Sets & High Availability
+// Lab 11: Replica Sets & High Availability
 // ===========================================
 
-print("\n🔄 Loading data for Lab 2: Replica Sets & High Availability");
+print("\n🔄 Loading data for Lab 11: Replica Sets & High Availability");
 print("----------------------------------------------------------");
 
 // Create test collections for replication testing
@@ -89,10 +89,10 @@ db.test_policies.createIndex({ timestamp: -1 });
 print("✓ Created replication test collections");
 
 // ===========================================
-// Lab 3: Sharding & Horizontal Scaling
+// Lab 12: Sharding & Horizontal Scaling
 // ===========================================
 
-print("\n⚡ Loading data for Lab 3: Sharding & Horizontal Scaling");
+print("\n⚡ Loading data for Lab 12: Sharding & Horizontal Scaling");
 print("------------------------------------------------------");
 
 // Generate additional customer data for sharding demonstrations
@@ -176,10 +176,10 @@ branches.forEach(function(b) {
 print("✓ Upserted branches - total: " + db.branches.countDocuments());
 
 // ===========================================
-// Lab 4: Change Streams for Real-time Applications
+// Lab 13: Change Streams for Real-time Applications
 // ===========================================
 
-print("\n📡 Loading data for Lab 4: Change Streams");
+print("\n📡 Loading data for Lab 13: Change Streams");
 print("----------------------------------------");
 
 // Create collections for change stream testing
@@ -208,10 +208,10 @@ db.policy_notifications.insertMany([notification1, notification2, notification3]
 print("✓ Created " + db.policy_notifications.countDocuments() + " sample notifications");
 
 // ===========================================
-// Lab 5: C# MongoDB Integration
+// Lab 14: Application Integration (C#, Node.js, Python)
 // ===========================================
 
-print("\n💻 Loading data for Lab 5: C# MongoDB Integration");
+print("\n💻 Loading data for Lab 14: Application Integration");
 print("------------------------------------------------");
 
 // Create comprehensive dataset for C# integration
@@ -365,11 +365,11 @@ print("- Comprehensive asset management data for C# integration");
 print("- Utility functions for data management and testing");
 print("");
 print("You can now proceed with any Day 3 lab:");
-print("- Lab 1: MongoDB Transactions");
-print("- Lab 2: Replica Sets & High Availability");
-print("- Lab 3: Sharding & Horizontal Scaling");
-print("- Lab 4: Change Streams for Real-time Applications");
-print("- Lab 5: C# MongoDB API Integration");
+print("- Lab 10: MongoDB Transactions");
+print("- Lab 11: Replica Sets & High Availability");
+print("- Lab 12: Sharding & Horizontal Scaling");
+print("- Lab 13: Change Streams for Real-time Applications");
+print("- Lab 14: Application Integration (C#, Node.js, Python)");
 print("");
 print("Available utility functions:");
 print("- resetDay3Data(): Reset all data to initial state");

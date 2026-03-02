@@ -5,6 +5,32 @@
 - Analyze query performance using explain plans
 - Understand index types and their use cases
 
+## Prerequisites: Environment Setup
+
+**⚠️ Only run if MongoDB environment is not already running**
+
+From the project root directory, use the course's standardized setup scripts:
+
+**macOS/Linux:**
+```bash
+./scripts/setup.sh
+```
+
+**Windows PowerShell:**
+```powershell
+.\scripts\setup.ps1
+```
+
+To check if MongoDB is already running:
+```bash
+mongosh --eval "db.runCommand('ping')"
+```
+
+**Load Course Data:**
+```bash
+mongosh < data/comprehensive_data_loader.js
+```
+
 ## Tasks
 
 ### Part A: Index Creation and Analysis (25 minutes)
@@ -89,7 +115,7 @@
    db.policies.getIndexes().forEach(function(idx) { if (idx.textIndexVersion) printjson(idx) })
    ```
 
-3. **Partial Indexes**
+4. **Partial Indexes**
    ```javascript
    // Index only active policies
    db.policies.createIndex(
@@ -146,6 +172,40 @@
    db.test_policies.createIndex({ policyType: 1 })
    db.test_policies.createIndex({ annualPremium: 1 })
    ```
+
+## Cleanup and Environment Teardown
+
+### Clean Up Test Data (Optional)
+
+```javascript
+// Remove test collections created during this lab
+db.test_policies.drop()
+db.test_claims.drop()
+print("✅ Test data cleaned up")
+```
+
+### Environment Teardown
+When finished with the lab, use the standardized teardown script:
+
+**macOS/Linux:**
+```bash
+cd scripts
+./teardown.sh
+```
+
+**Windows PowerShell:**
+```powershell
+cd scripts
+.\teardown.ps1
+```
+
+## Lab 8 Deliverables
+✅ **Index Inspection**: Examined existing indexes across collections
+✅ **Compound Indexes**: Created multi-field indexes for common query patterns
+✅ **Text Indexes**: Built weighted text search indexes on test data
+✅ **Partial Indexes**: Created filtered indexes for active-only records
+✅ **Performance Analysis**: Compared query execution with and without indexes using explain plans
+✅ **Index Intersection**: Analyzed multi-index query optimization strategies
 
 ## Challenge Exercise
 Optimize a slow-running claims processing aggregation pipeline by creating appropriate indexes. Use the profiler to identify bottlenecks and measure performance improvement for fraud detection queries.

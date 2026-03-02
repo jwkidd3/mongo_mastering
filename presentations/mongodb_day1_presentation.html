@@ -562,8 +562,8 @@ db.policies.stats()
                     <p class="code-title">Using JavaScript Inside the Shell</p>
                     <pre><code class="language-javascript">
 // Variables and expressions
-let x = 10
-let greeting = "Hello MongoDB"
+var x = 10
+var greeting = "Hello MongoDB"
 print(greeting)
 
 // Math operations
@@ -571,7 +571,7 @@ Math.round(3.7)         // 4
 Math.random()           // Random number between 0 and 1
 
 // Loops
-for (let i = 0; i < 5; i++) {
+for (var i = 0; i < 5; i++) {
     print("Iteration: " + i)
 }
 
@@ -600,7 +600,7 @@ prompt = function() {
 
                     <div class="highlight-box">
                         <h4>📊 Before Starting - Load Course Data</h4>
-                        <pre style="font-size: 0.75em; margin: 0.2em 0;"><code class="bash">cd data
+                        <pre style="font-size: 0.75em; margin: 0.2em 0;"><code class="language-bash">cd data
 mongosh < day1_data_loader.js</code></pre>
                         <p style="font-size: 0.65em; margin: 0.2em 0;">✅ Wait for "DAY 1 INSURANCE DATA LOADING COMPLETE!" message</p>
                     </div>
@@ -863,7 +863,7 @@ try {
 }
 
 // Check write result
-let result = db.policies.insertMany(
+var result = db.policies.insertMany(
     docs, {ordered: false}
 )
 print("Inserted: " +

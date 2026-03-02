@@ -242,7 +242,9 @@ var policiesByTypeShard = db.policies.aggregate([
             { case: { $eq: ["$policyType", "Auto"] }, then: "shard-auto" },
             { case: { $eq: ["$policyType", "Property"] }, then: "shard-property" },
             { case: { $eq: ["$policyType", "Life"] }, then: "shard-life" },
-            { case: { $eq: ["$policyType", "Commercial"] }, then: "shard-commercial" }
+            { case: { $eq: ["$policyType", "Commercial"] }, then: "shard-commercial" },
+            { case: { $eq: ["$policyType", "Cyber"] }, then: "shard-cyber" },
+            { case: { $eq: ["$policyType", "Health"] }, then: "shard-health" }
           ],
           default: "shard-other"
         }
@@ -400,7 +402,7 @@ print("Claim count: " + db.claims.countDocuments());
 // Generate additional test policies for range-based distribution
 print("Generating additional test policy data...");
 var regions = ["Northeast", "Southeast", "Midwest", "Southwest", "West"];
-var policyTypes = ["Auto", "Property", "Life", "Commercial", "Health"];
+var policyTypes = ["Auto", "Property", "Life", "Commercial", "Health", "Cyber"];
 var states = ["CA", "NY", "TX", "FL", "IL", "PA", "OH", "GA", "NC", "MI"];
 
 for (var i = 1; i <= 1500; i++) {
@@ -680,12 +682,12 @@ print("4. Monitor for proper chunk distribution")
 ```
 
 ## Lab 12 Deliverables
-✅ **Complete sharded cluster** with config servers and multiple shards for insurance company
-✅ **Insurance-specific sharding strategies** implemented:
+✅ **Sharding concepts**: Understood shard key selection, chunk distribution, and cluster architecture
+✅ **Insurance-specific sharding strategies** analyzed:
    - Hashed sharding for customer distribution
    - Range sharding for policies by region and type
    - Geographic sharding for claims by state
    - Territory-based sharding for agent data
-✅ **Zone sharding** configured for insurance geographic regions (Eastern/Western)
-✅ **Chunk distribution analysis** optimized for insurance operations and compliance requirements
-✅ **Balancer management** for insurance data maintenance windows
+✅ **Zone sharding**: Designed geographic zone configurations for insurance regions
+✅ **Chunk distribution analysis**: Simulated distribution patterns for insurance operations
+✅ **Balancer management**: Understood maintenance window planning and balancer controls

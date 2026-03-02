@@ -6,6 +6,32 @@
 - Handle upsert operations and update options
 - Master deleteOne() and deleteMany() operations safely
 
+## Prerequisites: Environment Setup
+
+**⚠️ Only run if MongoDB environment is not already running**
+
+From the project root directory, use the course's standardized setup scripts:
+
+**macOS/Linux:**
+```bash
+./scripts/setup.sh
+```
+
+**Windows PowerShell:**
+```powershell
+.\scripts\setup.ps1
+```
+
+To check if MongoDB is already running:
+```bash
+mongosh --eval "db.runCommand('ping')"
+```
+
+**Load Course Data:**
+```bash
+mongosh < data/comprehensive_data_loader.js
+```
+
 ## Tasks
 
 ### Part A: Basic Update Operations (20 minutes)
@@ -210,8 +236,9 @@
 3. **Update with Array Filters**
    ```javascript
    // Update specific array elements
+   db.policies.deleteOne({policyNumber: "POL-MULTI-001"})
 
-   db.policies.insertOne ({
+   db.policies.insertOne({
      policyNumber: "POL-MULTI-001",
      annualPremium: 1499.99,
      policyType: "Auto",
@@ -339,3 +366,36 @@ Implement a complete policy lifecycle management system that includes:
 - Archive and cleanup procedures for expired policies
 - Audit trail for all policy modifications
 - Error handling and reporting for all operations
+
+## Cleanup and Environment Teardown
+
+### Clean Up Test Data (Optional)
+
+```javascript
+// Remove test data created during this lab
+use insurance_company
+db.policies.deleteMany({policyNumber: {$in: ["POL-VEH-001", "POL-NEW-001", "POL-MULTI-001"]}})
+db.policies.deleteOne({policyNumber: "POL-HOME-001-RENEWED"})
+print("✅ Test data cleaned up")
+```
+
+### Environment Teardown
+When finished with the lab, use the standardized teardown script:
+
+**macOS/Linux:**
+```bash
+cd scripts
+./teardown.sh
+```
+
+**Windows PowerShell:**
+```powershell
+cd scripts
+.\teardown.ps1
+```
+
+## Lab 5 Deliverables
+✅ **Update Operations**: Used updateOne() and updateMany() with $set, $inc, $mul operators
+✅ **Array Updates**: Modified arrays with $push, $pull, $addToSet, and array filters
+✅ **Upsert Operations**: Implemented insert-or-update patterns with $setOnInsert
+✅ **Delete Operations**: Safely deleted documents with verification patterns

@@ -6,6 +6,27 @@
 - Work with collection options and metadata
 - Implement database administration best practices
 
+## Prerequisites: Environment Setup
+
+**⚠️ Only run if MongoDB environment is not already running**
+
+From the project root directory, use the course's standardized setup scripts:
+
+**macOS/Linux:**
+```bash
+./scripts/setup.sh
+```
+
+**Windows PowerShell:**
+```powershell
+.\scripts\setup.ps1
+```
+
+To check if MongoDB is already running:
+```bash
+mongosh --eval "db.runCommand('ping')"
+```
+
 ## Tasks
 
 ### Part A: Database Lifecycle Management (20 minutes)
@@ -47,6 +68,7 @@
    ```javascript
    // Create database with specific locale (using 'en' locale for compatibility)
    use international_insurance
+   db.international_policies.drop()
    db.createCollection("international_policies", { collation: { locale: "en", strength: 1 } })
 
    // Database profiling setup
@@ -62,6 +84,11 @@
 1. **Collection Creation with Options**
    ```javascript
    use insurance_company
+
+   // Drop any existing lab collections for rerun safety
+   db.lab2_customers.drop()
+   db.audit_logs.drop()
+   db.new_policies.drop()
 
    // Basic collection creation (using new name to avoid conflicts with existing data)
    db.createCollection("lab2_customers")
@@ -96,6 +123,8 @@
 3. **Collection Modification and Maintenance**
    ```javascript
    // Rename collection (using test collection to avoid breaking later labs)
+   db.lab2_test_collection.drop()
+   db.lab2_policyholders.drop()
    db.createCollection("lab2_test_collection")
    db.lab2_test_collection.insertOne({test: true})
    db.lab2_test_collection.renameCollection("lab2_policyholders")
@@ -132,6 +161,47 @@
 
    db.dropDatabase()
    ```
+
+## Cleanup and Environment Teardown
+
+### Clean Up Test Data (Optional)
+
+```javascript
+// Remove test collections and databases created during this lab
+use insurance_company
+db.lab2_customers.drop()
+db.audit_logs.drop()
+db.new_policies.drop()
+db.lab2_policyholders.drop()
+
+use international_insurance
+db.international_policies.drop()
+db.dropDatabase()
+
+use insurance_company
+print("✅ Test data cleaned up")
+```
+
+### Environment Teardown
+When finished with the lab, use the standardized teardown script:
+
+**macOS/Linux:**
+```bash
+cd scripts
+./teardown.sh
+```
+
+**Windows PowerShell:**
+```powershell
+cd scripts
+.\teardown.ps1
+```
+
+## Lab 2 Deliverables
+✅ **Database Lifecycle**: Created, switched, and inspected databases
+✅ **Collection Management**: Created collections with options (capped, validated)
+✅ **Collection Operations**: Renamed, modified, and inspected collection metadata
+✅ **Naming Conventions**: Applied best practices for database and collection naming
 
 ## Challenge Exercise
 Create a database structure for a multi-branch insurance company with collections for policies, claims, customers, agents, and branch_locations. Implement appropriate validation rules for insurance data (policy numbers, coverage amounts, deductibles) and demonstrate the relationship between collections using sample queries.

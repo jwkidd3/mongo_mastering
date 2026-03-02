@@ -143,7 +143,7 @@ class Policy:
     """Insurance Policy model for Jupyter analysis"""
     policy_number: str
     customer_id: str
-    policy_type: str  # Auto, Property, Life, Commercial
+    policy_type: str  # Auto, Property, Life, Commercial, Cyber, Health
     region: str
     state: str
     coverage_limit: float
@@ -205,9 +205,9 @@ class Policy:
         """Create Policy from MongoDB document (reads camelCase fields)"""
         return cls(
             _id=data.get('_id', ObjectId()),
-            policy_number=data['policyNumber'],
+            policy_number=data.get('policyNumber', ''),
             customer_id=data.get('customerId', ''),
-            policy_type=data['policyType'],
+            policy_type=data.get('policyType', ''),
             region=data.get('region', ''),
             state=data.get('state', ''),
             coverage_limit=data.get('coverageLimit', 0),
@@ -743,4 +743,10 @@ print("\n🔌 Database connection closed")
 - **Tab**: Auto-complete code
 - **Shift+Tab**: Show function documentation
 
-**🎉 Congratulations!** You've successfully built a complete insurance management system using Python, PyMongo, and Jupyter Notebook with interactive data analysis and visualization capabilities.
+## Lab 14C Deliverables
+✅ **Environment Setup**: Configured Jupyter Notebook with PyMongo
+✅ **Connection Management**: Implemented MongoDB connection with error handling
+✅ **Data Models**: Created Python dataclass models for insurance documents
+✅ **CRUD Operations**: Built complete insurance data management workflows
+✅ **Aggregation Pipelines**: Implemented analytics with pandas integration
+✅ **Data Visualization**: Created matplotlib charts for insurance metrics

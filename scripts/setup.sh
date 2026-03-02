@@ -165,7 +165,7 @@ print_success "Write concern configured"
 print_status "Verifying replica set status..."
 echo ""
 mongosh --quiet --eval "
-rs.status().members.forEach(m => print('  ' + m.name + ': ' + m.stateStr));
+rs.status().members.forEach(function(m) { print('  ' + m.name + ': ' + m.stateStr); });
 "
 echo ""
 

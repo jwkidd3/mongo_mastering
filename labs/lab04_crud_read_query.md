@@ -6,6 +6,32 @@
 - Implement projection, sorting, and result limiting
 - Work with cursors and iteration methods
 
+## Prerequisites: Environment Setup
+
+**⚠️ Only run if MongoDB environment is not already running**
+
+From the project root directory, use the course's standardized setup scripts:
+
+**macOS/Linux:**
+```bash
+./scripts/setup.sh
+```
+
+**Windows PowerShell:**
+```powershell
+.\scripts\setup.ps1
+```
+
+To check if MongoDB is already running:
+```bash
+mongosh --eval "db.runCommand('ping')"
+```
+
+**Load Course Data:**
+```bash
+mongosh < data/comprehensive_data_loader.js
+```
+
 ## Tasks
 
 ### Part A: Basic Query Operations (15 minutes)
@@ -113,6 +139,9 @@
 
 2. **Array Queries**
    ```javascript
+   // Clean up from any previous lab run
+   db.policies.deleteMany({policyNumber: {$in: ["POL-VEH-001", "POL-HOME-002"]}})
+
    // Insert test data with arrays
    db.policies.insertMany([
      {
@@ -250,3 +279,35 @@ Build a comprehensive policy search system that supports:
 - Sorting by multiple criteria (premium, effective date, policy type)
 - Pagination with configurable page sizes
 - Result statistics (total matches, average premium, claims ratio, etc.)
+
+## Cleanup and Environment Teardown
+
+### Clean Up Test Data (Optional)
+
+```javascript
+// Remove test data created during this lab
+use insurance_company
+db.test_query_policies.drop()
+print("✅ Test data cleaned up")
+```
+
+### Environment Teardown
+When finished with the lab, use the standardized teardown script:
+
+**macOS/Linux:**
+```bash
+cd scripts
+./teardown.sh
+```
+
+**Windows PowerShell:**
+```powershell
+cd scripts
+.\teardown.ps1
+```
+
+## Lab 4 Deliverables
+✅ **Basic Queries**: Retrieved documents using find() with various filter criteria
+✅ **Comparison Operators**: Used $gt, $lt, $gte, $lte, $ne, $in for filtering
+✅ **Logical Operators**: Combined conditions with $and, $or, $not
+✅ **Projections and Sorting**: Controlled output fields and result ordering

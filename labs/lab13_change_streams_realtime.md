@@ -1,4 +1,4 @@
-# Lab 13: Change Streams & Real-time Processing (SAFE VERSION)
+# Lab 13: Change Streams & Real-time Processing
 **Duration:** 45 minutes
 **Objective:** Understand change streams concepts and implement safe real-time processing examples
 
@@ -76,14 +76,42 @@ db.fraud_alerts.createIndex({ severity: 1, status: 1 })
 db.resume_tokens.createIndex({ lastUpdated: -1 })
 ```
 
-### Step 2: Understanding Change Stream Concepts
+### Step 2: Understanding Change Stream API
 
-**Change streams in production run as background processes. For lab purposes, we'll demonstrate the concepts with simplified examples.**
+**Change streams use `db.collection.watch()` to listen for real-time data changes. Here is the core API:**
 
-**Change Stream Concepts:**
-- **Insert operations**: New claims trigger notifications and fraud checks
-- **Update operations**: Status changes notify customers and staff
-- **Delete operations**: Log activities for audit compliance
+```javascript
+// Basic change stream syntax (returns a cursor)
+// var cursor = db.claims.watch()
+
+// Watch with a pipeline filter (only insert events)
+// var cursor = db.claims.watch([{ $match: { operationType: "insert" } }])
+
+// Watch with options (resume after disconnection)
+// var cursor = db.claims.watch([], { fullDocument: "updateLookup" })
+```
+
+**Quick demonstration** - open a change stream, trigger a change, then read it:
+
+```javascript
+// Open a change stream on the claims collection
+var changeStream = db.claims.watch([], { maxAwaitTimeMS: 1000 });
+```
+
+```javascript
+// In production, you would loop with changeStream.hasNext() / changeStream.next()
+// For this lab, we simulate what change streams trigger by manually
+// creating the notifications that a change stream handler would produce
+print("Change stream opened - in production this would run as a background listener");
+print("We will now simulate the processing that change stream handlers perform");
+changeStream.close();
+```
+
+**Change Stream Event Types:**
+- **insert**: New claims trigger notifications and fraud checks
+- **update**: Status changes notify customers and staff
+- **delete**: Log activities for audit compliance
+- **replace**: Full document replacements tracked for audit
 
 **Processing Functions Handle:**
 1. Claims processing notifications
@@ -301,4 +329,4 @@ cd scripts
 ✅ **Real-time Monitoring**: Created dashboard queries for live operational insights
 ✅ **Activity Logging**: Established audit trail for compliance and monitoring
 
-**🔒 Safety Note**: This lab uses safe, step-by-step commands instead of large multi-line functions that could lock terminals when copy-pasted.
+**Note**: This lab uses safe, step-by-step simulation commands. In production, change streams run as background processes using `db.collection.watch()` to receive real-time event notifications.

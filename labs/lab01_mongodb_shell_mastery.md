@@ -148,5 +148,37 @@ mongosh --eval "db.getSiblingDB('insurance_company').policies.countDocuments()"
    config.set("displayBatchSize", 10)
    ```
 
+## Cleanup and Environment Teardown
+
+### Clean Up Test Data (Optional)
+
+```javascript
+// Remove test collection created during this lab
+use insurance_company
+db.lab1_test.drop()
+print("✅ Test data cleaned up")
+```
+
+### Environment Teardown
+When finished with the lab, use the standardized teardown script:
+
+**macOS/Linux:**
+```bash
+cd scripts
+./teardown.sh
+```
+
+**Windows PowerShell:**
+```powershell
+cd scripts
+.\teardown.ps1
+```
+
+## Lab 1 Deliverables
+✅ **Shell Connection**: Connected to MongoDB and inspected server status
+✅ **Database Navigation**: Listed databases, switched contexts, and explored database hierarchy
+✅ **JavaScript Environment**: Executed JavaScript commands and used shell helper methods
+✅ **Administrative Commands**: Ran profiling, status, and operational commands
+
 ## Challenge Exercise
 Write a JavaScript function in the shell that connects to three different insurance-related databases (insurance_company, claims_processing, agent_management), creates a collection in each, and reports the total number of collections across all databases.

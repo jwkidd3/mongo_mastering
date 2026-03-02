@@ -5,9 +5,26 @@
 - Practice complex conditional queries
 - Implement geo-spatial and text search queries
 
-## Prerequisites
-- MongoDB replica set running and accessible
-- **Course data loaded** (see instructions below)
+## Prerequisites: Environment Setup
+
+**⚠️ Only run if MongoDB environment is not already running**
+
+From the project root directory, use the course's standardized setup scripts:
+
+**macOS/Linux:**
+```bash
+./scripts/setup.sh
+```
+
+**Windows PowerShell:**
+```powershell
+.\scripts\setup.ps1
+```
+
+To check if MongoDB is already running:
+```bash
+mongosh --eval "db.runCommand('ping')"
+```
 
 ## 📊 Load Course Data First!
 
@@ -185,6 +202,42 @@ use insurance_company
      $text: { $search: "excellent service claims process" }
    }).sort({ score: { $meta: "textScore" } })
    ```
+
+## Cleanup and Environment Teardown
+
+### Clean Up Test Data (Optional)
+
+```javascript
+// Remove indexes created during this lab (optional - only if you want to reset)
+use insurance_company
+// Note: Text and geospatial indexes were created for query exercises
+// They can be left for subsequent labs or dropped:
+// db.policies.dropIndex("policyType_text_name_text_coverageTypes_text")
+// db.claims.dropIndex("location_2dsphere")
+// db.reviews.dropIndex("reviewText_text_categories_text")
+print("✅ Lab 6 complete - indexes remain for future use")
+```
+
+### Environment Teardown
+When finished with the lab, use the standardized teardown script:
+
+**macOS/Linux:**
+```bash
+cd scripts
+./teardown.sh
+```
+
+**Windows PowerShell:**
+```powershell
+cd scripts
+.\teardown.ps1
+```
+
+## Lab 6 Deliverables
+✅ **Complex Queries**: Built multi-condition queries with $and, $or, and nested operators
+✅ **Text Search**: Created text indexes and performed full-text search queries
+✅ **Regex Patterns**: Used pattern matching for flexible string queries
+✅ **Geospatial Queries**: Implemented $near and $geoWithin with 2dsphere indexes
 
 ## Challenge Exercises
 

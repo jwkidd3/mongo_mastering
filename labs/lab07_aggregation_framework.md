@@ -5,9 +5,35 @@
 - Master aggregation operators and stages
 - Implement business intelligence queries using aggregation
 
-## Prerequisites
-- Sample insurance database with collections: `policies`, `claims`, `customers`, `agents`, `branches`, `payments`, `reviews`
-- Data counts after running both Day 1 and Day 2 loaders: 13 policies, 20 customers, 15 claims, 10 agents, 5 branches, 3 reviews
+## Prerequisites: Environment Setup
+
+**⚠️ Only run if MongoDB environment is not already running**
+
+From the project root directory, use the course's standardized setup scripts:
+
+**macOS/Linux:**
+```bash
+./scripts/setup.sh
+```
+
+**Windows PowerShell:**
+```powershell
+.\scripts\setup.ps1
+```
+
+To check if MongoDB is already running:
+```bash
+mongosh --eval "db.runCommand('ping')"
+```
+
+**Load Course Data:**
+```bash
+mongosh < data/comprehensive_data_loader.js
+```
+
+**Expected data counts:** 13 policies, 20 customers, 15 claims, 10 agents, 5 branches, 3 reviews
+
+**Collections available:** `policies`, `claims`, `customers`, `agents`, `branches`, `payments`, `reviews`
 
 ## Tasks
 
@@ -254,6 +280,29 @@ use insurance_company
      { $sort: { totalRevenue: -1 } }
    ])
    ```
+
+## Cleanup and Environment Teardown
+
+### Environment Teardown
+When finished with the lab, use the standardized teardown script:
+
+**macOS/Linux:**
+```bash
+cd scripts
+./teardown.sh
+```
+
+**Windows PowerShell:**
+```powershell
+cd scripts
+.\teardown.ps1
+```
+
+## Lab 7 Deliverables
+✅ **Basic Pipelines**: Built aggregation pipelines with $match, $group, and $sort stages
+✅ **Join Operations**: Used $lookup to combine data from multiple collections
+✅ **Data Transformation**: Implemented $project, $unwind, and computed fields
+✅ **Business Analytics**: Created insurance metrics dashboards using complex pipelines
 
 ## Challenge Exercises
 

@@ -26,7 +26,7 @@ print("✓ Cleaned Day 2-specific collections");
 print("Note: Preserving Day 1 data in policies, customers, claims, agents, branches");
 
 // Create 3 branches using individual variables (avoiding loops)
-print("\n🔍 Loading data for Lab 1: Advanced Querying & Filtering");
+print("\n🔍 Loading data for Lab 6: Advanced Querying & Filtering");
 print("--------------------------------------------------------");
 print("Creating comprehensive branch network (3 branches)...");
 
@@ -163,6 +163,7 @@ print("- Lab 6: Advanced Querying & Filtering");
 print("- Lab 7: Aggregation Framework Mastery");
 print("- Lab 8: Indexing Strategies and Performance");
 print("- Lab 9: Data Modeling and Schema Design");
+print("- Lab 10: MongoDB Transactions");
 print("");
 print("To reload this data at any time, run:");
 print("mongosh < data/day2_data_loader.js");

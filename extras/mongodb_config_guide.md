@@ -171,7 +171,7 @@ security:
   # Cluster authentication mode
   clusterAuthMode: keyFile  # keyFile, sendKeyFile, sendX509, x509
   
-  # LDAP configuration
+  # LDAP configuration  # Enterprise Edition only
   ldap:
     servers: "ldap.example.com"
     bind:
@@ -187,18 +187,18 @@ security:
       }
     ]'
   
-  # SASL configuration
+  # SASL configuration  # Enterprise Edition only
   sasl:
     hostName: "server.example.com"
     serviceName: "mongodb"
     saslauthdSocketPath: "/var/run/saslauthd"
   
-  # Encryption at rest
+  # Encryption at rest (Enterprise Edition only)
   enableEncryption: true
   encryptionKeyFile: /etc/mongodb/keys/mongodb.key
   encryptionCipherMode: AES256-CBC
   
-  # KMIP key management
+  # KMIP key management  # Enterprise Edition only
   kmip:
     serverName: "kmip.example.com"
     port: 5696
@@ -266,12 +266,6 @@ systemLog:
 replication:
   # Replica set name
   replSetName: rs0
-  
-  # Enable majority read concern
-  enableMajorityReadConcern: true
-  
-  # Local database size limit
-  localPingThresholdMs: 15
 ```
 
 ### 6. Sharding Configuration
@@ -280,9 +274,6 @@ replication:
 sharding:
   # Cluster role
   clusterRole: shardsvr  # configsvr, shardsvr
-  
-  # Config server settings (for config servers)
-  archiveMovedChunks: true
 ```
 
 ### 7. Operation Profiling
@@ -375,8 +366,8 @@ net:
 
 security:
   authorization: enabled
-  enableEncryption: true  # Enterprise Edition only
-  encryptionKeyFile: /etc/mongodb/keys/mongodb.key
+  # enableEncryption: true  # Enterprise Edition only - not available in community mongo:8.0
+  # encryptionKeyFile: /etc/mongodb/keys/mongodb.key
 
 systemLog:
   destination: file
@@ -460,8 +451,8 @@ net:
 
 security:
   authorization: enabled
-  enableEncryption: true
-  encryptionKeyFile: /etc/mongodb/keys/mongodb.key
+  # enableEncryption: true  # Enterprise Edition only
+  # encryptionKeyFile: /etc/mongodb/keys/mongodb.key
 
 systemLog:
   destination: file

@@ -2,9 +2,11 @@
 
 Complete walkthrough for setting up MongoDB encryption at rest and SSL in a Docker container using `docker run` with C# client examples.
 
+> **Important:** Encryption at rest (`enableEncryption`) requires **MongoDB Enterprise Edition**. The community `mongo:8.0` Docker image does not support this feature. SSL/TLS encryption in transit works with both Community and Enterprise editions.
+
 ## Prerequisites
 
-- Docker installed
+- Docker installed (Enterprise Edition image required for encryption at rest)
 - ssh-keygen (usually pre-installed)
 - C# development environment (.NET 6+)
 
@@ -81,7 +83,7 @@ storage:
     collectionConfig:
       blockCompressor: snappy
 
-# Enable encryption at rest
+# Enable encryption at rest (Enterprise Edition only)
 security:
   enableEncryption: true
   encryptionKeyFile: /etc/mongodb/keys/mongodb.key
@@ -110,8 +112,18 @@ processManagement:
 
 ### Start MongoDB Container
 
+> **Important:** The `docker run` commands below use the `mongo:8.0` community image, but the
+> `mongod.conf` above enables `enableEncryption: true`, which is an **Enterprise Edition only**
+> feature. If you are using the community image, either:
+> 1. **Comment out** the `enableEncryption` and `encryptionKeyFile` lines in `mongod.conf`, or
+> 2. **Replace** the image with `mongodb/mongodb-enterprise-server:8.0` in the commands below.
+>
+> SSL/TLS encryption in transit works with both Community and Enterprise editions.
+
 ```bash
 # Run MongoDB container with all volumes mounted
+# NOTE: Replace mongo:8.0 with mongodb/mongodb-enterprise-server:8.0
+#       if you need encryption at rest (enableEncryption: true in config).
 docker run -d \
   --name mongodb-encrypted \
   -p 27017:27017 \
@@ -138,6 +150,7 @@ docker logs -f mongodb-encrypted
 
 ```bash
 # For development/testing without authentication
+# NOTE: Same Enterprise Edition caveat applies - see note above.
 docker run -d \
   --name mongodb-encrypted \
   -p 27017:27017 \

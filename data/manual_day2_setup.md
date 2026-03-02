@@ -6,7 +6,11 @@ This guide provides step-by-step instructions for manually loading Day 2 data if
 
 - MongoDB replica set running (see `../scripts/setup.sh`)
 - MongoDB Shell (mongosh) installed and accessible
-- Day 1 data already loaded (optional but recommended)
+- Day 1 data already loaded (required -- Day 2 adds to existing Day 1 data)
+
+## Overview
+
+Day 2 does **not** replace Day 1 data. It upserts additional fields onto existing documents and adds a new `reviews` collection. All upserts use `updateOne` with `{upsert: true}` so the setup is safe to rerun.
 
 ## Manual Data Loading Steps
 
@@ -16,598 +20,691 @@ This guide provides step-by-step instructions for manually loading Day 2 data if
 mongosh
 ```
 
-### 2. Switch to Analytics Database
+### 2. Switch to the Insurance Database
 
 ```javascript
 use insurance_company
 ```
 
-### 3. Create Policy Types Collection (Hierarchical Structure)
+### 3. Clean Day 2-Specific Collections
+
+Only drop collections that are unique to Day 2. Do **not** drop `policies`, `customers`, `claims`, `agents`, or `branches` -- those contain Day 1 data.
 
 ```javascript
-db.policy_types.insertMany([
-  {
-    _id: "auto_policies",
-    category: "Auto",
-    description: "Vehicle insurance policies",
-    subcategories: [
-      {
-        type: "Liability",
-        coverageTypes: ["Bodily Injury", "Property Damage"],
-        minimumCoverage: 25000,
-        averagePremium: NumberDecimal("800.00")
-      },
-      {
-        type: "Comprehensive",
-        coverageTypes: ["Theft", "Vandalism", "Natural Disaster"],
-        minimumCoverage: 0,
-        averagePremium: NumberDecimal("400.00")
-      },
-      {
-        type: "Collision",
-        coverageTypes: ["Vehicle Damage"],
-        minimumCoverage: 0,
-        averagePremium: NumberDecimal("600.00")
-      }
-    ]
-  },
-  {
-    _id: "property_policies",
-    category: "Property",
-    description: "Property insurance policies",
-    subcategories: [
-      {
-        type: "Dwelling",
-        coverageTypes: ["Structure", "Foundation"],
-        minimumCoverage: 100000,
-        averagePremium: NumberDecimal("1200.00")
-      },
-      {
-        type: "Personal Property",
-        coverageTypes: ["Contents", "Electronics"],
-        minimumCoverage: 50000,
-        averagePremium: NumberDecimal("300.00")
-      }
-    ]
-  },
-  {
-    _id: "life_policies",
-    category: "Life",
-    description: "Life insurance policies",
-    subcategories: [
-      {
-        type: "Term Life",
-        coverageTypes: ["Death Benefit"],
-        minimumCoverage: 100000,
-        averagePremium: NumberDecimal("500.00")
-      },
-      {
-        type: "Whole Life",
-        coverageTypes: ["Death Benefit", "Cash Value"],
-        minimumCoverage: 100000,
-        averagePremium: NumberDecimal("2000.00")
-      }
-    ]
-  },
-  {
-    _id: "commercial_policies",
-    category: "Commercial",
-    description: "Commercial insurance policies",
-    subcategories: [
-      {
-        type: "General Liability",
-        coverageTypes: ["Property Damage", "Bodily Injury", "Personal Injury"],
-        minimumCoverage: 500000,
-        averagePremium: NumberDecimal("3000.00")
-      },
-      {
-        type: "Professional Liability",
-        coverageTypes: ["Errors & Omissions"],
-        minimumCoverage: 250000,
-        averagePremium: NumberDecimal("1500.00")
-      }
-    ]
-  }
-])
+db.reviews.drop();
+db.audit_logs.drop();
+
+print("Cleaned Day 2-specific collections");
+print("Note: Preserving Day 1 data in policies, customers, claims, agents, branches");
 ```
 
-### 4. Create Analytics Branches (Geospatial Data)
+### 4. Upsert Branches (3 Branches)
+
+These branches include `performanceMetrics` and GeoJSON `location` fields needed for Day 2 labs.
 
 ```javascript
-db.branches.insertMany([
-  {
-    _id: "analytics_branch_001",
-    branchId: "ABR-001",
-    name: "North Texas Analytics Center",
+db.branches.updateOne(
+  { _id: "BR001" },
+  { $set: {
+    branchCode: "BR-NY-001",
+    name: "New York Financial District",
+    address: {
+      street: "123 Wall Street",
+      city: "New York",
+      state: "NY",
+      zipCode: "10001"
+    },
     location: {
       type: "Point",
-      coordinates: [-96.7970, 32.7767] // Dallas coordinates
+      coordinates: [-73.9857, 40.7484]
     },
+    manager: "Sarah Johnson",
+    agentCount: 15,
+    performanceMetrics: {
+      monthlyRevenue: 245000.50,
+      customerSatisfaction: 4.8,
+      claimsProcessed: 125
+    },
+    specialties: ["Auto", "Property", "Life"],
+    isActive: true,
+    openDate: new Date("2020-01-15")
+  }},
+  { upsert: true }
+);
+
+db.branches.updateOne(
+  { _id: "BR002" },
+  { $set: {
+    branchCode: "BR-CA-002",
+    name: "Los Angeles West Side",
     address: {
-      street: "1000 Analytics Drive",
-      city: "Dallas",
-      state: "TX",
-      zipCode: "75201",
-      coordinates: {
-        lat: 32.7767,
-        lng: -96.7970
-      }
+      street: "456 Sunset Blvd",
+      city: "Los Angeles",
+      state: "CA",
+      zipCode: "90210"
     },
-    region: "North",
-    territory: ["Dallas", "Plano", "Richardson", "Addison"],
-    established: new Date("2018-01-01"),
-    metrics: {
-      totalPolicies: NumberInt(1547),
-      monthlyRevenue: NumberDecimal("1850000.00"),
-      customerSatisfaction: NumberDecimal("4.2")
-    }
-  },
-  {
-    _id: "analytics_branch_002",
-    branchId: "ABR-002",
-    name: "West Texas Analytics Hub",
     location: {
       type: "Point",
-      coordinates: [-97.3208, 32.7555] // Fort Worth coordinates
+      coordinates: [-118.2437, 34.0522]
     },
+    manager: "Michael Chen",
+    agentCount: 22,
+    performanceMetrics: {
+      monthlyRevenue: 325000.75,
+      customerSatisfaction: 4.6,
+      claimsProcessed: 180
+    },
+    specialties: ["Auto", "Commercial", "Cyber"],
+    isActive: true,
+    openDate: new Date("2019-05-20")
+  }},
+  { upsert: true }
+);
+
+db.branches.updateOne(
+  { _id: "BR003" },
+  { $set: {
+    branchCode: "BR-TX-003",
+    name: "Houston Energy Corridor",
     address: {
-      street: "2000 Data Boulevard",
-      city: "Fort Worth",
+      street: "789 Energy Plaza",
+      city: "Houston",
       state: "TX",
-      zipCode: "76102",
-      coordinates: {
-        lat: 32.7555,
-        lng: -97.3208
-      }
+      zipCode: "77042"
     },
-    region: "West",
-    territory: ["Fort Worth", "Arlington", "Grand Prairie", "Irving"],
-    established: new Date("2019-06-15"),
-    metrics: {
-      totalPolicies: NumberInt(1203),
-      monthlyRevenue: NumberDecimal("1420000.00"),
-      customerSatisfaction: NumberDecimal("4.1")
-    }
-  },
-  {
-    _id: "analytics_branch_003",
-    branchId: "ABR-003",
-    name: "East Texas Analytics Center",
     location: {
       type: "Point",
-      coordinates: [-96.6989, 32.8998] // Garland coordinates
+      coordinates: [-95.3698, 29.7604]
     },
-    address: {
-      street: "3000 Insight Lane",
-      city: "Garland",
-      state: "TX",
-      zipCode: "75040",
-      coordinates: {
-        lat: 32.8998,
-        lng: -96.6989
+    manager: "Jennifer Rodriguez",
+    agentCount: 18,
+    performanceMetrics: {
+      monthlyRevenue: 285000.25,
+      customerSatisfaction: 4.7,
+      claimsProcessed: 155
+    },
+    specialties: ["Commercial", "Cyber", "Health"],
+    isActive: true,
+    openDate: new Date("2021-03-10")
+  }},
+  { upsert: true }
+);
+
+print("Upserted branches - total: " + db.branches.countDocuments());
+```
+
+### 5. Upsert Policies (3 Policies)
+
+These policies add `riskScore` and `claimsHistory` fields used in Day 2 advanced querying and aggregation labs.
+
+```javascript
+db.policies.updateOne(
+  { policyNumber: "POL-AUTO-2024-001" },
+  { $set: {
+    policyNumber: "POL-AUTO-2024-001",
+    name: "Premium Auto Coverage",
+    policyType: "Auto",
+    customerId: "CUST000001",
+    annualPremium: 1299.99,
+    coverageDetails: {
+      liability: "250000/500000",
+      collision: {
+        deductible: 500,
+        coverage: "Full"
       }
     },
-    region: "East",
-    territory: ["Garland", "Mesquite", "Rockwall", "Rowlett"],
-    established: new Date("2020-03-10"),
-    metrics: {
-      totalPolicies: NumberInt(892),
-      monthlyRevenue: NumberDecimal("1050000.00"),
-      customerSatisfaction: NumberDecimal("4.3")
-    }
-  }
-])
-```
+    coverageTypes: ["liability", "collision"],
+    isActive: true,
+    createdAt: new Date("2024-01-01"),
+    expirationDate: new Date("2025-01-01"),
+    agentId: "AGT001",
+    branchId: "BR001",
+    riskScore: 50,
+    claimsHistory: []
+  }},
+  { upsert: true }
+);
 
-### 5. Create Analytics Policies (Large Dataset)
-
-```javascript
-// Create 50 policies for aggregation testing
-var policies = [];
-var policyTypes = ["Auto", "Property", "Life", "Commercial"];
-var statuses = [true, false];
-var regions = ["North", "West", "East"];
-
-for (var i = 1; i <= 50; i++) {
-  var policyType = policyTypes[Math.floor(Math.random() * policyTypes.length)];
-  var isActive = statuses[Math.floor(Math.random() * statuses.length)];
-  var region = regions[Math.floor(Math.random() * regions.length)];
-
-  // Calculate premium based on type
-  var basePremium = 0;
-  switch(policyType) {
-    case "Auto": basePremium = 1200; break;
-    case "Property": basePremium = 1500; break;
-    case "Life": basePremium = 2400; break;
-    case "Commercial": basePremium = 4500; break;
-  }
-
-  var variation = Math.random() * 1000 - 500; // ±500 variation
-  var premium = Math.max(300, basePremium + variation);
-
-  policies.push({
-    _id: "analytics_policy_" + String(i).padStart(3, '0'),
-    policyNumber: policyType.toUpperCase() + "-ANALYTICS-" + String(i).padStart(3, '0'),
-    policyType: policyType,
-    customerId: "ANALYTICS-CUST-" + String(Math.floor(i/2) + 1).padStart(3, '0'),
-    annualPremium: NumberDecimal(premium.toFixed(2)),
-    deductible: NumberInt([250, 500, 1000, 1500][Math.floor(Math.random() * 4)]),
-    coverageLimit: [50000, 100000, 250000, 500000][Math.floor(Math.random() * 4)],
-    isActive: isActive,
-    effectiveDate: new Date(2023, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1),
-    region: region,
-    riskScore: NumberDecimal((Math.random() * 9 + 1).toFixed(1)), // 1.0 - 10.0
-    branchId: "ABR-" + String(regions.indexOf(region) + 1).padStart(3, '0')
-  });
-}
-
-db.policies.insertMany(policies);
-```
-
-### 6. Create Analytics Customers (Risk-Segmented)
-
-```javascript
-// Create 100 customers with risk analytics
-var customers = [];
-var firstNames = ["John", "Mary", "Michael", "Jennifer", "William", "Linda", "David", "Barbara", "Richard", "Susan"];
-var lastNames = ["Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis", "Rodriguez", "Martinez"];
-var riskLevels = ["Low", "Medium", "High"];
-var cities = ["Dallas", "Fort Worth", "Plano", "Arlington", "Garland"];
-
-for (var i = 1; i <= 100; i++) {
-  var firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
-  var lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
-  var age = Math.floor(Math.random() * 50) + 25; // 25-74 years
-  var riskLevel = riskLevels[Math.floor(Math.random() * riskLevels.length)];
-  var city = cities[Math.floor(Math.random() * cities.length)];
-
-  // Risk-based metrics
-  var creditScore = riskLevel === "Low" ? 750 + Math.floor(Math.random() * 100) :
-                    riskLevel === "Medium" ? 650 + Math.floor(Math.random() * 100) :
-                    500 + Math.floor(Math.random() * 150);
-
-  customers.push({
-    _id: "analytics_customer_" + String(i).padStart(3, '0'),
-    customerId: "ANALYTICS-CUST-" + String(i).padStart(3, '0'),
-    firstName: firstName,
-    lastName: lastName,
-    fullName: firstName + " " + lastName,
-    email: firstName.toLowerCase() + "." + lastName.toLowerCase() + i + "@email.com",
-    phone: "(214) 555-" + String(1000 + i),
-    age: NumberInt(age),
-    dateOfBirth: new Date(2023 - age, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1),
-    address: {
-      street: String(100 + i) + " Analytics Street",
-      city: city,
-      state: "TX",
-      zipCode: String(75000 + Math.floor(Math.random() * 999))
+db.policies.updateOne(
+  { policyNumber: "POL-HOME-2024-002" },
+  { $set: {
+    policyNumber: "POL-HOME-2024-002",
+    name: "Homeowners Protection Plus",
+    policyType: "Property",
+    customerId: "CUST000002",
+    annualPremium: 1899.99,
+    coverageDetails: {
+      dwelling: {
+        coverage: 400000,
+        deductible: 1000
+      },
+      personalProperty: {
+        coverage: 200000,
+        deductible: 500
+      }
     },
-    riskLevel: riskLevel,
-    riskScore: NumberDecimal((riskLevel === "Low" ? 1 + Math.random() * 3 :
-                              riskLevel === "Medium" ? 4 + Math.random() * 3 :
-                              7 + Math.random() * 3).toFixed(1)),
-    creditScore: NumberInt(creditScore),
-    registrationDate: new Date(2022, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1),
-    status: "Active",
-    lifetimeValue: NumberDecimal((Math.random() * 50000 + 10000).toFixed(2)),
-    claimsHistory: NumberInt(Math.floor(Math.random() * 5))
-  });
-}
+    coverageTypes: ["dwelling", "personal_property"],
+    isActive: true,
+    createdAt: new Date("2024-02-01"),
+    expirationDate: new Date("2025-02-01"),
+    agentId: "AGT002",
+    branchId: "BR002",
+    riskScore: 60,
+    claimsHistory: []
+  }},
+  { upsert: true }
+);
 
-db.customers.insertMany(customers);
+db.policies.updateOne(
+  { policyNumber: "POL-LIFE-2024-003" },
+  { $set: {
+    policyNumber: "POL-LIFE-2024-003",
+    name: "Term Life Insurance Deluxe",
+    policyType: "Life",
+    customerId: "CUST000003",
+    annualPremium: 599.99,
+    coverageDetails: {
+      deathBenefit: 500000,
+      term: "20 years"
+    },
+    coverageTypes: ["death_benefit"],
+    isActive: true,
+    createdAt: new Date("2024-03-01"),
+    expirationDate: new Date("2044-03-01"),
+    agentId: "AGT003",
+    branchId: "BR003",
+    riskScore: 45,
+    claimsHistory: []
+  }},
+  { upsert: true }
+);
+
+print("Upserted Day 2 policies - total policies: " + db.policies.countDocuments());
 ```
 
-### 7. Create Analytics Claims (200 Claims)
+### 6. Upsert Customers (3 Customers)
+
+These customers add `riskProfile` and `loyaltyProgram` fields used in Day 2 analytics and aggregation labs.
 
 ```javascript
-// Create 200 claims for analytics
-var claims = [];
-var claimTypes = ["Auto", "Property", "Life", "Commercial"];
-var statuses = ["approved", "denied", "under_review", "pending"];
-var descriptions = {
-  "Auto": ["Collision damage", "Theft", "Vandalism", "Hail damage"],
-  "Property": ["Storm damage", "Fire damage", "Theft", "Water damage"],
-  "Life": ["Death benefit claim", "Disability claim"],
-  "Commercial": ["Liability claim", "Property damage", "Cyber attack"]
-};
-
-for (var i = 1; i <= 200; i++) {
-  var claimType = claimTypes[Math.floor(Math.random() * claimTypes.length)];
-  var status = statuses[Math.floor(Math.random() * statuses.length)];
-  var description = descriptions[claimType][Math.floor(Math.random() * descriptions[claimType].length)];
-
-  // Amount based on type and status
-  var baseAmount = claimType === "Life" ? 100000 :
-                   claimType === "Commercial" ? 25000 :
-                   claimType === "Property" ? 15000 : 8000;
-
-  var amount = status === "denied" ? 0 :
-               baseAmount + (Math.random() * baseAmount * 0.5);
-
-  claims.push({
-    _id: "analytics_claim_" + String(i).padStart(3, '0'),
-    claimNumber: "ANALYTICS-CLM-" + String(i).padStart(3, '0'),
-    policyNumber: claimType.toUpperCase() + "-ANALYTICS-" + String(Math.floor(Math.random() * 50) + 1).padStart(3, '0'),
-    customerId: "ANALYTICS-CUST-" + String(Math.floor(Math.random() * 100) + 1).padStart(3, '0'),
-    claimType: claimType,
-    incidentDate: new Date(2023, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1),
-    reportedDate: new Date(2023, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1),
-    claimAmount: NumberDecimal(amount.toFixed(2)),
-    adjustedAmount: status === "approved" ? NumberDecimal((amount * 0.95).toFixed(2)) : NumberDecimal("0.00"),
-    status: status,
-    description: description,
-    processingTime: NumberInt(Math.floor(Math.random() * 30) + 1), // Days
-    adjuster: {
-      name: ["John Adjuster", "Mary Examiner", "Mike Investigator"][Math.floor(Math.random() * 3)],
-      id: "ADJ-" + String(Math.floor(Math.random() * 100) + 1).padStart(3, '0')
+db.customers.updateOne(
+  { customerId: "CUST000001" },
+  { $set: {
+    customerId: "CUST000001",
+    firstName: "John",
+    lastName: "Smith",
+    email: "john.smith@email.com",
+    phone: "+1-555-0101",
+    address: {
+      street: "123 Main Street",
+      city: "New York",
+      state: "NY",
+      zipCode: "10001"
+    },
+    dateOfBirth: new Date("1985-06-15"),
+    customerType: "individual",
+    riskProfile: {
+      score: 75,
+      category: "medium",
+      factors: ["good_credit", "safe_driver"]
+    },
+    premiumTotal: 2850.99,
+    policies: ["POL-AUTO-2024-001", "POL-HOME-2024-002"],
+    registrationDate: new Date("2024-01-10"),
+    isActive: true,
+    loyaltyProgram: {
+      tier: "gold",
+      points: 1250,
+      memberSince: new Date("2022-01-10")
     }
-  });
-}
+  }},
+  { upsert: true }
+);
 
-db.claims.insertMany(claims);
-```
-
-### 8. Create Analytics Agents
-
-```javascript
-db.agents.insertMany([
-  {
-    _id: "analytics_agent_001",
-    agentId: "ANALYTICS-AGT-001",
+db.customers.updateOne(
+  { customerId: "CUST000002" },
+  { $set: {
+    customerId: "CUST000002",
     firstName: "Sarah",
-    lastName: "Analytics",
-    email: "sarah.analytics@insurance.com",
-    phone: "(214) 555-9001",
-    licenseNumber: "TX-ANALYTICS-001",
-    hireDate: new Date("2020-01-15"),
-    branchId: "ABR-001",
-    specialties: ["Auto", "Property", "Analytics"],
-    commissionRate: NumberDecimal("0.055"),
-    performance: {
-      policiesSold: NumberInt(247),
-      totalRevenue: NumberDecimal("985000.00"),
-      customerRating: NumberDecimal("4.7"),
-      renewalRate: NumberDecimal("0.87")
+    lastName: "Johnson",
+    email: "sarah.johnson@email.com",
+    phone: "+1-555-0102",
+    address: {
+      street: "456 Oak Avenue",
+      city: "Chicago",
+      state: "IL",
+      zipCode: "60601"
     },
-    territory: ["Dallas", "Plano", "Richardson"],
-    status: "Active"
-  },
-  {
-    _id: "analytics_agent_002",
-    agentId: "ANALYTICS-AGT-002",
+    dateOfBirth: new Date("1978-03-22"),
+    customerType: "family",
+    riskProfile: {
+      score: 60,
+      category: "low",
+      factors: ["excellent_credit", "homeowner", "multiple_policies"]
+    },
+    premiumTotal: 3250.75,
+    policies: ["POL-HOME-2024-003", "POL-LIFE-2024-004"],
+    registrationDate: new Date("2024-02-15"),
+    isActive: true,
+    loyaltyProgram: {
+      tier: "platinum",
+      points: 2850,
+      memberSince: new Date("2020-02-15")
+    }
+  }},
+  { upsert: true }
+);
+
+db.customers.updateOne(
+  { customerId: "CUST000003" },
+  { $set: {
+    customerId: "CUST000003",
     firstName: "Michael",
-    lastName: "DataPro",
-    email: "michael.datapro@insurance.com",
-    phone: "(817) 555-9002",
-    licenseNumber: "TX-ANALYTICS-002",
-    hireDate: new Date("2019-06-01"),
-    branchId: "ABR-002",
-    specialties: ["Life", "Commercial", "Risk Assessment"],
-    commissionRate: NumberDecimal("0.065"),
+    lastName: "Davis",
+    email: "michael.davis@business.com",
+    phone: "+1-555-0103",
+    address: {
+      street: "789 Business Plaza",
+      city: "Los Angeles",
+      state: "CA",
+      zipCode: "90210"
+    },
+    dateOfBirth: new Date("1972-11-08"),
+    customerType: "business",
+    riskProfile: {
+      score: 45,
+      category: "high",
+      factors: ["business_owner", "high_value_assets"]
+    },
+    premiumTotal: 5850.50,
+    policies: ["POL-COMMERCIAL-2024-001", "POL-CYBER-2024-001"],
+    registrationDate: new Date("2024-03-01"),
+    isActive: true,
+    loyaltyProgram: {
+      tier: "diamond",
+      points: 4200,
+      memberSince: new Date("2019-03-01")
+    }
+  }},
+  { upsert: true }
+);
+
+print("Upserted Day 2 customers - total customers: " + db.customers.countDocuments());
+```
+
+### 7. Upsert Claims (3 Claims)
+
+These claims add `severityLevel`, `location` (GeoJSON), `processingTime`, and `fraudIndicators` fields used in Day 2 analytics.
+
+```javascript
+db.claims.updateOne(
+  { claimNumber: "CLM-2024-001001" },
+  { $set: {
+    claimNumber: "CLM-2024-001001",
+    customerId: "CUST000001",
+    policyNumber: "POL-AUTO-2024-001",
+    claimType: "Auto Accident",
+    claimAmount: 8500.00,
+    deductible: 500.00,
+    status: "approved",
+    incidentDate: new Date("2024-03-15"),
+    incidentDescription: "Rear-end collision at intersection",
+    adjusterAssigned: "ADJ001",
+    settledAmount: 8000.00,
+    processingTime: 15,
+    fraudIndicators: [],
+    severityLevel: "moderate",
+    location: {
+      type: "Point",
+      coordinates: [-73.9857, 40.7484]
+    },
+    witnesses: 2,
+    policeReport: true,
+    createdAt: new Date("2024-03-16"),
+    settledAt: new Date("2024-03-31")
+  }},
+  { upsert: true }
+);
+
+db.claims.updateOne(
+  { claimNumber: "CLM-2024-001002" },
+  { $set: {
+    claimNumber: "CLM-2024-001002",
+    customerId: "CUST000002",
+    policyNumber: "POL-HOME-2024-002",
+    claimType: "Water Damage",
+    claimAmount: 15000.00,
+    deductible: 1000.00,
+    status: "under_review",
+    incidentDate: new Date("2024-03-10"),
+    incidentDescription: "Pipe burst in basement causing extensive water damage",
+    adjusterAssigned: "ADJ002",
+    settledAmount: null,
+    processingTime: null,
+    fraudIndicators: [],
+    severityLevel: "major",
+    location: {
+      type: "Point",
+      coordinates: [-87.6298, 41.8781]
+    },
+    witnesses: 0,
+    policeReport: false,
+    createdAt: new Date("2024-03-11"),
+    settledAt: null
+  }},
+  { upsert: true }
+);
+
+db.claims.updateOne(
+  { claimNumber: "CLM-2024-001003" },
+  { $set: {
+    claimNumber: "CLM-2024-001003",
+    customerId: "CUST000003",
+    policyNumber: "POL-COMMERCIAL-2024-001",
+    claimType: "Cyber Attack",
+    claimAmount: 75000.00,
+    deductible: 5000.00,
+    status: "investigating",
+    incidentDate: new Date("2024-02-28"),
+    incidentDescription: "Ransomware attack on company servers",
+    adjusterAssigned: "ADJ003",
+    settledAmount: null,
+    processingTime: null,
+    fraudIndicators: ["unusual_timing"],
+    severityLevel: "critical",
+    location: {
+      type: "Point",
+      coordinates: [-118.2437, 34.0522]
+    },
+    witnesses: 0,
+    policeReport: true,
+    createdAt: new Date("2024-03-01"),
+    settledAt: null
+  }},
+  { upsert: true }
+);
+
+print("Upserted Day 2 claims - total claims: " + db.claims.countDocuments());
+```
+
+### 8. Upsert Agents (3 Agents)
+
+These agents add `performance` metrics, `salary`, and `commissionRate` fields for Day 2 workforce analytics.
+
+```javascript
+db.agents.updateOne(
+  { agentId: "AGT001" },
+  { $set: {
+    agentId: "AGT001",
+    firstName: "Emily",
+    lastName: "Rodriguez",
+    email: "emily.rodriguez@insuranceco.com",
+    phone: "+1-555-0201",
+    branchId: "BR001",
+    territory: "Manhattan North",
+    specialties: ["Auto", "Property"],
+    licenseNumber: "LIC-NY-12345",
+    isActive: true,
     performance: {
-      policiesSold: NumberInt(189),
-      totalRevenue: NumberDecimal("1250000.00"),
-      customerRating: NumberDecimal("4.5"),
-      renewalRate: NumberDecimal("0.91")
+      salesTarget: 500000,
+      salesActual: 485000,
+      customerRating: 4.8,
+      claimsHandled: 125,
+      conversionRate: 0.78
     },
-    territory: ["Fort Worth", "Arlington", "Grand Prairie"],
-    status: "Active"
-  }
-])
+    hireDate: new Date("2022-03-15"),
+    lastPromotion: new Date("2023-03-15"),
+    salary: 75000,
+    commissionRate: 0.03
+  }},
+  { upsert: true }
+);
+
+db.agents.updateOne(
+  { agentId: "AGT002" },
+  { $set: {
+    agentId: "AGT002",
+    firstName: "David",
+    lastName: "Thompson",
+    email: "david.thompson@insuranceco.com",
+    phone: "+1-555-0202",
+    branchId: "BR002",
+    territory: "West LA",
+    specialties: ["Commercial", "Cyber"],
+    licenseNumber: "LIC-CA-67890",
+    isActive: true,
+    performance: {
+      salesTarget: 750000,
+      salesActual: 820000,
+      customerRating: 4.9,
+      claimsHandled: 95,
+      conversionRate: 0.85
+    },
+    hireDate: new Date("2021-08-22"),
+    lastPromotion: new Date("2022-08-22"),
+    salary: 85000,
+    commissionRate: 0.035
+  }},
+  { upsert: true }
+);
+
+db.agents.updateOne(
+  { agentId: "AGT003" },
+  { $set: {
+    agentId: "AGT003",
+    firstName: "Jessica",
+    lastName: "Chen",
+    email: "jessica.chen@insuranceco.com",
+    phone: "+1-555-0203",
+    branchId: "BR003",
+    territory: "Houston Energy",
+    specialties: ["Cyber", "Health"],
+    licenseNumber: "LIC-TX-11111",
+    isActive: true,
+    performance: {
+      salesTarget: 600000,
+      salesActual: 645000,
+      customerRating: 4.7,
+      claimsHandled: 110,
+      conversionRate: 0.72
+    },
+    hireDate: new Date("2020-11-10"),
+    lastPromotion: new Date("2021-11-10"),
+    salary: 78000,
+    commissionRate: 0.032
+  }},
+  { upsert: true }
+);
+
+print("Upserted Day 2 agents - total agents: " + db.agents.countDocuments());
 ```
 
-### 9. Create Vehicles Collection
+### 9. Insert Reviews (3 Reviews)
+
+The `reviews` collection is new in Day 2 (it was dropped in Step 3). These reviews include `sentiment`, `categories`, and `helpfulVotes` fields for text search labs.
 
 ```javascript
-db.vehicles.insertMany([
+db.reviews.insertMany([
   {
-    _id: "analytics_vehicle_001",
-    vin: "1HGCV1F3XNA123456",
-    customerId: "ANALYTICS-CUST-001",
-    policyNumber: "AUTO-ANALYTICS-001",
-    make: "Honda",
-    model: "Accord",
-    year: NumberInt(2022),
-    color: "Silver",
-    engineType: "4-Cylinder",
-    transmission: "Automatic",
-    mileage: NumberInt(25000),
-    value: NumberDecimal("28500.00"),
-    riskFactors: {
-      safetyRating: NumberDecimal("4.5"),
-      theftRisk: "Low",
-      repairCost: "Medium"
-    },
-    usage: {
-      primaryUse: "Commuting",
-      annualMileage: NumberInt(15000),
-      parkingLocation: "Garage"
-    }
+    reviewId: "REV001",
+    customerId: "CUST000001",
+    agentId: "AGT001",
+    branchId: "BR001",
+    rating: 5,
+    reviewText: "Excellent service and outstanding customer support. Emily was incredibly helpful throughout the entire claims process. The response time was fantastic and the settlement was fair. Highly recommend this insurance company to anyone looking for reliable coverage.",
+    reviewDate: new Date("2024-03-20"),
+    sentiment: "positive",
+    categories: ["service", "claims", "support"],
+    verified: true,
+    helpfulVotes: 15
   },
   {
-    _id: "analytics_vehicle_002",
-    vin: "1FTFW1ET5DKF12345",
-    customerId: "ANALYTICS-CUST-025",
-    policyNumber: "AUTO-ANALYTICS-025",
-    make: "Ford",
-    model: "F-150",
-    year: NumberInt(2021),
-    color: "Blue",
-    engineType: "V6",
-    transmission: "Automatic",
-    mileage: NumberInt(35000),
-    value: NumberDecimal("42000.00"),
-    riskFactors: {
-      safetyRating: NumberDecimal("4.2"),
-      theftRisk: "Medium",
-      repairCost: "High"
-    },
-    usage: {
-      primaryUse: "Work",
-      annualMileage: NumberInt(25000),
-      parkingLocation: "Driveway"
-    }
+    reviewId: "REV002",
+    customerId: "CUST000002",
+    agentId: "AGT002",
+    branchId: "BR002",
+    rating: 4,
+    reviewText: "Good coverage options and competitive pricing. The policy selection process was straightforward, though claim processing could be faster. Overall satisfied with the service and would consider renewing. David provided good guidance on policy options.",
+    reviewDate: new Date("2024-03-18"),
+    sentiment: "positive",
+    categories: ["coverage", "pricing", "claims"],
+    verified: true,
+    helpfulVotes: 8
+  },
+  {
+    reviewId: "REV003",
+    customerId: "CUST000003",
+    agentId: "AGT003",
+    branchId: "BR003",
+    rating: 2,
+    reviewText: "Poor experience with claim denial and lack of communication. The initial sales process was smooth but when I needed to file a claim, the service quality dropped significantly. Jessica was hard to reach and the explanations were unclear.",
+    reviewDate: new Date("2024-03-15"),
+    sentiment: "negative",
+    categories: ["claims", "communication", "service"],
+    verified: true,
+    helpfulVotes: 22
   }
-])
+]);
+
+print("Created " + db.reviews.countDocuments() + " customer reviews");
 ```
 
-### 10. Create Properties Collection
+### 10. Create Indexes for Performance
+
+These are the same indexes created by the automated loader.
 
 ```javascript
-db.properties.insertOne({
-  _id: "analytics_property_001",
-  customerId: "ANALYTICS-CUST-050",
-  policyNumber: "HOME-ANALYTICS-015",
-  address: {
-    street: "1500 Analytics Avenue",
-    city: "Dallas",
-    state: "TX",
-    zipCode: "75201",
-    coordinates: {
-      lat: 32.7767,
-      lng: -96.7970
-    }
-  },
-  propertyType: "Single Family Home",
-  yearBuilt: NumberInt(2018),
-  squareFootage: NumberInt(2400),
-  bedrooms: NumberInt(4),
-  bathrooms: NumberDecimal("2.5"),
-  garageSpaces: NumberInt(2),
-  value: NumberDecimal("485000.00"),
-  features: {
-    swimmingPool: true,
-    fireplace: true,
-    securitySystem: true,
-    smartHome: true
-  },
-  riskFactors: {
-    floodZone: false,
-    crimeRate: "Low",
-    fireRisk: "Low",
-    naturalDisasterRisk: "Medium"
-  },
-  construction: {
-    foundationType: "Slab",
-    roofType: "Asphalt Shingle",
-    exteriorWalls: "Brick",
-    heatingType: "Central Gas"
-  }
-})
+// Core business indexes
+db.policies.createIndex({ policyNumber: 1 }, { unique: true });
+db.policies.createIndex({ policyType: 1, isActive: 1 });
+db.customers.createIndex({ customerId: 1 }, { unique: true });
+db.customers.createIndex({ email: 1 }, { unique: true });
+db.claims.createIndex({ claimNumber: 1 }, { unique: true });
+db.claims.createIndex({ customerId: 1, status: 1 });
+db.agents.createIndex({ agentId: 1 }, { unique: true });
+db.branches.createIndex({ branchCode: 1 }, { unique: true });
+
+// Analytics and aggregation indexes
+db.customers.createIndex({ "riskProfile.score": 1, premiumTotal: -1 });
+db.claims.createIndex({ claimType: 1, claimAmount: -1 });
+db.claims.createIndex({ status: 1, incidentDate: -1 });
+db.agents.createIndex({ branchId: 1, "performance.salesActual": -1 });
+db.branches.createIndex({ "performanceMetrics.monthlyRevenue": -1 });
+
+// Geospatial indexes
+db.branches.createIndex({ location: "2dsphere" });
+db.claims.createIndex({ location: "2dsphere" });
+
+// Text search indexes
+db.reviews.createIndex({ reviewText: "text", categories: "text" });
+db.policies.createIndex({ name: "text", policyType: "text" });
+
+print("Created production indexes");
 ```
 
-### 11. Create Reviews Collection (Text Search)
+### 11. Verify Data Loading
 
 ```javascript
-// Create 100 agent reviews for text search testing
-var reviews = [];
-var ratings = [1, 2, 3, 4, 5];
-var reviewTexts = [
-  "Excellent service and very professional. Highly recommend!",
-  "Good experience overall. Agent was helpful and knowledgeable.",
-  "Average service. Could be more responsive to inquiries.",
-  "Outstanding customer service. Made the process very easy.",
-  "Professional and efficient. Great communication throughout.",
-  "Satisfactory service. Agent was courteous and informative.",
-  "Exceptional service quality. Very pleased with the experience.",
-  "Quick response time and thorough explanation of policies.",
-  "Friendly agent with extensive knowledge of insurance products.",
-  "Smooth process from start to finish. Very satisfied."
-];
+print("=== Day 2 Analytics Data Verification ===");
 
-for (var i = 1; i <= 100; i++) {
-  reviews.push({
-    _id: "analytics_review_" + String(i).padStart(3, '0'),
-    reviewId: "REV-" + String(i).padStart(3, '0'),
-    customerId: "ANALYTICS-CUST-" + String(Math.floor(Math.random() * 100) + 1).padStart(3, '0'),
-    agentId: "ANALYTICS-AGT-" + String(Math.floor(Math.random() * 2) + 1).padStart(3, '0'),
-    rating: NumberInt(ratings[Math.floor(Math.random() * ratings.length)]),
-    reviewText: reviewTexts[Math.floor(Math.random() * reviewTexts.length)],
-    reviewDate: new Date(2023, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1),
-    verified: Math.random() > 0.1, // 90% verified
-    helpfulVotes: NumberInt(Math.floor(Math.random() * 20)),
-    tags: ["service", "professional", "responsive", "knowledgeable"].slice(0, Math.floor(Math.random() * 3) + 1)
-  });
-}
+var branchCount = db.branches.countDocuments();
+var policyCount = db.policies.countDocuments();
+var customerCount = db.customers.countDocuments();
+var claimCount = db.claims.countDocuments();
+var agentCount = db.agents.countDocuments();
+var reviewCount = db.reviews.countDocuments();
 
-db.reviews.insertMany(reviews);
-```
-
-### 12. Create Indexes for Performance
-
-```javascript
-// Create indexes for Day 2 labs
-db.policies.createIndex({"policyType": 1, "annualPremium": -1})
-db.policies.createIndex({"isActive": 1})
-db.policies.createIndex({"region": 1, "riskScore": 1})
-
-db.customers.createIndex({"riskLevel": 1})
-db.customers.createIndex({"age": 1})
-db.customers.createIndex({"address.city": 1})
-
-db.claims.createIndex({"claimType": 1, "status": 1})
-db.claims.createIndex({"claimAmount": 1})
-db.claims.createIndex({"incidentDate": 1})
-
-db.branches.createIndex({"location": "2dsphere"})
-db.branches.createIndex({"region": 1})
-
-db.reviews.createIndex({"reviewText": "text", "tags": "text"})
-```
-
-### 13. Verify Data Loading
-
-```javascript
-// Check document counts
-print("=== Day 2 Analytics Data Verification ===")
-print("Policy Types: " + db.policy_types.countDocuments())
-print("Branches: " + db.branches.countDocuments())
-print("Policies: " + db.policies.countDocuments())
-print("Customers: " + db.customers.countDocuments())
-print("Claims: " + db.claims.countDocuments())
-print("Agents: " + db.agents.countDocuments())
-print("Vehicles: " + db.vehicles.countDocuments())
-print("Properties: " + db.properties.countDocuments())
-print("Reviews: " + db.reviews.countDocuments())
+print("Analytics collections:");
+print("- branches: " + branchCount);
+print("- policies: " + policyCount);
+print("- customers: " + customerCount);
+print("- claims: " + claimCount);
+print("- agents: " + agentCount);
+print("- reviews: " + reviewCount);
 
 // Test aggregation pipeline
-print("\n=== Sample Aggregation Test ===")
+print("\n=== Sample Aggregation Test ===");
 var aggResult = db.policies.aggregate([
-  {$match: {isActive: true}},
-  {$group: {
+  { $match: { isActive: true } },
+  { $group: {
     _id: "$policyType",
-    count: {$sum: 1},
-    avgPremium: {$avg: "$annualPremium"}
+    count: { $sum: 1 },
+    avgPremium: { $avg: "$annualPremium" }
   }},
-  {$sort: {count: -1}}
-]).toArray()
+  { $sort: { count: -1 } }
+]).toArray();
 
-print(JSON.stringify(aggResult, null, 2))
+print(JSON.stringify(aggResult, null, 2));
 
 // Test text search
-print("\n=== Text Search Test ===")
-var searchResult = db.reviews.countDocuments({$text: {$search: "excellent professional"}})
-print("Text search results: " + searchResult)
+print("\n=== Text Search Test ===");
+var searchResult = db.reviews.countDocuments({ $text: { $search: "excellent professional" } });
+print("Text search results: " + searchResult);
 ```
 
 ## Expected Results
 
-After manual loading, you should have:
-- **4 policy types** with hierarchical structures
-- **3 branches** with geospatial data
-- **50 policies** for aggregation testing
-- **100 customers** with risk segmentation
-- **200 claims** with analytics data
-- **2 agents** with performance metrics
-- **2 vehicles** with risk factors
-- **1 property** with detailed features
-- **100 reviews** with text search capability
+After running this manual setup on top of Day 1 data, you should have approximately:
+
+- **5+ branches** (Day 1 branches + 3 upserted Day 2 branches)
+- **13 policies** (10 from Day 1 + 3 upserted Day 2 policies)
+- **20 customers** (17 from Day 1 + 3 upserted Day 2 customers)
+- **15 claims** (12 from Day 1 + 3 upserted Day 2 claims)
+- **10 agents** (7 from Day 1 + 3 upserted Day 2 agents)
+- **3 reviews** (new Day 2 collection)
+
+Note: Exact counts depend on overlap between Day 1 and Day 2 IDs. The upsert pattern ensures no duplicate key errors.
+
+## Troubleshooting
+
+### Duplicate Key Errors
+
+If you see duplicate key errors, the data already exists. The upsert pattern used above should prevent this, but if you copied data from a different source:
+
+```javascript
+// Check existing document before upserting
+db.policies.findOne({ policyNumber: "POL-AUTO-2024-001" });
+```
+
+### Index Creation Errors
+
+If an index already exists with a different definition, drop it first:
+
+```javascript
+// Drop a specific index by name
+db.policies.dropIndex("policyNumber_1");
+
+// Or drop all non-default indexes on a collection
+db.reviews.dropIndexes();
+
+// Then rerun the index creation commands from Step 10
+```
+
+### Missing Day 1 Data
+
+Day 2 builds on top of Day 1 data. If Day 1 data is missing, load it first using `manual_day1_setup.md` or `day1_data_loader.js`.
+
+### Verifying Upserts Worked
+
+```javascript
+// Check that Day 2 fields were added to existing documents
+db.customers.findOne(
+  { customerId: "CUST000001" },
+  { riskProfile: 1, loyaltyProgram: 1 }
+);
+
+// Should show both riskProfile and loyaltyProgram fields
+```
 
 ## Next Steps
 
 After loading Day 2 data:
-1. Complete Day 2 labs (Labs 6-8)
-2. For Day 3, use `manual_day3_setup.md`
+1. Complete Lab 6: Advanced Query Techniques
+2. Complete Lab 7: Aggregation Framework
+3. Complete Lab 8: Indexing & Performance Optimization
+4. Complete Lab 9: Data Modeling & Schema Design
+5. Complete Lab 10: MongoDB Transactions
+6. For Day 3, use `manual_day3_setup.md` or `day3_data_loader.js`
 
 ---
 
