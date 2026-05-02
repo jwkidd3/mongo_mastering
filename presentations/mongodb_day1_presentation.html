@@ -227,6 +227,22 @@
             border-left: 4px solid #4A8B3B;
             border-radius: 0 5px 5px 0;
         }
+
+        .reveal .schedule-slide .agenda-item {
+            padding: 0.25em 0.6em;
+            margin: 0.12em 0;
+            font-size: 0.78em;
+        }
+
+        .reveal .schedule-slide h2 {
+            font-size: 1.6em;
+            margin-bottom: 0.4em;
+        }
+
+        .reveal .schedule-slide .section-title {
+            padding: 0.6em;
+            margin-bottom: 0.3em;
+        }
     </style>
 </head>
 
@@ -272,30 +288,45 @@
             </section>
 
             <!-- Daily Schedule -->
-            <section>
+            <section class="schedule-slide">
                 <div class="section-title">
                     <h2>🕘 Day 1 Schedule</h2>
                 </div>
                 <div class="agenda-item fragment">
-                    <strong>9:00 – 10:30</strong> &nbsp;·&nbsp; Sections 1–2: NoSQL Intro + Shell & Server &nbsp;·&nbsp; <em>Lab 1</em>
+                    <strong>9:00 – 9:30</strong> &nbsp;·&nbsp; 📽️ §1 NoSQL Intro + §2 Shell & Server
+                </div>
+                <div class="agenda-item fragment">
+                    <strong>9:30 – 10:30</strong> &nbsp;·&nbsp; 🧪 <em>Lab 1: MongoDB Shell Mastery</em>
                 </div>
                 <div class="agenda-item fragment">
                     <strong>10:30 – 10:45</strong> &nbsp;·&nbsp; ☕ Morning break
                 </div>
                 <div class="agenda-item fragment">
-                    <strong>10:45 – 12:00</strong> &nbsp;·&nbsp; Sections 3–4: DB/Collection Mgmt + Create/Insert &nbsp;·&nbsp; <em>Labs 2, 3</em>
+                    <strong>10:45 – 11:10</strong> &nbsp;·&nbsp; 📽️ §3 DB/Collection Mgmt + §4 Create/Insert
+                </div>
+                <div class="agenda-item fragment">
+                    <strong>11:10 – 12:00</strong> &nbsp;·&nbsp; 🧪 <em>Labs 2 & 3: DB Mgmt + CRUD Insert</em>
                 </div>
                 <div class="agenda-item fragment">
                     <strong>12:00 – 1:00</strong> &nbsp;·&nbsp; 🍽️ Lunch
                 </div>
                 <div class="agenda-item fragment">
-                    <strong>1:00 – 2:30</strong> &nbsp;·&nbsp; Section 5: Read & Query Operations &nbsp;·&nbsp; <em>Lab 4</em>
+                    <strong>1:00 – 1:30</strong> &nbsp;·&nbsp; 📽️ §5 Read & Query Operations
+                </div>
+                <div class="agenda-item fragment">
+                    <strong>1:30 – 2:30</strong> &nbsp;·&nbsp; 🧪 <em>Lab 4: CRUD Read & Query</em>
                 </div>
                 <div class="agenda-item fragment">
                     <strong>2:30 – 2:45</strong> &nbsp;·&nbsp; ☕ Afternoon break
                 </div>
                 <div class="agenda-item fragment">
-                    <strong>2:45 – 4:00</strong> &nbsp;·&nbsp; Section 6: Update & Delete &nbsp;·&nbsp; <em>Lab 5</em> &nbsp;·&nbsp; Wrap-up
+                    <strong>2:45 – 3:05</strong> &nbsp;·&nbsp; 📽️ §6 Update & Delete Operations
+                </div>
+                <div class="agenda-item fragment">
+                    <strong>3:05 – 3:50</strong> &nbsp;·&nbsp; 🧪 <em>Lab 5: CRUD Update & Delete</em>
+                </div>
+                <div class="agenda-item fragment">
+                    <strong>3:50 – 4:00</strong> &nbsp;·&nbsp; 📽️ Wrap-up & Day 2 preview
                 </div>
             </section>
 
@@ -1528,9 +1559,9 @@ db.users.deleteMany({
             plugins: [ RevealMarkdown, RevealHighlight, RevealNotes, RevealSearch, RevealZoom ],
 
             // Presentation size
-            width: 1200,
-            height: 800,
-            margin: 0.1,
+            width: 1280,
+            height: 900,
+            margin: 0.06,
             minScale: 0.2,
             maxScale: 1.5,
 

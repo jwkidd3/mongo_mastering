@@ -228,6 +228,22 @@
             border-radius: 0 5px 5px 0;
         }
 
+        .reveal .schedule-slide .agenda-item {
+            padding: 0.25em 0.6em;
+            margin: 0.12em 0;
+            font-size: 0.78em;
+        }
+
+        .reveal .schedule-slide h2 {
+            font-size: 1.6em;
+            margin-bottom: 0.4em;
+        }
+
+        .reveal .schedule-slide .section-title {
+            padding: 0.6em;
+            margin-bottom: 0.3em;
+        }
+
         .reveal .performance-metric {
             background: #2C5F41;
             color: white;
@@ -323,30 +339,45 @@
             </section>
 
             <!-- Daily Schedule -->
-            <section>
+            <section class="schedule-slide">
                 <div class="section-title">
                     <h2>🕘 Day 2 Schedule</h2>
                 </div>
                 <div class="agenda-item fragment">
-                    <strong>9:00 – 10:30</strong> &nbsp;·&nbsp; Section 1: Advanced Querying Techniques &nbsp;·&nbsp; <em>Lab 6</em>
+                    <strong>9:00 – 9:25</strong> &nbsp;·&nbsp; 📽️ §1 Advanced Querying Techniques
+                </div>
+                <div class="agenda-item fragment">
+                    <strong>9:25 – 10:30</strong> &nbsp;·&nbsp; 🧪 <em>Lab 6: Advanced Query Techniques</em>
                 </div>
                 <div class="agenda-item fragment">
                     <strong>10:30 – 10:45</strong> &nbsp;·&nbsp; ☕ Morning break
                 </div>
                 <div class="agenda-item fragment">
-                    <strong>10:45 – 12:00</strong> &nbsp;·&nbsp; Section 2: Aggregation Framework &nbsp;·&nbsp; <em>Lab 7</em>
+                    <strong>10:45 – 11:10</strong> &nbsp;·&nbsp; 📽️ §2 MongoDB Aggregation Framework
+                </div>
+                <div class="agenda-item fragment">
+                    <strong>11:10 – 12:00</strong> &nbsp;·&nbsp; 🧪 <em>Lab 7: Aggregation Framework</em>
                 </div>
                 <div class="agenda-item fragment">
                     <strong>12:00 – 1:00</strong> &nbsp;·&nbsp; 🍽️ Lunch
                 </div>
                 <div class="agenda-item fragment">
-                    <strong>1:00 – 2:30</strong> &nbsp;·&nbsp; Sections 3–4: Indexing & Performance &nbsp;·&nbsp; <em>Lab 8</em>
+                    <strong>1:00 – 1:30</strong> &nbsp;·&nbsp; 📽️ §3 Indexing + §4 Performance Optimization
+                </div>
+                <div class="agenda-item fragment">
+                    <strong>1:30 – 2:30</strong> &nbsp;·&nbsp; 🧪 <em>Lab 8: Indexing & Performance</em>
                 </div>
                 <div class="agenda-item fragment">
                     <strong>2:30 – 2:45</strong> &nbsp;·&nbsp; ☕ Afternoon break
                 </div>
                 <div class="agenda-item fragment">
-                    <strong>2:45 – 4:00</strong> &nbsp;·&nbsp; Sections 5–6: Schema Design + Transactions &nbsp;·&nbsp; <em>Labs 9, 10</em> &nbsp;·&nbsp; Wrap-up
+                    <strong>2:45 – 3:15</strong> &nbsp;·&nbsp; 📽️ §5 Schema Design + §6 Transactions
+                </div>
+                <div class="agenda-item fragment">
+                    <strong>3:15 – 3:50</strong> &nbsp;·&nbsp; 🧪 <em>Labs 9 & 10: Schema Design + Transactions</em>
+                </div>
+                <div class="agenda-item fragment">
+                    <strong>3:50 – 4:00</strong> &nbsp;·&nbsp; 📽️ Wrap-up & Day 3 preview
                 </div>
             </section>
 
@@ -745,34 +776,38 @@ db.users.find({email: "john@example.com"}).explain("executionStats")</code></pre
                         <div>
                             <div class="pattern-card">
                                 <h4>Single Field Indexes</h4>
-                                <pre><code class="language-javascript small-text">// Ascending index
+                                <pre style="font-size: 0.55em;"><code class="language-javascript">// Ascending index
 db.products.createIndex({price: 1})
 
 // Descending index
 db.products.createIndex({createdAt: -1})
 
 // Unique index
-db.users.createIndex({email: 1}, {unique: true})
+db.users.createIndex(
+  {email: 1},
+  {unique: true})
 
 // Sparse index
-db.users.createIndex({phoneNumber: 1}, {sparse: true})</code></pre>
+db.users.createIndex(
+  {phoneNumber: 1},
+  {sparse: true})</code></pre>
                             </div>
                         </div>
                         <div>
                             <div class="pattern-card">
                                 <h4>Compound Indexes</h4>
                                 <div class="warning-box">
-                                    <p class="small-text"><strong>Order matters!</strong> This index supports queries in prefix order only.</p>
+                                    <p class="small-text"><strong>Order matters!</strong> Prefix order required.</p>
                                 </div>
-                                <pre><code class="language-javascript small-text">db.products.createIndex({
-  category: 1, 
-  price: 1, 
+                                <pre style="font-size: 0.55em;"><code class="language-javascript">db.products.createIndex({
+  category: 1,
+  price: 1,
   brand: 1
 })
 
 // Supports:
 // 1. {category: "Electronics"}
-// 2. {category: "Electronics", price: {$gt: 100}}
+// 2. {category, price: {$gt: 100}}
 // 3. All three fields combined</code></pre>
                             </div>
                         </div>
@@ -1419,8 +1454,7 @@ function performTransaction(maxRetries) {
                         <ul>
                             <li>Understand ACID properties in MongoDB</li>
                             <li>Implement multi-document transactions</li>
-                            <li>Handle transaction errors and rollbacks</li>
-                            <li>Configure read and write concerns</li>
+                            <li>Handle errors, rollbacks, read/write concerns</li>
                         </ul>
                     </div>
 
@@ -1435,7 +1469,7 @@ function performTransaction(maxRetries) {
                     </div>
 
                     <div class="info-box">
-                        <strong>Note:</strong> Transactions require replica set configuration. Our environment is pre-configured for transaction support.
+                        Transactions require replica set configuration — our environment is pre-configured.
                     </div>
                 </section>
             </section>
@@ -1622,9 +1656,9 @@ db.system.profile.find()
             
             plugins: [ RevealMarkdown, RevealHighlight, RevealNotes, RevealSearch, RevealZoom ],
             
-            width: 1200,
-            height: 800,
-            margin: 0.1,
+            width: 1280,
+            height: 900,
+            margin: 0.06,
             minScale: 0.2,
             maxScale: 1.5,
             

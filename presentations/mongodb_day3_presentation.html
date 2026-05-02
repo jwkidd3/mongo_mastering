@@ -236,6 +236,17 @@
             border-radius: 0 5px 5px 0;
         }
 
+        .reveal .schedule-slide .agenda-item {
+            padding: 0.25em 0.6em;
+            margin: 0.12em 0;
+            font-size: 0.78em;
+        }
+
+        .reveal .schedule-slide h2 {
+            font-size: 1.6em;
+            margin-bottom: 0.4em;
+        }
+
         .reveal .architecture-diagram {
             border: 2px solid #4A8B3B;
             padding: 15px;
@@ -341,28 +352,43 @@
             </section>
 
             <!-- Daily Schedule -->
-            <section>
+            <section class="schedule-slide">
                 <h2>🕘 Day 3 Schedule</h2>
                 <div class="agenda-item fragment">
-                    <strong>9:00 – 10:30</strong> &nbsp;·&nbsp; Section 1: Replica Sets & High Availability &nbsp;·&nbsp; <em>Lab 11</em>
+                    <strong>9:00 – 9:25</strong> &nbsp;·&nbsp; 📽️ §1 Replica Sets & High Availability
+                </div>
+                <div class="agenda-item fragment">
+                    <strong>9:25 – 10:30</strong> &nbsp;·&nbsp; 🧪 <em>Lab 11: Replica Sets & HA</em>
                 </div>
                 <div class="agenda-item fragment">
                     <strong>10:30 – 10:45</strong> &nbsp;·&nbsp; ☕ Morning break
                 </div>
                 <div class="agenda-item fragment">
-                    <strong>10:45 – 12:00</strong> &nbsp;·&nbsp; Section 2: Sharding & Horizontal Scaling &nbsp;·&nbsp; <em>Lab 12</em>
+                    <strong>10:45 – 11:05</strong> &nbsp;·&nbsp; 📽️ §2 Sharding & Horizontal Scaling
+                </div>
+                <div class="agenda-item fragment">
+                    <strong>11:05 – 12:00</strong> &nbsp;·&nbsp; 🧪 <em>Lab 12: Sharding</em>
                 </div>
                 <div class="agenda-item fragment">
                     <strong>12:00 – 1:00</strong> &nbsp;·&nbsp; 🍽️ Lunch
                 </div>
                 <div class="agenda-item fragment">
-                    <strong>1:00 – 2:30</strong> &nbsp;·&nbsp; Section 3: Change Streams &nbsp;·&nbsp; <em>Lab 13</em>
+                    <strong>1:00 – 1:25</strong> &nbsp;·&nbsp; 📽️ §3 Change Streams
+                </div>
+                <div class="agenda-item fragment">
+                    <strong>1:25 – 2:30</strong> &nbsp;·&nbsp; 🧪 <em>Lab 13: Change Streams & Real-time</em>
                 </div>
                 <div class="agenda-item fragment">
                     <strong>2:30 – 2:45</strong> &nbsp;·&nbsp; ☕ Afternoon break
                 </div>
                 <div class="agenda-item fragment">
-                    <strong>2:45 – 4:00</strong> &nbsp;·&nbsp; Section 4: Production + Application Integration &nbsp;·&nbsp; <em>Lab 14a / 14b / 14c</em> &nbsp;·&nbsp; Wrap-up
+                    <strong>2:45 – 3:10</strong> &nbsp;·&nbsp; 📽️ §4 Production + Driver Integration
+                </div>
+                <div class="agenda-item fragment">
+                    <strong>3:10 – 3:55</strong> &nbsp;·&nbsp; 🧪 <em>Lab 14a / 14b / 14c (choose one)</em>
+                </div>
+                <div class="agenda-item fragment">
+                    <strong>3:55 – 4:00</strong> &nbsp;·&nbsp; 📽️ Wrap-up
                 </div>
             </section>
 
@@ -1705,9 +1731,9 @@ db.users.delete_one(
             plugins: [ RevealMarkdown, RevealHighlight, RevealNotes, RevealSearch, RevealZoom ],
 
             // Presentation size
-            width: 1200,
-            height: 800,
-            margin: 0.1,
+            width: 1280,
+            height: 900,
+            margin: 0.06,
             minScale: 0.2,
             maxScale: 1.5,
 
