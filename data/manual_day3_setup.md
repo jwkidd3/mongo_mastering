@@ -33,10 +33,10 @@ Only drop collections that are unique to Day 3. Do **not** drop `policies`, `cus
 ```javascript
 db.vehicles.drop();
 db.properties.drop();
-db.policy_notifications.drop();
-db.claim_activity_log.drop();
+db.notifications.drop();
+db.activity_log.drop();
 db.resume_tokens.drop();
-db.fraud_investigations.drop();
+db.fraud_alerts.drop();
 db.compliance_records.drop();
 
 print("Cleaned Day 3-specific collections");
@@ -593,12 +593,12 @@ Create indexes and sample data for the change stream monitoring collections.
 
 ```javascript
 // Policy notifications indexes
-db.policy_notifications.createIndex({ customerId: 1, timestamp: -1 });
-db.policy_notifications.createIndex({ type: 1, read: 1 });
+db.notifications.createIndex({ customerId: 1, timestamp: -1 });
+db.notifications.createIndex({ type: 1, read: 1 });
 
 // Claim activity log indexes
-db.claim_activity_log.createIndex({ timestamp: -1 });
-db.claim_activity_log.createIndex({ event: 1, timestamp: -1 });
+db.activity_log.createIndex({ timestamp: -1 });
+db.activity_log.createIndex({ event: 1, timestamp: -1 });
 
 // Resume tokens indexes
 db.resume_tokens.createIndex({ lastUpdated: -1 });
@@ -609,7 +609,7 @@ print("Created change stream collection indexes");
 Insert sample policy notifications:
 
 ```javascript
-db.policy_notifications.insertMany([
+db.notifications.insertMany([
   {
     customerId: "cust1",
     type: "policy_renewal",
@@ -636,7 +636,7 @@ db.policy_notifications.insertMany([
   }
 ]);
 
-print("Created " + db.policy_notifications.countDocuments() + " sample notifications");
+print("Created " + db.notifications.countDocuments() + " sample notifications");
 ```
 
 ### 12. Upsert Agents for Application Integration (Lab 14)
@@ -804,7 +804,7 @@ var branchCount = db.branches.countDocuments();
 var agentCount = db.agents.countDocuments();
 var vehicleCount = db.vehicles.countDocuments();
 var propertyCount = db.properties.countDocuments();
-var notificationCount = db.policy_notifications.countDocuments();
+var notificationCount = db.notifications.countDocuments();
 
 print("Production collections:");
 print("- policies: " + policyCount);
@@ -814,7 +814,7 @@ print("- branches: " + branchCount);
 print("- agents: " + agentCount);
 print("- vehicles: " + vehicleCount);
 print("- properties: " + propertyCount);
-print("- policy_notifications: " + notificationCount);
+print("- notifications: " + notificationCount);
 
 // Check indexes
 print("\nIndex validation:");
@@ -889,8 +889,8 @@ function resetDay3Data() {
   db.customers.updateOne({ _id: "cust3" }, { $set: { premiumBalance: 1500.00, totalPolicies: 0 } });
   db.claims.deleteMany({ _id: /^test_/ });
   db.payments.deleteMany({ paymentType: "test" });
-  db.policy_notifications.deleteMany({ type: { $in: ["test", "claim_created", "status_update"] } });
-  db.claim_activity_log.deleteMany({});
+  db.notifications.deleteMany({ type: { $in: ["test", "claim_created", "status_update"] } });
+  db.activity_log.deleteMany({});
   db.resume_tokens.deleteMany({});
   print("Day 3 data reset complete!");
 }

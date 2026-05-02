@@ -4,7 +4,9 @@
 # Removes all MongoDB containers and networks
 # Compatible with macOS, Linux, and Windows WSL
 
-set -e  # Exit on any error
+# Note: intentionally NOT using `set -e` — teardown is best-effort.
+# Missing containers/networks should not abort cleanup. Matches the
+# PowerShell teardown's $ErrorActionPreference = "Continue" semantics.
 
 # Help function
 show_help() {

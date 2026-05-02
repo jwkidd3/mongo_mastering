@@ -130,7 +130,7 @@ sleep 30
 # Step 6: Set write concern from host
 print_status "Setting write concern..."
 # Wait for primary to be elected and host connection to be available
-max_attempts=10
+max_attempts=15
 attempt=1
 while [ $attempt -le $max_attempts ]; do
     # Check if we can connect and the primary is ready
@@ -138,7 +138,7 @@ while [ $attempt -le $max_attempts ]; do
         break
     fi
     print_status "  Attempt $attempt/$max_attempts - waiting for primary election..."
-    sleep 5
+    sleep 3
     ((attempt++))
 done
 

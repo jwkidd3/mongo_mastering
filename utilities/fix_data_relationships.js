@@ -1,7 +1,19 @@
 #!/usr/bin/env mongosh
 
-// FIX DATA RELATIONSHIPS - Ensure all foreign key relationships work
-print("🔧 FIXING DATA RELATIONSHIPS");
+// FIX DATA RELATIONSHIPS — Diagnostic / remediation script.
+//
+// After comprehensive_data_loader.js runs successfully, this script should
+// report that all foreign-key relationships are valid (no orphaned claims,
+// no orphaned policies, no missing customer/agent/branch references).
+// It is kept as a diagnostic tool that can be run manually if course data
+// has been hand-edited or partially loaded.
+//
+// Usage from project root:
+//   mongosh "mongodb://localhost:27017/?directConnection=true" < utilities/fix_data_relationships.js
+//
+// If this script reports problems on a freshly-loaded course dataset, the
+// loaders are out of sync — investigate and fix the loaders, not the data.
+print("🔧 DATA RELATIONSHIP DIAGNOSTIC / REMEDIATION");
 print("=" .repeat(80));
 
 db = db.getSiblingDB('insurance_company');

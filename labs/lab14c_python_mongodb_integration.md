@@ -26,9 +26,19 @@ To check if MongoDB is already running:
 mongosh --eval "db.runCommand('ping')"
 ```
 
-**Load Course Data:**
+## Prerequisites: Load Course Data
+
+Before starting this lab, ensure the MongoDB environment is running and course data is loaded:
+
 ```bash
-mongosh < data/day3_data_loader.js
+# From the project root
+mongosh "mongodb://localhost:27017/?directConnection=true" < data/comprehensive_data_loader.js
+```
+
+Verify the data loaded successfully:
+
+```bash
+mongosh "mongodb://localhost:27017/?directConnection=true" --eval "use insurance_company; db.policies.countDocuments()"
 ```
 
 ## Part A: Jupyter Notebook Setup (5 minutes)

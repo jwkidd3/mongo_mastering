@@ -6,14 +6,16 @@ Complete 3-day MongoDB training course with hands-on labs and enterprise-ready c
 
 ### 1. Automated Setup (Recommended)
 
+All commands below assume your current working directory is the repository root (`mongo_mastering/`).
+
 **macOS/Linux:**
 ```bash
-./setup.sh
+scripts/setup.sh
 ```
 
 **Windows PowerShell:**
 ```powershell
-.\setup.ps1
+scripts\setup.ps1
 ```
 
 **Windows Docker Desktop Requirements**:
@@ -80,18 +82,16 @@ If you see "falling back to inline data loading" on Windows, this is a known iss
 
 **Alternative Windows Approaches** (if you prefer individual script loading):
 
-**Option 1: Run from data directory**:
+**Option 1: Run from repo root**:
 ```powershell
-cd data
-Get-Content comprehensive_data_loader.js | mongosh
+Get-Content data\comprehensive_data_loader.js | mongosh "mongodb://localhost:27017/?directConnection=true"
 ```
 
-**Option 2: Load individual scripts manually**:
+**Option 2: Load individual scripts manually (from repo root)**:
 ```powershell
-cd data
-Get-Content day1_data_loader.js | mongosh
-Get-Content day2_data_loader.js | mongosh
-Get-Content day3_data_loader.js | mongosh
+Get-Content data\day1_data_loader.js | mongosh "mongodb://localhost:27017/?directConnection=true"
+Get-Content data\day2_data_loader.js | mongosh "mongodb://localhost:27017/?directConnection=true"
+Get-Content data\day3_data_loader.js | mongosh "mongodb://localhost:27017/?directConnection=true"
 ```
 
 **Option 3: Use inline loading (recommended for Windows)**:
@@ -119,12 +119,12 @@ Get-Content data\day3_data_loader.js | mongosh "mongodb://localhost:27017/?direc
 
 **macOS/Linux:**
 ```bash
-./test.sh
+scripts/test.sh
 ```
 
 **Windows PowerShell:**
 ```powershell
-.\test.ps1
+scripts\test.ps1
 ```
 
 ### 4. Verify Connection
@@ -216,7 +216,7 @@ If you cannot connect to `localhost:27018` or `localhost:27019` on Windows:
    - Right-click Docker Desktop in system tray
    - Select "Restart Docker Desktop"
    - Wait for complete restart
-   - Re-run setup: `.\setup.ps1`
+   - Re-run setup: `scripts\setup.ps1`
 
 5. **Windows-Specific Connection String**:
    ```
@@ -240,45 +240,37 @@ Tests entire environment setup, data loading, and lab validation:
 
 **macOS/Linux:**
 ```bash
-# From scripts directory:
-./comprehensive_test.sh
-
-# From project root:
 scripts/comprehensive_test.sh
 ```
 
 **Windows PowerShell:**
 ```powershell
-# From scripts directory:
-.\comprehensive_test.ps1
-
-# From project root:
 scripts\comprehensive_test.ps1
 ```
 
 **Option B: Lab Validation Only**
-Validates every operation from all 12 labs:
+Validates data and key operations across all 16 labs (lab01–lab14c):
 
 **macOS/Linux:**
 ```bash
-mongosh < scripts/lab_validation_comprehensive.js
+mongosh "mongodb://localhost:27017/?directConnection=true" < scripts/lab_validation_comprehensive.js
 ```
 
 **Windows PowerShell:**
 ```powershell
-Get-Content scripts\lab_validation_comprehensive.js | mongosh
+Get-Content scripts\lab_validation_comprehensive.js | mongosh "mongodb://localhost:27017/?directConnection=true"
 ```
 
 ### 7. Clean Up When Done
 
 **macOS/Linux:**
 ```bash
-./teardown.sh
+scripts/teardown.sh
 ```
 
 **Windows PowerShell:**
 ```powershell
-.\teardown.ps1
+scripts\teardown.ps1
 ```
 
 ## Data Loaders
@@ -323,31 +315,45 @@ Get-Content scripts\lab_validation_comprehensive.js | mongosh
 ### 📂 Directory Overview
 ```
 mongo_mastering/
-├── scripts/                  # Automated setup & teardown scripts
-│   ├── setup.sh           # One-command environment setup (macOS/Linux)
-│   ├── setup.ps1          # One-command environment setup (Windows)
-│   ├── teardown.sh        # Complete cleanup (macOS/Linux)
-│   ├── teardown.ps1       # Complete cleanup (Windows)
-│   ├── test.sh            # Connection testing (macOS/Linux)
-│   ├── test.ps1           # Connection testing (Windows)
-│   ├── comprehensive_test.sh  # Complete end-to-end test (macOS/Linux)
-│   ├── comprehensive_test.ps1 # Complete end-to-end test (Windows)
-│   ├── test_connection.js # Basic MongoDB connection test
-│   └── lab_validation_comprehensive.js # Complete lab validation test
-├── data/                   # Course data & loading scripts
+├── setup.sh / setup.ps1          # Root convenience wrappers -> scripts/setup.*
+├── teardown.sh / teardown.ps1    # Root convenience wrappers -> scripts/teardown.*
+├── test.sh / test.ps1            # Root convenience wrappers -> scripts/test.*
+├── scripts/                      # Automated setup, teardown, and test scripts
+│   ├── setup.sh                  # Environment setup (macOS/Linux)
+│   ├── setup.ps1                 # Environment setup (Windows)
+│   ├── teardown.sh               # Complete cleanup (macOS/Linux)
+│   ├── teardown.ps1              # Complete cleanup (Windows)
+│   ├── test.sh                   # Connection testing (macOS/Linux)
+│   ├── test.ps1                  # Connection testing (Windows)
+│   ├── comprehensive_test.sh     # End-to-end test (macOS/Linux)
+│   ├── comprehensive_test.ps1    # End-to-end test (Windows)
+│   ├── test_connection.js        # Basic MongoDB connection test
+│   └── lab_validation_comprehensive.js # Sanity validation queries
+├── data/                         # Course data & loading scripts
 │   ├── comprehensive_data_loader.js # Complete 3-day course data (recommended)
-│   ├── day1_data_loader.js # Day 1 fundamentals data
-│   ├── day2_data_loader.js # Day 2 analytics data
-│   ├── day3_data_loader.js # Day 3 production data
-│   └── test_connection.js  # Connection verification
-├── presentations/          # Course presentations (Day 1-3)
+│   ├── day1_data_loader.js       # Day 1 fundamentals data
+│   ├── day2_data_loader.js       # Day 2 analytics data
+│   ├── day3_data_loader.js       # Day 3 production data
+│   ├── manual_day1_setup.md      # Day 1 manual data load instructions
+│   ├── manual_day2_setup.md      # Day 2 manual data load instructions
+│   └── manual_day3_setup.md      # Day 3 manual data load instructions
+├── presentations/                # Course presentations (Day 1-3)
 │   ├── mongodb_day1_presentation.html
 │   ├── mongodb_day2_presentation.html
 │   └── mongodb_day3_presentation.html
-└── labs/                   # Hands-on lab exercises
-    ├── day1_lab*.md       # Day 1: MongoDB fundamentals
-    ├── day2_lab*.md       # Day 2: Advanced features
-    └── day3_lab*.md       # Day 3: Production & scaling
+├── labs/                         # Hands-on lab exercises (16 labs)
+│   ├── lab01_*.md ... lab13_*.md # Labs 1-13: fundamentals -> production
+│   └── lab14a_*.md, lab14b_*.md, lab14c_*.md  # Lab 14 (C# / JS / Python integrations)
+├── utilities/                    # Heavyweight validators and data utilities
+│   ├── comprehensive_lab_validator.sh  # Full bash-based lab command validator
+│   └── fix_data_relationships.js       # Data relationship repair helper
+└── extras/                       # Supplemental reference guides
+    ├── comparison.md
+    ├── dockersetup.md
+    ├── mongodb_config_guide.md
+    ├── mongodb_docker_memory_guide.md
+    ├── mongodb_encryption_guide.md
+    └── mongodb_profiling.md
 ```
 
 ### 📅 Course Schedule
@@ -382,7 +388,7 @@ mongo_mastering/
 - **Multiple programming languages** (C#, JavaScript, Python)
 
 ### 🛠 **Easy Setup**
-- **One-command setup**: `./setup.sh`
+- **One-command setup**: `scripts/setup.sh`
 - **Automated data loading**: Pre-built scripts for each day
 - **Cross-platform**: Works on macOS, Linux, Windows (WSL)
 - **No manual configuration**: Everything automated
@@ -479,17 +485,16 @@ Choose ONE of the following:
 
 ### Option 1: Automated Setup (Recommended)
 ```bash
-# Clone or download course materials
-cd mongo_mastering/scripts
-./setup.sh              # Creates MongoDB environment
-cd ../data
-mongosh < day1_data_loader.js  # Load Day 1 data
-mongosh                  # Start working!
+# Clone or download course materials, then from the repo root:
+cd mongo_mastering
+scripts/setup.sh                                                            # Creates MongoDB environment
+mongosh "mongodb://localhost:27017/?directConnection=true" < data/day1_data_loader.js  # Load Day 1 data
+mongosh "mongodb://localhost:27017/?directConnection=true"                  # Start working!
 ```
 
 ### Option 2: Manual Setup
 ```bash
-cd scripts
+cd mongo_mastering
 # Follow manual setup instructions in this README
 ```
 
@@ -497,19 +502,24 @@ cd scripts
 
 ### Daily Workflow
 ```bash
-# Morning setup
-cd scripts && ./setup.sh
+# All commands run from the repo root (mongo_mastering/).
 
-# Load data for the day (from project root)
-mongosh < data/comprehensive_data_loader.js  # All 3 days (recommended)
-# OR load individual days: data/day1_data_loader.js, data/day2_data_loader.js, data/day3_data_loader.js
+# Morning setup
+scripts/setup.sh
+
+# Load data for the day
+mongosh "mongodb://localhost:27017/?directConnection=true" < data/comprehensive_data_loader.js  # All 3 days (recommended)
+# OR load individual days:
+# mongosh "mongodb://localhost:27017/?directConnection=true" < data/day1_data_loader.js
+# mongosh "mongodb://localhost:27017/?directConnection=true" < data/day2_data_loader.js
+# mongosh "mongodb://localhost:27017/?directConnection=true" < data/day3_data_loader.js
 
 # Work through presentations and labs
-open ../presentations/mongodb_day1_presentation.html
-# Follow lab instructions in ../labs/
+open presentations/mongodb_day1_presentation.html
+# Follow lab instructions in labs/
 
 # Evening cleanup (optional)
-cd ../scripts && ./teardown.sh
+scripts/teardown.sh
 ```
 
 ### Lab Instructions
@@ -523,41 +533,43 @@ cd ../scripts && ./teardown.sh
 
 ### Daily Course Setup
 ```bash
-# Morning setup
-./setup.sh
+# All commands run from the repo root (mongo_mastering/).
 
-# Load data for the course (from project root)
-mongosh < data/comprehensive_data_loader.js  # All 3 days (recommended)
+# Morning setup
+scripts/setup.sh
+
+# Load data for the course
+mongosh "mongodb://localhost:27017/?directConnection=true" < data/comprehensive_data_loader.js  # All 3 days (recommended)
 # OR load individual days:
-# mongosh < data/day1_data_loader.js  # Day 1: Fundamentals
-# mongosh < data/day2_data_loader.js  # Day 2: Advanced Features
-# mongosh < data/day3_data_loader.js  # Day 3: Production
+# mongosh "mongodb://localhost:27017/?directConnection=true" < data/day1_data_loader.js  # Day 1: Fundamentals
+# mongosh "mongodb://localhost:27017/?directConnection=true" < data/day2_data_loader.js  # Day 2: Advanced Features
+# mongosh "mongodb://localhost:27017/?directConnection=true" < data/day3_data_loader.js  # Day 3: Production
 
 # Work on labs...
-mongosh  # Connect and work
+mongosh "mongodb://localhost:27017/?directConnection=true"  # Connect and work
 
 # Evening cleanup
-cd ../scripts
-./teardown.sh
+scripts/teardown.sh
 ```
 
 ### Quick Reset During Labs
 ```bash
-# If you need to reset data during labs
-./teardown.sh
-./setup.sh
-cd .. && mongosh < data/day1_data_loader.js
+# All commands run from the repo root.
+# If you need to reset data during labs:
+scripts/teardown.sh
+scripts/setup.sh
+mongosh "mongodb://localhost:27017/?directConnection=true" < data/day1_data_loader.js
 ```
 
 ### Troubleshooting
 ```bash
 # Test if everything is working
-./test.sh
+scripts/test.sh
 
 # If tests fail, try fresh setup
-./teardown.sh
-./setup.sh
-./test.sh
+scripts/teardown.sh
+scripts/setup.sh
+scripts/test.sh
 ```
 
 ## Troubleshooting
@@ -566,7 +578,7 @@ cd .. && mongosh < data/day1_data_loader.js
 
 #### Script won't run
 ```bash
-chmod +x *.sh  # Make scripts executable
+chmod +x scripts/*.sh setup.sh teardown.sh test.sh  # Make scripts executable
 ```
 
 #### Docker not found
@@ -576,16 +588,16 @@ chmod +x *.sh  # Make scripts executable
 
 #### Permission denied
 ```bash
-sudo ./setup.sh  # Try with sudo (Linux)
+sudo scripts/setup.sh  # Try with sudo (Linux)
 ```
 
 #### MongoDB connection fails
 ```bash
-./teardown.sh && ./setup.sh  # Fresh setup
+scripts/teardown.sh && scripts/setup.sh  # Fresh setup
 ```
 
 #### Port conflicts
-Edit `setup.sh` and change ports:
+Edit `scripts/setup.sh` and change ports:
 ```bash
 # Change -p 27017:27017 to -p 27020:27017
 # Change -p 27018:27017 to -p 27021:27017
@@ -600,7 +612,7 @@ Edit `setup.sh` and change ports:
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 # Or bypass for single execution
-PowerShell -ExecutionPolicy Bypass -File .\setup.ps1
+PowerShell -ExecutionPolicy Bypass -File scripts\setup.ps1
 ```
 
 #### PowerShell version compatibility
@@ -631,15 +643,15 @@ If you see character encoding problems:
 
 #### Quick Fix (Try First)
 1. Close PowerShell
-2. Run `.\teardown.ps1`
+2. Run `scripts\teardown.ps1`
 3. Restart Docker Desktop
 4. Wait 30 seconds
-5. Run `.\setup.ps1`
+5. Run `scripts\setup.ps1`
 
 #### Complete Reset (If Quick Fix Fails)
 1. **Clean environment:**
    ```powershell
-   .\teardown.ps1
+   scripts\teardown.ps1
    docker system prune -f
    ```
 
@@ -658,7 +670,7 @@ If you see character encoding problems:
 
 4. **Run setup with verbose output:**
    ```powershell
-   .\setup.ps1 -Verbose
+   scripts\setup.ps1 -Verbose
    ```
 
 ### Getting Help
@@ -674,7 +686,7 @@ If none of these solutions work:
    - Virtualization enabled in BIOS
 
 4. **Alternative options:**
-   - Use Windows Subsystem for Linux (WSL) with `setup.sh`
+   - Use Windows Subsystem for Linux (WSL) with `scripts/setup.sh`
    - Run scripts as Administrator
 
 ## Advanced Usage
@@ -700,15 +712,22 @@ If none of these solutions work:
 ## Directory Structure
 
 ```
-scripts/
-├── setup.sh                      # Automated setup (macOS/Linux)
-├── setup.ps1                     # Automated setup (Windows PowerShell)
-├── teardown.sh                   # Cleanup (macOS/Linux)
-├── teardown.ps1                  # Cleanup (Windows PowerShell)
-├── comprehensive_test.sh          # Complete end-to-end test (macOS/Linux)
-├── comprehensive_test.ps1         # Complete end-to-end test (Windows PowerShell)
-├── test_connection.js            # Basic MongoDB connection test
-└── lab_validation_comprehensive.js # Complete lab validation test
+mongo_mastering/
+├── setup.sh / setup.ps1            # Root convenience wrappers
+├── teardown.sh / teardown.ps1      # Root convenience wrappers
+├── test.sh / test.ps1              # Root convenience wrappers
+├── scripts/                        # Setup, teardown, and test scripts
+│   ├── setup.sh / setup.ps1
+│   ├── teardown.sh / teardown.ps1
+│   ├── test.sh / test.ps1
+│   ├── comprehensive_test.sh / comprehensive_test.ps1
+│   ├── test_connection.js
+│   └── lab_validation_comprehensive.js
+├── data/                           # Course data loaders & manual setup guides
+├── labs/                           # 16 lab markdown files (lab01_*.md ... lab14c_*.md)
+├── presentations/                  # Reveal.js HTML presentations (Day 1-3)
+├── utilities/                      # Heavyweight validators / data utilities
+└── extras/                         # Supplemental reference guides
 ```
 
 ## Script Features
@@ -732,7 +751,7 @@ scripts/
 
 ## 🎯 Ready to Master MongoDB?
 
-**Start with:** `cd scripts && ./setup.sh`
+**Start with:** `scripts/setup.sh` (from the repo root)
 
 **Learn with:** Comprehensive presentations and hands-on labs
 
@@ -742,6 +761,6 @@ scripts/
 
 ---
 
-**Ready to start?** Run `./setup.sh` and you'll be ready for the MongoDB course in 30 seconds! 🚀
+**Ready to start?** Run `scripts/setup.sh` from the repo root and you'll be ready for the MongoDB course in 30 seconds! 🚀
 
 *MongoDB Mastering Course - From introductory to enterprise expert in 3 days*

@@ -11,28 +11,20 @@
 - Terminal/command prompt access
 - **Course data loaded** (see instructions below)
 
-## 📊 Load Course Data First!
+## Prerequisites: Load Course Data
 
-**Before starting this lab, load the Day 1 course data:**
+Before starting this lab, ensure the MongoDB environment is running and course data is loaded:
 
 ```bash
-mongosh < data/day1_data_loader.js
+# From the project root
+mongosh "mongodb://localhost:27017/?directConnection=true" < data/comprehensive_data_loader.js
 ```
 
-**Wait for this success message:**
-```
-✅ DAY 1 INSURANCE DATA LOADING COMPLETE!
-```
+Verify the data loaded successfully:
 
-**Test data loaded correctly:**
 ```bash
-mongosh --eval "db.getSiblingDB('insurance_company').branches.countDocuments()"
-mongosh --eval "db.getSiblingDB('insurance_company').policies.countDocuments()"
+mongosh "mongodb://localhost:27017/?directConnection=true" --eval "use insurance_company; db.policies.countDocuments()"
 ```
-
-**Expected output:** Branches: 5, Policies: 10
-
-💡 **See [Manual Setup](../data/manual_day1_setup.md) for detailed instructions and troubleshooting**
 
 ## Tasks
 

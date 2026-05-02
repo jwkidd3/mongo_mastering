@@ -30,24 +30,34 @@ print("\n🔍 Loading data for Lab 6: Advanced Querying & Filtering");
 print("--------------------------------------------------------");
 print("Creating comprehensive branch network (3 branches)...");
 
-var branch1 = {_id: "BR001", branchCode: "BR-NY-001", name: "New York Financial District", address: {street: "123 Wall Street", city: "New York", state: "NY", zipCode: "10001"}, location: {type: "Point", coordinates: [-73.9857, 40.7484]}, manager: "Sarah Johnson", agentCount: 15, performanceMetrics: {monthlyRevenue: 245000.50, customerSatisfaction: 4.8, claimsProcessed: 125}, specialties: ["Auto", "Property", "Life"], isActive: true, openDate: new Date("2020-01-15")};
-var branch2 = {_id: "BR002", branchCode: "BR-CA-002", name: "Los Angeles West Side", address: {street: "456 Sunset Blvd", city: "Los Angeles", state: "CA", zipCode: "90210"}, location: {type: "Point", coordinates: [-118.2437, 34.0522]}, manager: "Michael Chen", agentCount: 22, performanceMetrics: {monthlyRevenue: 325000.75, customerSatisfaction: 4.6, claimsProcessed: 180}, specialties: ["Auto", "Commercial", "Cyber"], isActive: true, openDate: new Date("2019-05-20")};
-var branch3 = {_id: "BR003", branchCode: "BR-TX-003", name: "Houston Energy Corridor", address: {street: "789 Energy Plaza", city: "Houston", state: "TX", zipCode: "77042"}, location: {type: "Point", coordinates: [-95.3698, 29.7604]}, manager: "Jennifer Rodriguez", agentCount: 18, performanceMetrics: {monthlyRevenue: 285000.25, customerSatisfaction: 4.7, claimsProcessed: 155}, specialties: ["Commercial", "Cyber", "Health"], isActive: true, openDate: new Date("2021-03-10")};
+// Day 2 enriches existing Day 1 branches with analytics fields (performanceMetrics, openDate).
+// Geographic identity (name, address, branchCode, location) is preserved from Day 1 so Day 1 lab
+// content remains valid after Day 2 loads.
+var day2BranchEnrichments = [
+  {_id: "BR001", performanceMetrics: {monthlyRevenue: 245000.50, customerSatisfaction: 4.8, claimsProcessed: 125}, openDate: new Date("2020-01-15")},
+  {_id: "BR002", performanceMetrics: {monthlyRevenue: 325000.75, customerSatisfaction: 4.6, claimsProcessed: 180}, openDate: new Date("2019-05-20")},
+  {_id: "BR003", performanceMetrics: {monthlyRevenue: 285000.25, customerSatisfaction: 4.7, claimsProcessed: 155}, openDate: new Date("2021-03-10")}
+];
 
-// Upsert branches to avoid conflicts with Day 1 data
-[branch1, branch2, branch3].forEach(function(b) {
-  db.branches.updateOne({_id: b._id}, {$set: b}, {upsert: true});
+day2BranchEnrichments.forEach(function(b) {
+  var enrichment = Object.assign({}, b);
+  delete enrichment._id;
+  db.branches.updateOne({_id: b._id}, {$set: enrichment}, {upsert: true});
 });
-print("✓ Upserted branches - total: " + db.branches.countDocuments());
+print("✓ Enriched branches with Day 2 analytics fields - total: " + db.branches.countDocuments());
 
 // Create policies using individual variables
 print("Creating comprehensive insurance policies...");
-var policy1 = {policyNumber: "POL-AUTO-2024-001", name: "Premium Auto Coverage", policyType: "Auto", customerId: "CUST000001", annualPremium: 1299.99, coverageDetails: {liability: "250000/500000", collision: {deductible: 500, coverage: "Full"}}, coverageTypes: ["liability", "collision"], isActive: true, createdAt: new Date("2024-01-01"), expirationDate: new Date("2025-01-01"), agentId: "AGT001", branchId: "BR001", riskScore: 50, claimsHistory: []};
-var policy2 = {policyNumber: "POL-HOME-2024-002", name: "Homeowners Protection Plus", policyType: "Property", customerId: "CUST000002", annualPremium: 1899.99, coverageDetails: {dwelling: {coverage: 400000, deductible: 1000}, personalProperty: {coverage: 200000, deductible: 500}}, coverageTypes: ["dwelling", "personal_property"], isActive: true, createdAt: new Date("2024-02-01"), expirationDate: new Date("2025-02-01"), agentId: "AGT002", branchId: "BR002", riskScore: 60, claimsHistory: []};
-var policy3 = {policyNumber: "POL-LIFE-2024-003", name: "Term Life Insurance Deluxe", policyType: "Life", customerId: "CUST000003", annualPremium: 599.99, coverageDetails: {deathBenefit: 500000, term: "20 years"}, coverageTypes: ["death_benefit"], isActive: true, createdAt: new Date("2024-03-01"), expirationDate: new Date("2044-03-01"), agentId: "AGT003", branchId: "BR003", riskScore: 45, claimsHistory: []};
+var policy1 = {policyNumber: "POL-AUTO-2024-001", name: "Premium Auto Coverage", policyType: "Auto", customerId: "CUST000001", annualPremium: 1299.99, coverageDetails: {liability: "250000/500000", collision: {deductible: 500, coverage: "Full"}}, coverageTypes: ["liability", "collision"], riskAssessment: {score: 50, category: "medium", factors: ["safe_driver", "good_credit"]}, isActive: true, createdAt: new Date("2024-01-01"), expirationDate: new Date("2025-01-01"), agentId: "AGT001", branchId: "BR001", riskScore: 50, claimsHistory: []};
+var policy2 = {policyNumber: "POL-HOME-2024-002", name: "Homeowners Protection Plus", policyType: "Property", customerId: "CUST000002", annualPremium: 1899.99, coverageDetails: {dwelling: {coverage: 400000, deductible: 1000}, personalProperty: {coverage: 200000, deductible: 500}}, coverageTypes: ["dwelling", "personal_property"], riskAssessment: {score: 60, category: "low", factors: ["homeowner", "good_credit"]}, isActive: true, createdAt: new Date("2024-02-01"), expirationDate: new Date("2025-02-01"), agentId: "AGT002", branchId: "BR002", riskScore: 60, claimsHistory: []};
+var policy3 = {policyNumber: "POL-LIFE-2024-003", name: "Term Life Insurance Deluxe", policyType: "Life", customerId: "CUST000003", annualPremium: 599.99, coverageDetails: {deathBenefit: 500000, term: "20 years"}, coverageTypes: ["death_benefit"], riskAssessment: {score: 45, category: "medium", factors: ["non_smoker", "healthy"]}, isActive: true, createdAt: new Date("2024-03-01"), expirationDate: new Date("2044-03-01"), agentId: "AGT003", branchId: "BR003", riskScore: 45, claimsHistory: []};
+// Additional policies referenced by customer.policies and claims documents below
+var policy4 = {policyNumber: "POL-HOME-2024-003", name: "Homeowners Protection Standard", policyType: "Property", customerId: "CUST000002", annualPremium: 1450.00, coverageDetails: {dwelling: {coverage: 300000, deductible: 1000}, personalProperty: {coverage: 150000, deductible: 500}, liability: 200000}, coverageTypes: ["dwelling", "personal_property", "liability"], riskAssessment: {score: 65, category: "low", factors: ["homeowner", "security_system"]}, isActive: true, createdAt: new Date("2024-02-15"), expirationDate: new Date("2025-02-15"), agentId: "AGT002", branchId: "BR002", riskScore: 65, claimsHistory: []};
+var policy5 = {policyNumber: "POL-LIFE-2024-004", name: "Whole Life Insurance Premier", policyType: "Life", customerId: "CUST000002", annualPremium: 1099.99, coverageDetails: {deathBenefit: 750000, term: "Lifetime", cashValue: "Accumulating", beneficiaries: "Spouse and Children"}, coverageTypes: ["death_benefit", "cash_value"], riskAssessment: {score: 55, category: "low", factors: ["non_smoker", "regular_checkups"]}, isActive: true, createdAt: new Date("2024-02-20"), expirationDate: new Date("2074-02-20"), agentId: "AGT003", branchId: "BR003", riskScore: 55, claimsHistory: []};
+var policy6 = {policyNumber: "POL-COMMERCIAL-2024-001", name: "Business Liability Pro", policyType: "Commercial", customerId: "CUST000003", annualPremium: 4499.99, coverageDetails: {generalLiability: 2000000, productLiability: 1000000, businessType: "Technology", buildingCoverage: 1500000}, coverageTypes: ["general_liability", "product_liability", "building"], riskAssessment: {score: 40, category: "high", factors: ["high_value_assets", "tech_industry"]}, isActive: true, createdAt: new Date("2024-03-05"), expirationDate: new Date("2025-03-05"), agentId: "AGT002", branchId: "BR002", riskScore: 40, claimsHistory: []};
 
 // Upsert policies to avoid conflicts with Day 1 data
-[policy1, policy2, policy3].forEach(function(p) {
+[policy1, policy2, policy3, policy4, policy5, policy6].forEach(function(p) {
   db.policies.updateOne({policyNumber: p.policyNumber}, {$set: p}, {upsert: true});
 });
 print("✓ Upserted Day 2 policies - total policies: " + db.policies.countDocuments());
@@ -148,7 +158,7 @@ print("- agents: " + agentCount);
 print("- reviews: " + reviewCount);
 
 print("\n=======================================================");
-print("✅ DAY 2 INSURANCE ANALYTICS DATA LOADING COMPLETE!");
+print("✅ DAY 2 ANALYTICS DATA LOADING COMPLETE!");
 print("=======================================================");
 print("All Day 2 data has been loaded into the insurance_company database.");
 print("");

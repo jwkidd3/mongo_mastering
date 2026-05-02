@@ -6,6 +6,11 @@
 
 set -e  # Exit on any error
 
+# Resolve project root from this script's location so the validator
+# works regardless of where the repo is checked out.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
 # Color codes for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -17,25 +22,55 @@ echo "========================================================================"
 echo "COMPREHENSIVE LAB VALIDATOR - Testing ALL Lab Commands (Labs 1-13)"
 echo "========================================================================"
 
-# User prompt for environment management
-echo -e "${YELLOW}ENVIRONMENT MANAGEMENT OPTIONS:${NC}"
-echo "1. Quick Test (use existing environment)"
-echo "2. Total Clean Test Run (teardown → setup → data loading → test → cleanup)"
-echo ""
-read -p "Choose option (1 or 2): " ENV_CHOICE
+# Environment management: support non-interactive mode via CLI arg or env var.
+#   --quick  -> CLEAN_RUN=false (use existing environment, skip prompt)
+#   --clean  -> CLEAN_RUN=true  (full teardown -> setup -> load -> test -> cleanup)
+# Or set CLEAN_RUN=true|false in the environment to skip the prompt.
+# When no arg or env var is given, fall back to the interactive prompt.
+ENV_ARG="${1:-}"
 
-case $ENV_CHOICE in
-    1)
-        echo -e "${GREEN}Running quick test against existing environment...${NC}"
+case "$ENV_ARG" in
+    --quick)
+        echo -e "${GREEN}Running quick test against existing environment (--quick)...${NC}"
         CLEAN_RUN=false
         ;;
-    2)
-        echo -e "${BLUE}Running total clean test with full environment lifecycle...${NC}"
+    --clean)
+        echo -e "${BLUE}Running total clean test with full environment lifecycle (--clean)...${NC}"
         CLEAN_RUN=true
         ;;
+    "")
+        # No CLI arg; honor CLEAN_RUN env var if set, otherwise prompt.
+        if [ "${CLEAN_RUN:-}" = "true" ]; then
+            echo -e "${BLUE}Running total clean test (CLEAN_RUN=true from env)...${NC}"
+        elif [ "${CLEAN_RUN:-}" = "false" ]; then
+            echo -e "${GREEN}Running quick test (CLEAN_RUN=false from env)...${NC}"
+        else
+            echo -e "${YELLOW}ENVIRONMENT MANAGEMENT OPTIONS:${NC}"
+            echo "1. Quick Test (use existing environment)"
+            echo "2. Total Clean Test Run (teardown → setup → data loading → test → cleanup)"
+            echo ""
+            read -p "Choose option (1 or 2): " ENV_CHOICE
+
+            case $ENV_CHOICE in
+                1)
+                    echo -e "${GREEN}Running quick test against existing environment...${NC}"
+                    CLEAN_RUN=false
+                    ;;
+                2)
+                    echo -e "${BLUE}Running total clean test with full environment lifecycle...${NC}"
+                    CLEAN_RUN=true
+                    ;;
+                *)
+                    echo -e "${RED}Invalid choice. Defaulting to quick test.${NC}"
+                    CLEAN_RUN=false
+                    ;;
+            esac
+        fi
+        ;;
     *)
-        echo -e "${RED}Invalid choice. Defaulting to quick test.${NC}"
-        CLEAN_RUN=false
+        echo -e "${RED}Unknown argument: $ENV_ARG${NC}"
+        echo "Usage: $0 [--quick|--clean]"
+        exit 2
         ;;
 esac
 
@@ -48,15 +83,15 @@ setup_environment() {
     echo "========================================================================"
 
     echo "🔄 Tearing down existing environment..."
-    SCRIPT_DIR="/Users/jwkidd3/classes_in_development/mongo_mastering/scripts"
-    if (cd "$SCRIPT_DIR" && ./teardown.sh) > /dev/null 2>&1; then
+    SCRIPTS_DIR="$PROJECT_ROOT/scripts"
+    if (cd "$SCRIPTS_DIR" && ./teardown.sh) > /dev/null 2>&1; then
         echo "✅ Environment teardown completed"
     else
         echo "⚠️  Teardown completed (may have been already clean)"
     fi
 
     echo "🚀 Setting up fresh MongoDB environment..."
-    if (cd "$SCRIPT_DIR" && ./setup.sh) > setup_output.log 2>&1; then
+    if (cd "$SCRIPTS_DIR" && ./setup.sh) > setup_output.log 2>&1; then
         echo "✅ Environment setup completed"
         rm -f setup_output.log
     else
@@ -68,7 +103,7 @@ setup_environment() {
     fi
 
     # Return to project root for data loading
-    cd /Users/jwkidd3/classes_in_development/mongo_mastering
+    cd "$PROJECT_ROOT"
 
     echo "📊 Loading comprehensive course data..."
     if mongosh < data/comprehensive_data_loader.js > data_load_output.log 2>&1; then
@@ -93,8 +128,8 @@ cleanup_environment() {
     echo "========================================================================"
 
     echo "🧹 Cleaning up environment..."
-    SCRIPT_DIR="/Users/jwkidd3/classes_in_development/mongo_mastering/scripts"
-    if (cd "$SCRIPT_DIR" && ./teardown.sh) > /dev/null 2>&1; then
+    SCRIPTS_DIR="$PROJECT_ROOT/scripts"
+    if (cd "$SCRIPTS_DIR" && ./teardown.sh) > /dev/null 2>&1; then
         echo "✅ Environment cleanup completed"
     else
         echo "⚠️  Cleanup completed (may have been already clean)"
@@ -1332,6 +1367,56 @@ test_mongo_command \
     "Lab 13 - Cleanup test data" \
     "use insurance_company; db.claims.deleteMany({ _id: { \$in: ['claim_cs_test1', 'claim_fraud_test'] } }); db.policies.deleteMany({ _id: 'policy_cs_test1' }); db.notifications.deleteMany({ \$or: [{ claimId: { \$in: ['claim_cs_test1', 'claim_fraud_test'] } }, { policyId: 'policy_cs_test1' }] }); db.fraud_alerts.deleteMany({ claimId: 'claim_fraud_test' }); db.activity_log.deleteMany({ userId: 'system' });" \
     ""
+
+echo "========================================================================"
+echo "LAB 14: Application Integration Tests (C# / JavaScript / Python drivers)"
+echo "========================================================================"
+
+# Helper to run a Lab 14 driver test script and roll its result into the
+# overall counters. Each script is treated as a single test.
+run_lab14_script() {
+    local description="$1"
+    local script_path="$2"
+
+    TOTAL_TESTS=$((TOTAL_TESTS + 1))
+    echo "🔍 Testing: $description"
+
+    if [ ! -x "$script_path" ]; then
+        echo "❌ FAILED - Script not found or not executable: $script_path"
+        FAILED_TESTS=$((FAILED_TESTS + 1))
+        FAILED_COMMANDS+=("$description")
+        echo
+        return
+    fi
+
+    local lab14_log
+    lab14_log="$(mktemp)"
+    if "$script_path" > "$lab14_log" 2>&1; then
+        echo "✅ PASSED"
+        PASSED_TESTS=$((PASSED_TESTS + 1))
+    else
+        echo "❌ FAILED"
+        FAILED_TESTS=$((FAILED_TESTS + 1))
+        FAILED_COMMANDS+=("$description")
+        echo "--- Output (tail) ---"
+        tail -20 "$lab14_log"
+        echo "---------------------"
+    fi
+    rm -f "$lab14_log"
+    echo
+}
+
+run_lab14_script \
+    "Lab 14A - C# MongoDB.Driver integration (insert/find/update/aggregate/delete)" \
+    "$SCRIPT_DIR/lab14a_test.sh"
+
+run_lab14_script \
+    "Lab 14B - Node.js mongodb driver integration (insert/find/update/aggregate/delete)" \
+    "$SCRIPT_DIR/lab14b_test.sh"
+
+run_lab14_script \
+    "Lab 14C - Python pymongo integration (insert/find/update/aggregate/delete)" \
+    "$SCRIPT_DIR/lab14c_test.sh"
 
 # Final Results
 echo "========================================================================"

@@ -24,10 +24,10 @@ db = db.getSiblingDB('insurance_company');
 print("Cleaning Day 3-specific collections...");
 db.vehicles.drop();
 db.properties.drop();
-db.policy_notifications.drop();
-db.claim_activity_log.drop();
+db.notifications.drop();
+db.activity_log.drop();
 db.resume_tokens.drop();
-db.fraud_investigations.drop();
+db.fraud_alerts.drop();
 db.compliance_records.drop();
 
 print("✓ Cleaned Day 3-specific collections");
@@ -147,9 +147,12 @@ print("Adding Day 3 branches for sharding labs...");
 var branches = [];
 
 // Create comprehensive branch dataset with sample data and bulk generation
-var branch1 = {_id: "branch1", region: "north", branchCode: "BR-NO-001", name: "Insurance Branch 1", address: {street: "1 Insurance Blvd", city: "North City", state: "NY", zipCode: "12345"}, manager: "Manager 1", agentCount: 15, performanceData: {monthlyPremiums: 450000.50, quarterlyPremiums: 1350000.75, annualPremiums: 5400000.25}, policyMetrics: {activePolicies: 1500, policyTypes: 4, lastUpdated: new Date()}, coordinates: {lat: 40.7128, lng: -74.0060}, specialties: ["Auto", "Property", "Life"]};
-var branch2 = {_id: "branch2", region: "south", branchCode: "BR-SO-002", name: "Insurance Branch 2", address: {street: "2 Insurance Blvd", city: "South City", state: "CA", zipCode: "23456"}, manager: "Manager 2", agentCount: 12, performanceData: {monthlyPremiums: 380000.25, quarterlyPremiums: 1140000.50, annualPremiums: 4560000.75}, policyMetrics: {activePolicies: 1200, policyTypes: 5, lastUpdated: new Date()}, coordinates: {lat: 34.0522, lng: -118.2437}, specialties: ["Auto", "Commercial"]};
-var branch3 = {_id: "branch3", region: "east", branchCode: "BR-EA-003", name: "Insurance Branch 3", address: {street: "3 Insurance Blvd", city: "East City", state: "TX", zipCode: "34567"}, manager: "Manager 3", agentCount: 18, performanceData: {monthlyPremiums: 520000.75, quarterlyPremiums: 1560000.25, annualPremiums: 6240000.50}, policyMetrics: {activePolicies: 1800, policyTypes: 3, lastUpdated: new Date()}, coordinates: {lat: 29.7604, lng: -95.3698}, specialties: ["Property", "Life", "Commercial"]};
+// Day 3 enriches existing Day 1/2 branches (BR001-BR005) with sharding/geographic fields
+// rather than creating parallel branch records. These upserts ADD fields like region,
+// performanceData, policyMetrics, and coordinates to the existing branch documents.
+var branch1 = {_id: "BR001", region: "north", performanceData: {monthlyPremiums: 450000.50, quarterlyPremiums: 1350000.75, annualPremiums: 5400000.25}, policyMetrics: {activePolicies: 1500, policyTypes: 4, lastUpdated: new Date()}, coordinates: {lat: 40.7128, lng: -74.0060}};
+var branch2 = {_id: "BR002", region: "central", performanceData: {monthlyPremiums: 380000.25, quarterlyPremiums: 1140000.50, annualPremiums: 4560000.75}, policyMetrics: {activePolicies: 1200, policyTypes: 5, lastUpdated: new Date()}, coordinates: {lat: 41.8781, lng: -87.6298}};
+var branch3 = {_id: "BR003", region: "west", performanceData: {monthlyPremiums: 520000.75, quarterlyPremiums: 1560000.25, annualPremiums: 6240000.50}, policyMetrics: {activePolicies: 1800, policyTypes: 3, lastUpdated: new Date()}, coordinates: {lat: 34.0522, lng: -118.2437}};
 
 branches.push(branch1);
 branches.push(branch2);
@@ -159,9 +162,9 @@ branches.push(branch3);
 // Note: For production scale testing, we create representative sample data
 // that demonstrates sharding capabilities without complex generation loops
 
-// Add a few more sample branches manually
-var branch4 = {_id: "branch4", region: "west", branchCode: "BR-WE-004", name: "Insurance Branch 4", address: {street: "4 Insurance Blvd", city: "West City", state: "FL", zipCode: "45678"}, manager: "Manager 4", agentCount: 10, performanceData: {monthlyPremiums: 350000.00, quarterlyPremiums: 1050000.00, annualPremiums: 4200000.00}, policyMetrics: {activePolicies: 900, policyTypes: 4, lastUpdated: new Date()}, coordinates: {lat: 25.7617, lng: -80.1918}, specialties: ["Auto", "Property"]};
-var branch5 = {_id: "branch5", region: "central", branchCode: "BR-CE-005", name: "Insurance Branch 5", address: {street: "5 Insurance Blvd", city: "Central City", state: "IL", zipCode: "56789"}, manager: "Manager 5", agentCount: 14, performanceData: {monthlyPremiums: 425000.00, quarterlyPremiums: 1275000.00, annualPremiums: 5100000.00}, policyMetrics: {activePolicies: 1300, policyTypes: 5, lastUpdated: new Date()}, coordinates: {lat: 41.8781, lng: -87.6298}, specialties: ["Commercial", "Life"]};
+// Enrich the remaining Day 1/2 branches (BR004 Houston, BR005 Phoenix) with Day 3 fields
+var branch4 = {_id: "BR004", region: "south", performanceData: {monthlyPremiums: 350000.00, quarterlyPremiums: 1050000.00, annualPremiums: 4200000.00}, policyMetrics: {activePolicies: 900, policyTypes: 4, lastUpdated: new Date()}, coordinates: {lat: 29.7604, lng: -95.3698}};
+var branch5 = {_id: "BR005", region: "southwest", performanceData: {monthlyPremiums: 425000.00, quarterlyPremiums: 1275000.00, annualPremiums: 5100000.00}, policyMetrics: {activePolicies: 1300, policyTypes: 5, lastUpdated: new Date()}, coordinates: {lat: 33.4484, lng: -112.0740}};
 
 branches.push(branch4);
 branches.push(branch5);
@@ -185,13 +188,19 @@ print("----------------------------------------");
 // Create collections for change stream testing
 print("Creating change stream monitoring collections...");
 
-// Policy notifications collection
-db.policy_notifications.createIndex({ customerId: 1, timestamp: -1 });
-db.policy_notifications.createIndex({ type: 1, read: 1 });
+// Notifications collection (used by Lab 13 change stream simulations)
+db.notifications.createIndex({ recipientId: 1, timestamp: -1 });
+db.notifications.createIndex({ type: 1, read: 1 });
+db.notifications.createIndex({ priority: 1, status: 1 });
 
-// Claim activity log collection
-db.claim_activity_log.createIndex({ timestamp: -1 });
-db.claim_activity_log.createIndex({ event: 1, timestamp: -1 });
+// Activity log collection (used by Lab 13 audit trail)
+db.activity_log.createIndex({ timestamp: -1 });
+db.activity_log.createIndex({ operation: 1, timestamp: -1 });
+db.activity_log.createIndex({ userId: 1, timestamp: -1 });
+
+// Fraud alerts collection (used by Lab 13 fraud detection)
+db.fraud_alerts.createIndex({ customerId: 1, timestamp: -1 });
+db.fraud_alerts.createIndex({ severity: 1, status: 1 });
 
 // Resume tokens collection
 db.resume_tokens.createIndex({ lastUpdated: -1 });
@@ -199,13 +208,13 @@ db.resume_tokens.createIndex({ lastUpdated: -1 });
 print("✓ Created change stream collections");
 
 // Insert sample notifications
-print("Creating sample policy notifications...");
-var notification1 = {_id: new ObjectId(), customerId: "cust1", type: "policy_renewal", message: "Your auto insurance policy is due for renewal in 30 days", timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000), read: true, priority: "medium"};
-var notification2 = {_id: new ObjectId(), customerId: "cust2", type: "claim_update", message: "Your claim CLM-2024-001234 has been approved", timestamp: new Date(Date.now() - 12 * 60 * 60 * 1000), read: false, priority: "high"};
-var notification3 = {_id: new ObjectId(), customerId: "admin", type: "system", message: "System maintenance scheduled - claims processing may be delayed", timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000), read: false, priority: "low"};
-db.policy_notifications.insertMany([notification1, notification2, notification3]);
+print("Creating sample notifications...");
+var notification1 = {_id: new ObjectId(), recipientId: "cust1", type: "policy_renewal", message: "Your auto insurance policy is due for renewal in 30 days", timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000), read: true, priority: "medium", status: "active"};
+var notification2 = {_id: new ObjectId(), recipientId: "cust2", type: "claim_update", message: "Your claim CLM-2024-001234 has been approved", timestamp: new Date(Date.now() - 12 * 60 * 60 * 1000), read: false, priority: "high", status: "active"};
+var notification3 = {_id: new ObjectId(), recipientId: "admin", type: "system", message: "System maintenance scheduled - claims processing may be delayed", timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000), read: false, priority: "low", status: "active"};
+db.notifications.insertMany([notification1, notification2, notification3]);
 
-print("✓ Created " + db.policy_notifications.countDocuments() + " sample notifications");
+print("✓ Created " + db.notifications.countDocuments() + " sample notifications");
 
 // ===========================================
 // Lab 14: Application Integration (C#, Node.js, Python)
@@ -286,8 +295,8 @@ print("- generateTestClaims(count): Generate test claims");
 //   db.customers.updateOne({_id: "cust3"}, {$set: {premiumBalance: 1500.00, totalPolicies: 0}});
 //   db.claims.deleteMany({_id: /^test_/});
 //   db.payments.deleteMany({paymentType: "test"});
-//   db.policy_notifications.deleteMany({type: {$in: ["test", "claim_created", "status_update"]}});
-//   db.claim_activity_log.deleteMany({});
+//   db.notifications.deleteMany({type: {$in: ["test", "claim_created", "status_update"]}});
+//   db.activity_log.deleteMany({});
 //   db.resume_tokens.deleteMany({});
 //   print("✓ Day 3 data reset complete!");
 // }
@@ -327,7 +336,7 @@ var branchCount = db.branches.countDocuments();
 var agentCount = db.agents.countDocuments();
 var vehicleCount = db.vehicles.countDocuments();
 var propertyCount = db.properties.countDocuments();
-var notificationCount = db.policy_notifications.countDocuments();
+var notificationCount = db.notifications.countDocuments();
 
 print("Production collections:");
 print("- policies: " + policyCount);
@@ -337,7 +346,7 @@ print("- branches: " + branchCount);
 print("- agents: " + agentCount);
 print("- vehicles: " + vehicleCount);
 print("- properties: " + propertyCount);
-print("- policy_notifications: " + notificationCount);
+print("- notifications: " + notificationCount);
 
 // Check indexes using individual calls
 print("\nIndex validation:");

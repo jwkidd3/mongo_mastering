@@ -23,10 +23,22 @@ To check if MongoDB is already running:
 mongosh --eval "db.runCommand('ping')"
 ```
 
-**Load Course Data:**
+## Prerequisites: Load Course Data
+
+Before starting this lab, ensure the MongoDB environment is running and course data is loaded:
+
 ```bash
-mongosh < data/day3_data_loader.js
+# From the project root
+mongosh "mongodb://localhost:27017/?directConnection=true" < data/comprehensive_data_loader.js
 ```
+
+Verify the data loaded successfully:
+
+```bash
+mongosh "mongodb://localhost:27017/?directConnection=true" --eval "use insurance_company; db.policies.countDocuments()"
+```
+
+> **Note:** This lab will create and use its own separate database (`insurance_company_csharp`) for the C# integration exercises. The comprehensive loader is still required to populate the shared course data used by other labs.
 
 ## Part A: Project Setup (10 minutes)
 

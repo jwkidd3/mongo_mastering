@@ -26,36 +26,20 @@ To check if MongoDB is already running:
 mongosh --eval "db.runCommand('ping')"
 ```
 
-## 📊 Load Course Data First!
+## Prerequisites: Load Course Data
 
-**Before starting this lab, load the Day 2 course data:**
+Before starting this lab, ensure the MongoDB environment is running and course data is loaded:
 
 ```bash
-mongosh < data/day2_data_loader.js
+# From the project root
+mongosh "mongodb://localhost:27017/?directConnection=true" < data/comprehensive_data_loader.js
 ```
 
-**Wait for this success message:**
-```
-✅ DAY 2 ANALYTICS DATA LOADING COMPLETE!
-```
+Verify the data loaded successfully:
 
-**Test data loaded correctly:**
 ```bash
-mongosh --eval "db.getSiblingDB('insurance_company').policies.countDocuments()"
-mongosh --eval "db.getSiblingDB('insurance_company').customers.countDocuments()"
+mongosh "mongodb://localhost:27017/?directConnection=true" --eval "use insurance_company; db.policies.countDocuments()"
 ```
-
-**Expected output:** Policies: 13, Customers: 20
-
-> **Note:** The Day 2 loader upserts 3 policies, 3 customers, 3 claims, 3 agents, and 3 branches on top of Day 1 data. Because the upserted records share the same keys (e.g., same claimNumbers, agentIds, branch _ids), the totals are:
-> - Policies: 13 (10 from Day 1 + 3 new from Day 2)
-> - Customers: 20 (Day 1 had 20; Day 2 upserts 3 with same customerIds)
-> - Claims: 15 (Day 1 had 15; Day 2 upserts 3 with same claimNumbers)
-> - Agents: 10 (Day 1 had 10; Day 2 upserts 3 with same agentIds)
-> - Branches: 5 (Day 1 had 5; Day 2 upserts 3 with same _ids)
-> - Reviews: 3 (Day 2 only)
-
-💡 **See [Manual Setup](../data/manual_day2_setup.md) for detailed instructions and troubleshooting**
 
 **Collections available:** `policies`, `claims`, `customers`, `agents`, `branches`, `payments`, `reviews`
 

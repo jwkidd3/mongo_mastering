@@ -320,22 +320,49 @@
 
             <!-- Session Agenda -->
             <section>
-                <h2>Session Agenda</h2>
+                <h2>📋 Session Agenda</h2>
                 <div class="two-column">
                     <div class="column">
-                        <h3>Morning Session</h3>
+                        <h3>Morning</h3>
                         <ul class="small-text">
                             <li><strong>Replica Sets & HA</strong></li>
+                            <li><strong>Sharding & Scaling</strong></li>
                         </ul>
                     </div>
                     <div class="column">
-                        <h3>Afternoon Session</h3>
+                        <h3>Afternoon</h3>
                         <ul class="small-text">
-                            <li><strong>Sharding & Scaling</strong></li>
                             <li><strong>Change Streams</strong></li>
                             <li><strong>Production Deployment</strong></li>
+                            <li><strong>Application Integration</strong></li>
                         </ul>
                     </div>
+                </div>
+            </section>
+
+            <!-- Daily Schedule -->
+            <section>
+                <h2>🕘 Day 3 Schedule</h2>
+                <div class="agenda-item fragment">
+                    <strong>9:00 – 10:30</strong> &nbsp;·&nbsp; Section 1: Replica Sets & High Availability &nbsp;·&nbsp; <em>Lab 11</em>
+                </div>
+                <div class="agenda-item fragment">
+                    <strong>10:30 – 10:45</strong> &nbsp;·&nbsp; ☕ Morning break
+                </div>
+                <div class="agenda-item fragment">
+                    <strong>10:45 – 12:00</strong> &nbsp;·&nbsp; Section 2: Sharding & Horizontal Scaling &nbsp;·&nbsp; <em>Lab 12</em>
+                </div>
+                <div class="agenda-item fragment">
+                    <strong>12:00 – 1:00</strong> &nbsp;·&nbsp; 🍽️ Lunch
+                </div>
+                <div class="agenda-item fragment">
+                    <strong>1:00 – 2:30</strong> &nbsp;·&nbsp; Section 3: Change Streams &nbsp;·&nbsp; <em>Lab 13</em>
+                </div>
+                <div class="agenda-item fragment">
+                    <strong>2:30 – 2:45</strong> &nbsp;·&nbsp; ☕ Afternoon break
+                </div>
+                <div class="agenda-item fragment">
+                    <strong>2:45 – 4:00</strong> &nbsp;·&nbsp; Section 4: Production + Application Integration &nbsp;·&nbsp; <em>Lab 14a / 14b / 14c</em> &nbsp;·&nbsp; Wrap-up
                 </div>
             </section>
 
@@ -343,7 +370,7 @@
             <!-- Section 1: Replica Sets -->
             <section>
                 <section class="section-title">
-                    <h2>1. Replica Sets & High Availability</h2>
+                    <h2>🛡️ 1. Replica Sets & High Availability</h2>
                     <p>Building Resilient MongoDB Deployments</p>
                 </section>
 
@@ -601,7 +628,7 @@ rs.reconfig(config, { force: true })</code></pre>
             <!-- Section 2: Sharding -->
             <section>
                 <section class="section-title">
-                    <h2>2. Sharding & Horizontal Scaling</h2>
+                    <h2>🔀 2. Sharding & Horizontal Scaling</h2>
                     <p>Scaling MongoDB Beyond Single Machines</p>
                 </section>
 
@@ -862,7 +889,7 @@ sh.updateZoneKeyRange("ecommerce.users",
             <!-- Section 3: Change Streams -->
             <section>
                 <section class="section-title">
-                    <h2>3. Change Streams</h2>
+                    <h2>📡 3. Change Streams</h2>
                     <p>Real-time Applications with MongoDB</p>
                 </section>
 
@@ -1113,7 +1140,7 @@ class OrderProcessor {
             <!-- Section 4: Production Deployment -->
             <section>
                 <section class="section-title">
-                    <h2>4. Production Deployment</h2>
+                    <h2>🏭 4. Production Deployment</h2>
                     <p>MongoDB in Production Environments</p>
                 </section>
 
@@ -1349,6 +1376,155 @@ secrets:
                                 <li>✓ Index optimization</li>
                                 <li>✓ Disaster recovery testing</li>
                                 <li>✓ Documentation updated</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h2>🔌 Application Integration Overview</h2>
+                    <div class="two-column smaller-text">
+                        <div class="column">
+                            <h3>Why a Driver?</h3>
+                            <ul>
+                                <li>Apps talk to MongoDB via official drivers</li>
+                                <li>Wire protocol abstraction</li>
+                                <li>BSON serialization handled for you</li>
+                                <li>Connection pooling built in</li>
+                            </ul>
+                        </div>
+                        <div class="column">
+                            <h3>Official Drivers</h3>
+                            <ul>
+                                <li><strong>C# / .NET:</strong> MongoDB.Driver</li>
+                                <li><strong>Node.js:</strong> mongodb (npm)</li>
+                                <li><strong>Python:</strong> PyMongo / Motor</li>
+                                <li><strong>Java:</strong> mongodb-driver-sync</li>
+                                <li><strong>Go:</strong> mongo-go-driver</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="fragment">
+                        <h3>Connection Lifecycle</h3>
+                        <ul class="smaller-text">
+                            <li>Create client once → reuse across the app</li>
+                            <li>Driver maintains pool of pre-opened connections</li>
+                            <li>Most modern drivers expose async / await APIs</li>
+                            <li>Dispose / close client cleanly on shutdown</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <section>
+                    <h2>⚙️ Driver Connection Patterns</h2>
+                    <div class="two-column smaller-text">
+                        <div class="column">
+                            <h3>Connection String</h3>
+                            <ul>
+                                <li><code>mongodb://</code> — direct / standalone</li>
+                                <li><code>mongodb+srv://</code> — DNS seedlist (Atlas)</li>
+                                <li><code>replicaSet=rs0</code> — replica set aware</li>
+                                <li><code>readPreference</code>, <code>w</code>, <code>tls</code></li>
+                            </ul>
+                        </div>
+                        <div class="column">
+                            <h3>Pooling Defaults</h3>
+                            <ul>
+                                <li><strong>maxPoolSize:</strong> 100 (default)</li>
+                                <li><strong>minPoolSize:</strong> 0</li>
+                                <li><strong>maxIdleTimeMS:</strong> connection eviction</li>
+                                <li><strong>waitQueueTimeoutMS:</strong> backpressure</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="code-container">
+                        <div class="code-title">Example: Node.js Connection</div>
+                        <pre><code class="language-javascript">const { MongoClient } = require('mongodb');
+
+const uri = "mongodb://user:pass@host:27017/?replicaSet=rs0&maxPoolSize=50";
+const client = new MongoClient(uri);
+
+await client.connect();
+const db = client.db('myapp');
+// reuse client for the lifetime of the app</code></pre>
+                    </div>
+                </section>
+
+                <section>
+                    <h2>💻 CRUD via Drivers</h2>
+                    <p class="smaller-text">Driver APIs mirror mongosh semantics — same names, same arguments.</p>
+                    <div class="two-column smaller-text">
+                        <div class="column">
+                            <h3>mongosh</h3>
+                            <pre><code class="language-javascript">db.users.insertOne(
+  { name: "Ada", age: 36 }
+)
+
+db.users.find(
+  { age: { $gt: 30 } }
+)
+
+db.users.updateOne(
+  { name: "Ada" },
+  { $set: { age: 37 } }
+)
+
+db.users.deleteOne(
+  { name: "Ada" }
+)</code></pre>
+                        </div>
+                        <div class="column">
+                            <h3>Python (PyMongo)</h3>
+                            <pre><code class="language-python">db.users.insert_one(
+  {"name": "Ada", "age": 36}
+)
+
+db.users.find(
+  {"age": {"$gt": 30}}
+)
+
+db.users.update_one(
+  {"name": "Ada"},
+  {"$set": {"age": 37}}
+)
+
+db.users.delete_one(
+  {"name": "Ada"}
+)</code></pre>
+                        </div>
+                    </div>
+                    <p class="smaller-text fragment">If you know the shell, you already know 90% of the driver API.</p>
+                </section>
+
+                <section>
+                    <h2>🎯 Choosing Your Stack</h2>
+                    <div class="two-column smaller-text">
+                        <div class="column">
+                            <h3>C# / .NET</h3>
+                            <ul>
+                                <li>Strong typing, LINQ-style queries</li>
+                                <li>Enterprise / Windows shops</li>
+                                <li>Mature async/await story</li>
+                            </ul>
+                            <h3>Node.js</h3>
+                            <ul>
+                                <li>JSON-native, low ceremony</li>
+                                <li>Great for APIs and serverless</li>
+                                <li>Same JS as mongosh — fastest ramp-up</li>
+                            </ul>
+                        </div>
+                        <div class="column">
+                            <h3>Python</h3>
+                            <ul>
+                                <li>Data, analytics, ML pipelines</li>
+                                <li>PyMongo (sync) or Motor (async)</li>
+                                <li>Readable, approachable syntax</li>
+                            </ul>
+                            <h3>Recommendation</h3>
+                            <ul>
+                                <li>Pick the language you already know best</li>
+                                <li>Driver concepts transfer across all three</li>
+                                <li>Focus on patterns, not syntax</li>
                             </ul>
                         </div>
                     </div>

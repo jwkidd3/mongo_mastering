@@ -38,35 +38,15 @@ print("Cleaned Day 2-specific collections");
 print("Note: Preserving Day 1 data in policies, customers, claims, agents, branches");
 ```
 
-### 4. Upsert Branches (3 Branches)
+### 4. Enrich Branches with Day 2 Analytics Fields
 
-These branches include `performanceMetrics` and GeoJSON `location` fields needed for Day 2 labs.
+Day 2 enriches the existing Day 1 branches (BR001–BR005) with analytics fields (`performanceMetrics`, `openDate`). Geographic identity (name, address, branchCode, location) is preserved from Day 1.
 
 ```javascript
 db.branches.updateOne(
   { _id: "BR001" },
   { $set: {
-    branchCode: "BR-NY-001",
-    name: "New York Financial District",
-    address: {
-      street: "123 Wall Street",
-      city: "New York",
-      state: "NY",
-      zipCode: "10001"
-    },
-    location: {
-      type: "Point",
-      coordinates: [-73.9857, 40.7484]
-    },
-    manager: "Sarah Johnson",
-    agentCount: 15,
-    performanceMetrics: {
-      monthlyRevenue: 245000.50,
-      customerSatisfaction: 4.8,
-      claimsProcessed: 125
-    },
-    specialties: ["Auto", "Property", "Life"],
-    isActive: true,
+    performanceMetrics: { monthlyRevenue: 245000.50, customerSatisfaction: 4.8, claimsProcessed: 125 },
     openDate: new Date("2020-01-15")
   }},
   { upsert: true }
@@ -75,27 +55,7 @@ db.branches.updateOne(
 db.branches.updateOne(
   { _id: "BR002" },
   { $set: {
-    branchCode: "BR-CA-002",
-    name: "Los Angeles West Side",
-    address: {
-      street: "456 Sunset Blvd",
-      city: "Los Angeles",
-      state: "CA",
-      zipCode: "90210"
-    },
-    location: {
-      type: "Point",
-      coordinates: [-118.2437, 34.0522]
-    },
-    manager: "Michael Chen",
-    agentCount: 22,
-    performanceMetrics: {
-      monthlyRevenue: 325000.75,
-      customerSatisfaction: 4.6,
-      claimsProcessed: 180
-    },
-    specialties: ["Auto", "Commercial", "Cyber"],
-    isActive: true,
+    performanceMetrics: { monthlyRevenue: 325000.75, customerSatisfaction: 4.6, claimsProcessed: 180 },
     openDate: new Date("2019-05-20")
   }},
   { upsert: true }
@@ -104,33 +64,13 @@ db.branches.updateOne(
 db.branches.updateOne(
   { _id: "BR003" },
   { $set: {
-    branchCode: "BR-TX-003",
-    name: "Houston Energy Corridor",
-    address: {
-      street: "789 Energy Plaza",
-      city: "Houston",
-      state: "TX",
-      zipCode: "77042"
-    },
-    location: {
-      type: "Point",
-      coordinates: [-95.3698, 29.7604]
-    },
-    manager: "Jennifer Rodriguez",
-    agentCount: 18,
-    performanceMetrics: {
-      monthlyRevenue: 285000.25,
-      customerSatisfaction: 4.7,
-      claimsProcessed: 155
-    },
-    specialties: ["Commercial", "Cyber", "Health"],
-    isActive: true,
+    performanceMetrics: { monthlyRevenue: 285000.25, customerSatisfaction: 4.7, claimsProcessed: 155 },
     openDate: new Date("2021-03-10")
   }},
   { upsert: true }
 );
 
-print("Upserted branches - total: " + db.branches.countDocuments());
+print("Enriched branches - total: " + db.branches.countDocuments());
 ```
 
 ### 5. Upsert Policies (3 Policies)
