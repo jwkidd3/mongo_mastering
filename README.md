@@ -315,39 +315,44 @@ scripts\teardown.ps1
 ### 📂 Directory Overview
 ```
 mongo_mastering/
-├── setup.sh / setup.ps1          # Root convenience wrappers -> scripts/setup.*
-├── teardown.sh / teardown.ps1    # Root convenience wrappers -> scripts/teardown.*
-├── test.sh / test.ps1            # Root convenience wrappers -> scripts/test.*
-├── scripts/                      # Automated setup, teardown, and test scripts
-│   ├── setup.sh                  # Environment setup (macOS/Linux)
-│   ├── setup.ps1                 # Environment setup (Windows)
-│   ├── teardown.sh               # Complete cleanup (macOS/Linux)
-│   ├── teardown.ps1              # Complete cleanup (Windows)
-│   ├── test.sh                   # Connection testing (macOS/Linux)
-│   ├── test.ps1                  # Connection testing (Windows)
-│   ├── comprehensive_test.sh     # End-to-end test (macOS/Linux)
-│   ├── comprehensive_test.ps1    # End-to-end test (Windows)
-│   ├── test_connection.js        # Basic MongoDB connection test
-│   └── lab_validation_comprehensive.js # Sanity validation queries
+├── scripts/                      # Setup, teardown, and test scripts
+│   ├── setup.sh / setup.ps1                     # Replica set setup
+│   ├── teardown.sh / teardown.ps1               # Replica set cleanup
+│   ├── setup_sharding.sh / setup_sharding.ps1   # Sharded cluster (Lab 12)
+│   ├── teardown_sharding.sh / teardown_sharding.ps1
+│   ├── test.sh / test.ps1                       # Quick connection test
+│   ├── comprehensive_test.sh / comprehensive_test.ps1  # Full end-to-end test
+│   ├── test_connection.js                       # Basic MongoDB connection test
+│   └── lab_validation_comprehensive.js          # Sanity validation queries
 ├── data/                         # Course data & loading scripts
-│   ├── comprehensive_data_loader.js # Complete 3-day course data (recommended)
-│   ├── day1_data_loader.js       # Day 1 fundamentals data
-│   ├── day2_data_loader.js       # Day 2 analytics data
-│   ├── day3_data_loader.js       # Day 3 production data
-│   ├── manual_day1_setup.md      # Day 1 manual data load instructions
-│   ├── manual_day2_setup.md      # Day 2 manual data load instructions
-│   └── manual_day3_setup.md      # Day 3 manual data load instructions
+│   ├── comprehensive_data_loader.js  # Complete 3-day course data (recommended)
+│   ├── day1_data_loader.js           # Day 1 fundamentals data
+│   ├── day2_data_loader.js           # Day 2 analytics data
+│   ├── day3_data_loader.js           # Day 3 production data
+│   └── manual_day{1,2,3}_setup.md    # Manual data load instructions
 ├── presentations/                # Course presentations (Day 1-3)
 │   ├── mongodb_day1_presentation.html
 │   ├── mongodb_day2_presentation.html
 │   └── mongodb_day3_presentation.html
 ├── labs/                         # Hands-on lab exercises (16 labs)
 │   ├── lab01_*.md ... lab13_*.md # Labs 1-13: fundamentals -> production
-│   └── lab14a_*.md, lab14b_*.md, lab14c_*.md  # Lab 14 (C# / JS / Python integrations)
-├── utilities/                    # Heavyweight validators and data utilities
-│   ├── comprehensive_lab_validator.sh  # Full bash-based lab command validator
+│   └── lab14/                    # Lab 14 (only lab with its own subdirectory)
+│       ├── lab14a_csharp_mongodb_integration.md
+│       ├── lab14b_javascript_mongodb_integration.md
+│       ├── lab14c_python_mongodb_integration.md
+│       ├── lab14a-csharp-starter/
+│       ├── lab14b-javascript-starter/
+│       └── lab14c-python-starter/
+├── utilities/                    # Validators, fence runner, container image
+│   ├── Dockerfile.course-tools         # Test-runner image (mongosh + dotnet + node + python)
+│   ├── run_tests_in_container.sh       # Wrapper to run any test script in the container
+│   ├── comprehensive_lab_validator.sh  # 133 curated tests + 3 driver integrations
+│   ├── lab_fence_runner.sh             # 176 per-fence tests across all 16 labs
+│   ├── ps_fence_check.sh               # 38 PowerShell fence parse-checks
+│   ├── lab14a_test.sh / lab14b_test.sh / lab14c_test.sh
 │   └── fix_data_relationships.js       # Data relationship repair helper
 └── extras/                       # Supplemental reference guides
+    ├── TROUBLESHOOTING.md        # Common student errors and fixes
     ├── comparison.md
     ├── dockersetup.md
     ├── mongodb_config_guide.md
@@ -578,8 +583,10 @@ scripts/test.sh
 
 #### Script won't run
 ```bash
-chmod +x scripts/*.sh setup.sh teardown.sh test.sh  # Make scripts executable
+chmod +x scripts/*.sh utilities/*.sh  # Make scripts executable
 ```
+
+See [extras/TROUBLESHOOTING.md](extras/TROUBLESHOOTING.md) for common student errors and fixes.
 
 #### Docker not found
 - Install Docker Desktop

@@ -9,7 +9,7 @@ set -u
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-CONN="mongodb://localhost:27017/?directConnection=true"
+CONN="${MONGO_URI:-mongodb://localhost:27017/?directConnection=true}"
 TEST_DB="insurance_company_py_test"
 TEST_POLICY="POL-PY-TEST-001"
 
@@ -59,11 +59,12 @@ fi
 
 # Write test.py
 cat > test.py <<'PY_EOF'
+import os
 import sys
 from datetime import datetime, timezone
 from pymongo import MongoClient
 
-URI = "mongodb://localhost:27017/?directConnection=true"
+URI = os.environ.get("MONGO_URI", "mongodb://localhost:27017/?directConnection=true")
 DB_NAME = "insurance_company_py_test"
 COLL_NAME = "policies"
 TEST_POLICY = "POL-PY-TEST-001"

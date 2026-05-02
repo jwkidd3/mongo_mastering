@@ -66,9 +66,9 @@ print_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
-# Check if containers exist
+# Check if containers exist (replica set + sharded cluster)
 print_status "Checking for MongoDB containers..."
-containers=$(docker ps -a --filter "name=mongo" --format "{{.Names}}" | grep -E "^mongo[123]$" || true)
+containers=$(docker ps -a --format "{{.Names}}" | grep -E "^(mongo[123]|mongo-cfg|mongo-shard[12]|mongo-mongos)$" || true)
 
 if [ -z "$containers" ]; then
     print_warning "No MongoDB containers found"
@@ -97,7 +97,7 @@ fi
 
 # Verify cleanup
 print_status "Verifying cleanup..."
-remaining_containers=$(docker ps -a --filter "name=mongo" --format "{{.Names}}" | grep -E "^mongo[123]$" || true)
+remaining_containers=$(docker ps -a --format "{{.Names}}" | grep -E "^(mongo[123]|mongo-cfg|mongo-shard[12]|mongo-mongos)$" || true)
 remaining_networks=$(docker network ls --filter "name=mongodb-net" --format "{{.Name}}" || true)
 
 if [ -z "$remaining_containers" ] && [ -z "$remaining_networks" ]; then

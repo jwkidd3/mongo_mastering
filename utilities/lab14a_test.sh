@@ -10,7 +10,7 @@ set -u
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-CONN="mongodb://localhost:27017/?directConnection=true"
+CONN="${MONGO_URI:-mongodb://localhost:27017/?directConnection=true}"
 TEST_DB="insurance_company_csharp_test"
 TEST_POLICY="POL-CSHARP-TEST-001"
 
@@ -68,7 +68,9 @@ using MongoDB.Driver;
 
 class Program
 {
-    private const string ConnectionString = "mongodb://localhost:27017/?directConnection=true";
+    private static readonly string ConnectionString =
+        System.Environment.GetEnvironmentVariable("MONGO_URI")
+        ?? "mongodb://localhost:27017/?directConnection=true";
     private const string DatabaseName = "insurance_company_csharp_test";
     private const string CollectionName = "policies";
     private const string TestPolicyNumber = "POL-CSHARP-TEST-001";

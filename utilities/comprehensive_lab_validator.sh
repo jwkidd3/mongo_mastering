@@ -11,6 +11,25 @@ set -e  # Exit on any error
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
+# Connection URI (honor env var so we can run inside the course-tools
+# container against mongo1 by name). Default targets host port 27017.
+: "${MONGO_URI:=mongodb://localhost:27017/?directConnection=true}"
+: "${MONGOS_URI:=mongodb://localhost:27120/?directConnection=true}"
+export MONGO_URI MONGOS_URI
+
+# Build a URI that targets a specific database. Splits on the first '?'
+# so existing query options (directConnection, replicaSet, etc.) are kept.
+_uri_with_db() {
+    local base="$1"; local db="$2"
+    if [ -z "$db" ]; then echo "$base"; return; fi
+    local before="${base%%\?*}"
+    local query=""
+    if [ "$before" != "$base" ]; then query="?${base#*\?}"; fi
+    # strip trailing slash from before
+    before="${before%/}"
+    echo "${before}/${db}${query}"
+}
+
 # Color codes for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -106,7 +125,7 @@ setup_environment() {
     cd "$PROJECT_ROOT"
 
     echo "📊 Loading comprehensive course data..."
-    if mongosh < data/comprehensive_data_loader.js > data_load_output.log 2>&1; then
+    if mongosh "$MONGO_URI" < data/comprehensive_data_loader.js > data_load_output.log 2>&1; then
         echo "✅ Data loading completed"
         rm -f data_load_output.log
     else
@@ -163,24 +182,15 @@ test_mongo_command() {
     echo "🔍 Testing: $description"
 
     # Execute the command and capture both stdout and stderr
-    if [ -z "$database" ]; then
-        if mongosh --quiet --eval "$command" >/dev/null 2>&1; then
-            echo "✅ PASSED"
-            PASSED_TESTS=$((PASSED_TESTS + 1))
-        else
-            echo "❌ FAILED"
-            FAILED_TESTS=$((FAILED_TESTS + 1))
-            FAILED_COMMANDS+=("$description")
-        fi
+    local _uri
+    _uri="$(_uri_with_db "$MONGO_URI" "$database")"
+    if mongosh --quiet "$_uri" --eval "$command" >/dev/null 2>&1; then
+        echo "✅ PASSED"
+        PASSED_TESTS=$((PASSED_TESTS + 1))
     else
-        if mongosh --quiet "$database" --eval "$command" >/dev/null 2>&1; then
-            echo "✅ PASSED"
-            PASSED_TESTS=$((PASSED_TESTS + 1))
-        else
-            echo "❌ FAILED"
-            FAILED_TESTS=$((FAILED_TESTS + 1))
-            FAILED_COMMANDS+=("$description")
-        fi
+        echo "❌ FAILED"
+        FAILED_TESTS=$((FAILED_TESTS + 1))
+        FAILED_COMMANDS+=("$description")
     fi
     echo
 }
@@ -196,11 +206,9 @@ test_mongo_command_with_output() {
     echo "🔍 Testing: $description"
 
     # Execute the command and capture output
-    if [ -z "$database" ]; then
-        output=$(mongosh --quiet --eval "$command" 2>&1)
-    else
-        output=$(mongosh --quiet "$database" --eval "$command" 2>&1)
-    fi
+    local _uri
+    _uri="$(_uri_with_db "$MONGO_URI" "$database")"
+    output=$(mongosh --quiet "$_uri" --eval "$command" 2>&1)
 
     if echo "$output" | grep -q "$expected_pattern"; then
         echo "✅ PASSED"

@@ -1,0 +1,64 @@
+# course-tools: single image with everything needed to run the
+# MongoDB Mastering test suites without WSL or Git Bash on the host.
+#
+# Base: mcr.microsoft.com/dotnet/sdk:8.0 (Debian 12 "bookworm").
+# Justification: dotnet SDK is the heaviest dependency (Lab 14A does
+# `dotnet new console` + `dotnet add package` + `dotnet run`); pulling
+# that as the base saves a heavy install layer. The remaining tools
+# (mongosh, node, python3, docker CLI) are small additions on top.
+#
+# This image talks to the host Docker daemon via a mounted socket and
+# joins the `mongodb-net` network at runtime, so it can reach the
+# mongo1/2/3 replica set and mongo-mongos sharded cluster by name.
+
+FROM mcr.microsoft.com/dotnet/sdk:8.0
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Base utilities + repos for mongosh, nodejs, docker CLI.
+RUN set -eux; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
+        bash \
+        ca-certificates \
+        curl \
+        git \
+        gnupg \
+        lsb-release \
+        procps \
+        python3 \
+        python3-pip \
+        python3-venv \
+        tzdata; \
+    # MongoDB apt repo for mongosh
+    install -d -m 0755 /etc/apt/keyrings; \
+    curl -fsSL https://www.mongodb.org/static/pgp/server-8.0.asc \
+        | gpg --dearmor -o /etc/apt/keyrings/mongodb-server-8.0.gpg; \
+    echo "deb [signed-by=/etc/apt/keyrings/mongodb-server-8.0.gpg] https://repo.mongodb.org/apt/debian bookworm/mongodb-org/8.0 main" \
+        > /etc/apt/sources.list.d/mongodb-org-8.0.list; \
+    # NodeSource for Node.js 20
+    curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
+        | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg; \
+    echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_20.x nodistro main" \
+        > /etc/apt/sources.list.d/nodesource.list; \
+    # Docker apt repo for the docker CLI only (no daemon).
+    curl -fsSL https://download.docker.com/linux/debian/gpg \
+        | gpg --dearmor -o /etc/apt/keyrings/docker.gpg; \
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian bookworm stable" \
+        > /etc/apt/sources.list.d/docker.list; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
+        mongodb-mongosh \
+        nodejs \
+        docker-ce-cli; \
+    apt-get clean; \
+    rm -rf /var/lib/apt/lists/*
+
+# Pre-warm the dotnet first-run experience so lab14a is faster.
+RUN dotnet --info > /dev/null 2>&1 || true
+
+# Default working directory matches the runner mount point.
+WORKDIR /work
+
+# Sane default; the runner overrides this with a real script path.
+CMD ["/bin/bash"]

@@ -41,50 +41,53 @@ Verify the data loaded successfully:
 mongosh "mongodb://localhost:27017/?directConnection=true" --eval "use insurance_company; db.policies.countDocuments()"
 ```
 
-## Part A: Jupyter Notebook Setup (5 minutes)
+## Part A: Get the Starter Code (3 minutes)
 
-### Step 1: Launch Jupyter Notebook
+### Step 1: Get the Starter Code
+
+The starter code is in `labs/lab14/lab14c-python-starter/`. Copy it to your working directory and install dependencies:
+
 ```bash
-# Navigate to your preferred directory
-cd ~/Documents
-
-# Launch Jupyter Notebook
-jupyter notebook
+cp -r labs/lab14/lab14c-python-starter ~/lab14c-mywork
+cd ~/lab14c-mywork
+cp .env.example .env
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+python main.py
 ```
 
-**In Jupyter:**
-1. Click "New" → "Python 3" to create new notebook
-2. Rename notebook: "MongoDB_Insurance_Management"
-3. You'll work in notebook cells throughout this lab
+`python main.py` should print "Connected to MongoDB" and exit cleanly. The starter already has:
 
-### Step 2: Install and Import Packages
-**Cell 1 - Install packages:**
+- `requirements.txt` with `pymongo`, `python-dotenv`, `pandas`, `matplotlib`
+- `.env.example` with `MONGODB_URI` defaulting to the local connection string
+- `config/database.py` — `DatabaseConnection` wrapping `MongoClient` (don't modify)
+- `main.py` — entry point with connect/cleanup wired up; `TODO`s mark where you'll add CRUD calls
+- Skeleton `models/policy.py`, `models/customer.py`, and `services/policy_service.py` files with `TODO` comments where you fill in fields and method bodies
+
+### Step 2: Open in Jupyter (optional)
+
+This lab is presented in cells. You can either:
+
+- **Run as a script:** edit `main.py` and re-run `python main.py` after each change.
+- **Use Jupyter:** launch `jupyter notebook` in `~/lab14c-mywork` and create a new notebook. Paste the code blocks below into cells. The starter modules are already importable from the notebook directory.
+
 ```python
-# Install required packages (run once)
-!pip install pymongo pandas matplotlib
-
-print("✅ Packages installed successfully")
-```
-
-**Cell 2 - Import libraries:**
-```python
-# Import necessary libraries
+# Cell 1 - import everything you need (no install required, deps already in venv)
 import pymongo
-from pymongo import MongoClient
 from datetime import datetime, timedelta
 from dataclasses import dataclass, field
 from typing import Optional, Dict, Any, List
-import json
 from bson import ObjectId
 import pandas as pd
 
-print("✅ All libraries imported successfully")
+print("All libraries imported successfully")
 print(f"PyMongo version: {pymongo.version}")
 ```
 
-## Part B: Database Connection (5 minutes)
+## Part B: Database Connection (already provided)
 
-**Cell 3 - Database Connection:**
+`config/database.py` is already in the starter. For reference, here's what it contains — you don't need to recreate it:
 ```python
 class DatabaseConnection:
     def __init__(self, uri='mongodb://localhost:27017', db_name='insurance_company'):
@@ -146,7 +149,7 @@ def validate_policy_type(policy_type: str) -> bool:
 print("✅ Validation utilities created")
 ```
 
-**Cell 5 - Policy Model:**
+**Cell 5 - Policy Model:** (replace the skeleton in `models/policy.py`)
 ```python
 @dataclass
 class Policy:
@@ -232,7 +235,7 @@ class Policy:
 print("✅ Policy model created successfully")
 ```
 
-**Cell 6 - Customer Model:**
+**Cell 6 - Customer Model:** (replace the skeleton in `models/customer.py`)
 ```python
 @dataclass
 class Customer:
@@ -307,7 +310,7 @@ print("✅ Customer model created successfully")
 
 ## Part D: Insurance Management Service (15 minutes)
 
-**Cell 7 - Policy Service:**
+**Cell 7 - Policy Service:** (replace the stub bodies in `services/policy_service.py`)
 ```python
 class PolicyService:
     """Insurance policy management service"""

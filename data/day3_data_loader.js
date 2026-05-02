@@ -42,25 +42,28 @@ print("----------------------------------------------");
 
 // Create core policies for transaction testing
 print("Creating core insurance policies...");
-var policy1 = {_id: "pol1", policyNumber: "POL-AUTO-001", name: "Premium Auto Coverage", policyType: "Auto", annualPremium: 1299.99, activePolicies: 10, coverageDetails: {liability: "250000/500000", collision: { deductible: 500, coverage: "Full" }, comprehensive: { deductible: 250, coverage: "Full" }}, coverageTypes: ["liability", "collision", "comprehensive"], isActive: true};
-var policy2 = {_id: "pol2", policyNumber: "POL-HOME-001", name: "Homeowners Protection", policyType: "Property", annualPremium: 1899.99, activePolicies: 25, coverageDetails: {dwelling: { coverage: 400000, deductible: 1000 }, personalProperty: { coverage: 200000, deductible: 500 }, liability: 300000}, coverageTypes: ["dwelling", "personal_property", "liability"], isActive: true};
-var policy3 = {_id: "pol3", policyNumber: "POL-LIFE-001", name: "Term Life Insurance", policyType: "Life", annualPremium: 599.99, activePolicies: 15, coverageDetails: {deathBenefit: 500000, term: "20 years", beneficiaries: "Spouse and Children"}, coverageTypes: ["death_benefit", "accidental_death"], isActive: true};
-var policy4 = {_id: "pol4", policyNumber: "POL-COMM-001", name: "Business Liability", policyType: "Commercial", annualPremium: 2499.99, activePolicies: 8, coverageDetails: {generalLiability: 2000000, productLiability: 1000000, businessType: "Technology"}, coverageTypes: ["general_liability", "product_liability"], isActive: true};
-// Upsert policies to avoid conflicts with Day 1/2 data
+// Day 3 enriches existing Day 1 policies (matched by policyNumber) with Day-3-specific
+// fields (activePolicies counter). _id is intentionally omitted so we don't try to
+// overwrite Day 1's ObjectId _ids.
+var policy1 = {policyNumber: "POL-AUTO-001", activePolicies: 10};
+var policy2 = {policyNumber: "POL-HOME-001", activePolicies: 25};
+var policy3 = {policyNumber: "POL-LIFE-001", activePolicies: 15};
+var policy4 = {policyNumber: "POL-COMM-001", activePolicies: 8};
 [policy1, policy2, policy3, policy4].forEach(function(p) {
-  db.policies.updateOne({_id: p._id}, {$set: p}, {upsert: true});
+  db.policies.updateOne({policyNumber: p.policyNumber}, {$set: p}, {upsert: true});
 });
 
 print("✓ Upserted Day 3 policies - total: " + db.policies.countDocuments());
 
 // Create customers with premium balances for transaction testing
 print("Creating customers with premium balances...");
-var customer1 = {_id: "cust1", customerId: "CUST000001", firstName: "John", lastName: "Smith", email: "john.smith@email.com", phone: "+1-555-0101", premiumBalance: 1200.00, totalPolicies: 0, totalPremiumsPaid: 0, lastPaymentDate: null, riskScore: 75, address: {street: "123 Main Street", city: "New York", state: "NY", zipCode: "10001"}, registrationDate: new Date("2024-01-15"), isActive: true};
-var customer2 = {_id: "cust2", customerId: "CUST000002", firstName: "Sarah", lastName: "Johnson", email: "sarah.johnson@email.com", phone: "+1-555-0102", premiumBalance: 800.00, totalPolicies: 0, totalPremiumsPaid: 0, lastPaymentDate: null, riskScore: 60, address: {street: "456 Oak Avenue", city: "Chicago", state: "IL", zipCode: "60601"}, registrationDate: new Date("2024-02-20"), isActive: true};
-var customer3 = {_id: "cust3", customerId: "CUST000003", firstName: "Michael", lastName: "Davis", email: "michael.davis@email.com", phone: "+1-555-0103", premiumBalance: 1500.00, totalPolicies: 0, totalPremiumsPaid: 0, lastPaymentDate: null, riskScore: 45, address: {street: "789 Business Plaza", city: "Los Angeles", state: "CA", zipCode: "90001"}, registrationDate: new Date("2024-03-10"), isActive: true};
-// Upsert customers to avoid conflicts with Day 1/2 data
+// Enrich existing Day 1 customers with Day-3 transaction-test fields (premiumBalance, riskScore).
+// Match by customerId so we don't conflict with Day 1's ObjectId _ids.
+var customer1 = {customerId: "CUST000001", premiumBalance: 1200.00, totalPolicies: 0, totalPremiumsPaid: 0, lastPaymentDate: null, riskScore: 75};
+var customer2 = {customerId: "CUST000002", premiumBalance: 800.00, totalPolicies: 0, totalPremiumsPaid: 0, lastPaymentDate: null, riskScore: 60};
+var customer3 = {customerId: "CUST000003", premiumBalance: 1500.00, totalPolicies: 0, totalPremiumsPaid: 0, lastPaymentDate: null, riskScore: 45};
 [customer1, customer2, customer3].forEach(function(c) {
-  db.customers.updateOne({_id: c._id}, {$set: c}, {upsert: true});
+  db.customers.updateOne({customerId: c.customerId}, {$set: c}, {upsert: true});
 });
 
 print("✓ Created " + db.customers.countDocuments() + " customers with balances");
@@ -103,18 +106,20 @@ var lastNames = ["Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Mi
 var states = ["NY", "CA", "TX", "FL", "IL", "PA", "OH", "GA", "NC", "MI", "NJ", "WA", "AZ", "MA", "TN", "IN", "MO", "MD", "WI", "CO", "MN", "SC", "AL", "LA", "KY", "OR", "OK", "CT", "UT", "IA"];
 
 // Create a smaller sample of customers to avoid hanging - using individual variables
-var customer1 = {_id: "customer1", customerId: "CUST000004", firstName: "Emma", lastName: "Wilson", email: "customer4@example.com", address: {street: "123 Main St", city: "New York", state: "NY", zipCode: "10001"}, registrationDate: new Date(2024, 1, 15), insuranceProfile: {riskLevel: "medium", policyTypes: ["Auto"], paymentMethod: "monthly", totalPremiumValue: 1250.00}, metadata: {lastLogin: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), claimCount: 1, customerType: "standard"}};
-var customer2 = {_id: "customer2", customerId: "CUST000005", firstName: "James", lastName: "Miller", email: "customer5@example.com", address: {street: "456 Oak St", city: "Los Angeles", state: "CA", zipCode: "90210"}, registrationDate: new Date(2024, 2, 20), insuranceProfile: {riskLevel: "low", policyTypes: ["Auto", "Property"], paymentMethod: "annual", totalPremiumValue: 2750.00}, metadata: {lastLogin: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), claimCount: 0, customerType: "premium"}};
-var customer3 = {_id: "customer3", customerId: "CUST000006", firstName: "Olivia", lastName: "Brown", email: "customer6@example.com", address: {street: "789 Pine St", city: "Chicago", state: "IL", zipCode: "60601"}, registrationDate: new Date(2024, 3, 10), insuranceProfile: {riskLevel: "high", policyTypes: ["Auto"], paymentMethod: "monthly", totalPremiumValue: 1850.00}, metadata: {lastLogin: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), claimCount: 3, customerType: "standard"}};
+// Day 3 sharding-demo customers — enrich existing Day 1 customers (CUST000004-6) with
+// insuranceProfile/metadata. Match by customerId.
+var customer1 = {customerId: "CUST000004", insuranceProfile: {riskLevel: "medium", policyTypes: ["Auto"], paymentMethod: "monthly", totalPremiumValue: 1250.00}, metadata: {lastLogin: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), claimCount: 1, customerType: "standard"}};
+var customer2 = {customerId: "CUST000005", insuranceProfile: {riskLevel: "low", policyTypes: ["Auto", "Property"], paymentMethod: "annual", totalPremiumValue: 2750.00}, metadata: {lastLogin: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), claimCount: 0, customerType: "premium"}};
+var customer3 = {customerId: "CUST000006", insuranceProfile: {riskLevel: "high", policyTypes: ["Auto"], paymentMethod: "monthly", totalPremiumValue: 1850.00}, metadata: {lastLogin: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), claimCount: 3, customerType: "standard"}};
 
 customers.push(customer1);
 customers.push(customer2);
 customers.push(customer3);
 
-// Upsert customers to avoid conflicts with Day 1/2 data
+// Upsert customers by business key to avoid conflicts with Day 1/2 data
 print("Upserting " + customers.length + " customers...");
 customers.forEach(function(c) {
-  db.customers.updateOne({_id: c._id}, {$set: c}, {upsert: true});
+  db.customers.updateOne({customerId: c.customerId}, {$set: c}, {upsert: true});
 });
 
 print("✓ Generated " + db.customers.countDocuments() + " customers for sharding");
@@ -126,18 +131,18 @@ var claims = [];
 var claimTypes = ["Auto Accident", "Property Damage", "Theft", "Fire", "Water Damage", "Medical", "Liability", "Vandalism", "Natural Disaster", "Cyber Attack", "Equipment Failure", "Personal Injury", "Product Liability", "Professional Liability", "Workers Compensation"];
 
 // Create sample claims using individual variables to avoid hanging
-var claim1 = {_id: "claim1", claimNumber: "CLM-2024-000004", customerId: "customer1", claimDate: new Date(2024, 3, 15), claimType: "Auto Accident", claimAmount: 8500.00, deductible: 500, status: "approved", incidentLocation: {street: "123 Insurance Ave", city: "New York", state: "NY", zipCode: "10001"}, territory: "north", adjusterAssigned: "ADJ001", fraudFlag: false};
-var claim2 = {_id: "claim2", claimNumber: "CLM-2024-000005", customerId: "customer2", claimDate: new Date(2024, 2, 20), claimType: "Property Damage", claimAmount: 15000.00, deductible: 1000, status: "pending", incidentLocation: {street: "456 Insurance Ave", city: "Los Angeles", state: "CA", zipCode: "90210"}, territory: "west", adjusterAssigned: "ADJ002", fraudFlag: false};
-var claim3 = {_id: "claim3", claimNumber: "CLM-2024-000006", customerId: "customer3", claimDate: new Date(2024, 1, 10), claimType: "Theft", claimAmount: 3200.00, deductible: 250, status: "approved", incidentLocation: {street: "789 Insurance Ave", city: "Chicago", state: "IL", zipCode: "60601"}, territory: "central", adjusterAssigned: "ADJ003", fraudFlag: false};
+var claim1 = {claimNumber: "CLM-2024-000004", customerId: "CUST000004", claimDate: new Date(2024, 3, 15), claimType: "Auto Accident", claimAmount: 8500.00, deductible: 500, status: "approved", incidentLocation: {street: "123 Insurance Ave", city: "New York", state: "NY", zipCode: "10001"}, territory: "north", adjusterAssigned: "ADJ001", fraudFlag: false};
+var claim2 = {claimNumber: "CLM-2024-000005", customerId: "CUST000005", claimDate: new Date(2024, 2, 20), claimType: "Property Damage", claimAmount: 15000.00, deductible: 1000, status: "pending", incidentLocation: {street: "456 Insurance Ave", city: "Los Angeles", state: "CA", zipCode: "90210"}, territory: "west", adjusterAssigned: "ADJ002", fraudFlag: false};
+var claim3 = {claimNumber: "CLM-2024-000006", customerId: "CUST000006", claimDate: new Date(2024, 1, 10), claimType: "Theft", claimAmount: 3200.00, deductible: 250, status: "approved", incidentLocation: {street: "789 Insurance Ave", city: "Chicago", state: "IL", zipCode: "60601"}, territory: "central", adjusterAssigned: "ADJ003", fraudFlag: false};
 
 claims.push(claim1);
 claims.push(claim2);
 claims.push(claim3);
 
-// Upsert claims to avoid conflicts with Day 1/2 data
+// Upsert claims by business key (claimNumber) to avoid conflicts with Day 1/2 data
 print("Upserting " + claims.length + " claims...");
 claims.forEach(function(c) {
-  db.claims.updateOne({_id: c._id}, {$set: c}, {upsert: true});
+  db.claims.updateOne({claimNumber: c.claimNumber}, {$set: c}, {upsert: true});
 });
 
 print("✓ Generated " + db.claims.countDocuments() + " claims for sharding");
@@ -227,8 +232,10 @@ print("------------------------------------------------");
 print("Creating comprehensive insurance dataset for C# integration...");
 
 // Add agents for the C# service examples
-var agent1 = {_id: new ObjectId(), agentId: "AGT001", firstName: "Emily", lastName: "Rodriguez", email: "emily.rodriguez@insuranceco.com", phone: "+1-555-0201", branchId: "BR001", territory: "Manhattan", specialties: ["Auto", "Property"], licenseNumber: "LIC-NY-12345", isActive: true, performance: {monthlyQuota: 50000.00, quarterlyRevenue: 145000.00, customerSatisfaction: 4.7}, hireDate: new Date("2022-03-15")};
-var agent2 = {_id: new ObjectId(), agentId: "AGT002", firstName: "David", lastName: "Thompson", email: "david.thompson@insuranceco.com", phone: "+1-555-0202", branchId: "BR002", territory: "Chicago", specialties: ["Commercial", "Life"], licenseNumber: "LIC-IL-67890", isActive: true, performance: {monthlyQuota: 75000.00, quarterlyRevenue: 220000.00, customerSatisfaction: 4.9}, hireDate: new Date("2021-08-22")};
+// Day 3 enrichment for AGT001/AGT002 (existing Day 1 agents). Upsert matches by agentId
+// so we don't try to overwrite Day 1's _id.
+var agent1 = {agentId: "AGT001", firstName: "Emily", lastName: "Rodriguez", email: "emily.rodriguez@insuranceco.com", phone: "+1-555-0201", branchId: "BR001", territory: "Manhattan", specialties: ["Auto", "Property"], licenseNumber: "LIC-NY-12345", isActive: true, performance: {monthlyQuota: 50000.00, quarterlyRevenue: 145000.00, customerSatisfaction: 4.7}, hireDate: new Date("2022-03-15")};
+var agent2 = {agentId: "AGT002", firstName: "David", lastName: "Thompson", email: "david.thompson@insuranceco.com", phone: "+1-555-0202", branchId: "BR002", territory: "Chicago", specialties: ["Commercial", "Life"], licenseNumber: "LIC-IL-67890", isActive: true, performance: {monthlyQuota: 75000.00, quarterlyRevenue: 220000.00, customerSatisfaction: 4.9}, hireDate: new Date("2021-08-22")};
 [agent1, agent2].forEach(function(a) {
   db.agents.updateOne({agentId: a.agentId}, {$set: a}, {upsert: true});
 });

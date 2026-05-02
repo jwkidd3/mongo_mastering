@@ -1,10 +1,21 @@
 # Lab 12: Sharding & Horizontal Scaling
-**Duration:** 45 minutes
-**Objective:** Understand MongoDB sharding concepts and strategies for insurance company geographic distribution
+**Duration:** 75 minutes
+**Objective:** Understand MongoDB sharding concepts and strategies for insurance company geographic distribution by running real sharding commands against a live sharded cluster.
+
+> **NOTE — Two Environments**
+> Lab 12 uses **two MongoDB environments side-by-side**:
+> 1. **Replica set** on `localhost:27017` — holds the `insurance_company` data set you have used in earlier labs (loaded by `comprehensive_data_loader.js`). This is your *source* of analysis data.
+> 2. **Sharded cluster** on `localhost:27120` (mongos router) — provisioned by `scripts/setup_sharding.sh`. This is where you will perform actual sharding operations.
+>
+> Topology of the sharded cluster:
+> - Mongos router : `localhost:27120` ← students connect here for Part B/C
+> - Config server : `mongo-cfg` (replica set `cfgrs`, port 27121)
+> - Shard 1       : `mongo-shard1` (replica set `shard1rs`, port 27131)
+> - Shard 2       : `mongo-shard2` (replica set `shard2rs`, port 27141)
 
 ## Prerequisites: Environment Setup
 
-### Prerequisites: Verify MongoDB Environment
+### Prerequisites: Verify MongoDB Replica Set
 
 **⚠️ Only run if MongoDB environment is not already running**
 
@@ -25,12 +36,40 @@ To check if MongoDB is already running:
 mongosh --eval "db.runCommand('ping')"
 ```
 
-**Load Course Data:**
+**Load Course Data into the Replica Set:**
 ```bash
 mongosh < data/comprehensive_data_loader.js
 ```
 
-## Part A: Understanding Sharding Architecture (25 minutes)
+### Prerequisites: Provision the Sharded Cluster
+
+Lab 12 requires a real sharded cluster. Provision it with the course script:
+
+**macOS/Linux:**
+```bash
+./scripts/setup_sharding.sh
+```
+
+**Windows PowerShell:**
+```powershell
+.\scripts\setup_sharding.ps1
+```
+
+This brings up a config server, two shard replica sets, and a mongos router on port `27120`. The script is idempotent — re-running it cleans up and recreates the sharded cluster. It does **not** affect the replica set on `27017`.
+
+**Connect to the sharded cluster (you will use this connection for Part B and Part C):**
+```bash
+mongosh "mongodb://localhost:27120/?directConnection=true"
+```
+
+You should see a prompt like `[direct: mongos] test>`. Verify the cluster:
+```javascript
+sh.status()
+```
+
+You should see two shards (`shard1rs`, `shard2rs`) and the config database.
+
+## Part A: Understanding Sharding Architecture (15 minutes)
 
 ### Step 1: Sharded Cluster Components Overview
 
@@ -56,17 +95,31 @@ MongoDB sharding distributes data across multiple machines for horizontal scalin
 - **Size**: Default 128MB, configurable
 - **Migration**: Automatic balancing between shards
 
-#### **Current Environment Analysis**
-Our current environment uses a 3-member replica set, which provides high availability but not horizontal scaling. Let's explore how our insurance data would benefit from sharding.
+#### **Inspect the Live Sharded Cluster**
+
+Connect to mongos (`mongodb://localhost:27120/?directConnection=true`) and inspect the cluster components.
 
 ```javascript
-// Connect to our replica set
-use insurance_company
+// View overall cluster status
+sh.status()
 ```
 
-### Step 2: Analyze Insurance Data for Sharding
+```javascript
+// List shards in the config metadata
+db.getSiblingDB("config").shards.find().toArray()
+```
 
-Understanding your current data distribution is crucial for designing an effective sharding strategy.
+### Step 2: Analyze Insurance Data for Sharding (Replica Set)
+
+Connect to the **replica set** (port 27017) in a separate terminal to analyze the source data:
+
+```bash
+mongosh
+```
+
+```javascript
+use insurance_company
+```
 
 **Analyze Customer Geographic Distribution:**
 ```javascript
@@ -90,14 +143,13 @@ var policiesByType = db.policies.aggregate([
 policiesByType
 ```
 
-**Simulate Shard Distribution:**
+**Estimate Shard Distribution:**
 ```javascript
-// Calculate how data would be distributed across shards
+// Calculate how data would be distributed across 2 shards
 var totalDocs = db.customers.countDocuments()
-var docsPerShard = Math.ceil(totalDocs / 3)
-
+var docsPerShard = Math.ceil(totalDocs / 2)
 print("Total customers: " + totalDocs)
-print("Documents per shard (3 shards): " + docsPerShard)
+print("Documents per shard (2 shards): " + docsPerShard)
 ```
 
 #### **Sharding Strategy Recommendations**
@@ -109,585 +161,368 @@ Based on this data analysis, insurance companies typically benefit from:
 3. **Hash-based Sharding**: Use `_id` field for guaranteed even distribution
 4. **Range-based Sharding**: Optimize time-series queries using date fields
 
-### Step 3: Sharding Commands Simulation
+In the rest of this lab you will apply these strategies against the actual sharded cluster. Stretch Goals at the end of the lab let you extend the work to additional collections and zone-based residency.
 
-In a real sharded environment, you would use these commands:
+## Part B: Real Sharding Operations on the Mongos Cluster (35 minutes)
+
+> Switch to the **mongos** connection now: `mongosh "mongodb://localhost:27120/?directConnection=true"`. All commands in Part B are executed against mongos unless noted otherwise.
+
+### Step 3: Migrate Sample Data into the Sharded Cluster
+
+The sharded cluster starts empty. We need to copy the `insurance_company` data from the replica set into the sharded cluster so we have something real to shard.
+
+**At the mongos prompt**, run the following script. It opens a second connection to the replica set, reads each collection, and inserts the documents through mongos:
 
 ```javascript
-// Analyze claims distribution by claim type for sharding decisions
-var claimsCount = db.claims.countDocuments()
-if (claimsCount > 0) {
-  var claimsByType = db.claims.aggregate([
-    { $group: { _id: "$claimType", count: { $sum: 1 } } },
-    { $sort: { count: -1 } }
-  ]).toArray()
+// Run this AT THE MONGOS PROMPT (mongodb://localhost:27120)
+// It opens a second connection to the replica set on 27017 and copies data in.
+const sourceConn = new Mongo("mongodb://localhost:27017/?directConnection=true");
+const sourceDb = sourceConn.getDB("insurance_company");
+const targetDb = db.getSiblingDB("insurance_company");
 
-  // Display claims distribution by type (step-by-step approach)
-  for (var k = 0; k < claimsByType.length; k++) {
-    var claimType = claimsByType[k];
-    print("  " + (claimType._id || "Unknown") + ": " + claimType.count + " claims");
+["customers", "policies", "claims", "agents"].forEach(function (c) {
+  const docs = sourceDb.getCollection(c).find().toArray();
+  if (docs.length === 0) {
+    print("(skip) no documents in source." + c);
+    return;
   }
-} else {
-  print("  No claims data available for analysis")
-}
-print("")
-
-print("=== Sharding Strategy Recommendations ===")
-print("Based on the data analysis above:")
-print("")
-print("1. GEOGRAPHIC SHARDING")
-print("   Shard Key: { state: 1, customerId: 1 }")
-print("   Benefits: Locality for regional operations")
-print("   Use Case: Branch-specific queries and compliance")
-print("")
-print("2. HASH SHARDING")
-print("   Shard Key: { _id: 'hashed' }")
-print("   Benefits: Even distribution of write load")
-print("   Use Case: High-volume, evenly distributed writes")
-print("")
-print("3. RANGE SHARDING")
-print("   Shard Key: { policyType: 1, effectiveDate: 1 }")
-print("   Benefits: Efficient queries by policy type")
-print("   Use Case: Policy type-specific analytics")
+  targetDb.getCollection(c).deleteMany({});
+  targetDb.getCollection(c).insertMany(docs);
+  print("Migrated " + docs.length + " documents -> insurance_company." + c);
+});
 ```
 
-### Step 4: Sharding Strategy Simulation
-
-**Simulate Different Sharding Approaches:**
-
+**Verify the migration:**
 ```javascript
-// Step 1: Initialize sharding distribution simulation
-print("=== Sharding Distribution Simulation ===");
-print("");
-```
-
-```javascript
-// Step 2: Set up geographic sharding simulation
-print("1. GEOGRAPHIC SHARDING SIMULATION");
-print("   Imaginary shard allocation by state:");
-```
-
-```javascript
-// Step 3: Define state to shard mapping
-var stateToShard = {
-  "CA": "shard-west",
-  "NY": "shard-east",
-  "TX": "shard-central",
-  "FL": "shard-east",
-  "IL": "shard-central"
-};
-```
-
-```javascript
-// Step 4: Count customers by geographic shard using aggregation (safer approach)
-var customersByGeographicShard = db.customers.aggregate([
-  { $addFields: {
-      assignedShard: {
-        $switch: {
-          branches: [
-            { case: { $eq: ["$address.state", "CA"] }, then: "shard-west" },
-            { case: { $eq: ["$address.state", "NY"] }, then: "shard-east" },
-            { case: { $eq: ["$address.state", "TX"] }, then: "shard-central" },
-            { case: { $eq: ["$address.state", "FL"] }, then: "shard-east" },
-            { case: { $eq: ["$address.state", "IL"] }, then: "shard-central" }
-          ],
-          default: "shard-other"
-        }
-      }
-    }
-  },
-  { $group: { _id: "$assignedShard", count: { $sum: 1 } } },
-  { $sort: { _id: 1 } }
-]).toArray();
-```
-
-```javascript
-// Step 5: Display geographic shard distribution
-for (var i = 0; i < customersByGeographicShard.length; i++) {
-  var shard = customersByGeographicShard[i];
-  print("   " + shard._id + ": " + shard.count + " customers");
-}
-print("");
-```
-
-```javascript
-// Step 6: Simulate hash sharding
-print("2. HASH SHARDING SIMULATION");
-print("   Even distribution across 3 hypothetical shards:");
-```
-
-```javascript
-// Step 7: Calculate hash shard distribution
-var customerCount = db.customers.countDocuments();
-var shardSize = Math.ceil(customerCount / 3);
-print("   shard-0: ~" + shardSize + " customers");
-print("   shard-1: ~" + shardSize + " customers");
-print("   shard-2: ~" + shardSize + " customers");
-print("");
-```
-
-```javascript
-// Step 8: Set up range sharding by policy type
-print("3. RANGE SHARDING BY POLICY TYPE");
-print("   Shard allocation by policy type:");
-```
-
-```javascript
-// Step 9: Count policies by type shard using aggregation (safer approach)
-var policiesByTypeShard = db.policies.aggregate([
-  { $addFields: {
-      assignedShard: {
-        $switch: {
-          branches: [
-            { case: { $eq: ["$policyType", "Auto"] }, then: "shard-auto" },
-            { case: { $eq: ["$policyType", "Property"] }, then: "shard-property" },
-            { case: { $eq: ["$policyType", "Life"] }, then: "shard-life" },
-            { case: { $eq: ["$policyType", "Commercial"] }, then: "shard-commercial" },
-            { case: { $eq: ["$policyType", "Cyber"] }, then: "shard-cyber" },
-            { case: { $eq: ["$policyType", "Health"] }, then: "shard-health" }
-          ],
-          default: "shard-other"
-        }
-      }
-    }
-  },
-  { $group: { _id: "$assignedShard", count: { $sum: 1 } } },
-  { $sort: { _id: 1 } }
-]).toArray();
-```
-
-```javascript
-// Step 10: Display policy type shard distribution
-for (var j = 0; j < policiesByTypeShard.length; j++) {
-  var policyShard = policiesByTypeShard[j];
-  print("   " + policyShard._id + ": " + policyShard.count + " policies");
-}
-```
-
-### Step 5: Query Routing Simulation
-
-**Understand How Queries Would Route:**
-```javascript
-// Simulate query routing in a sharded environment
-function simulateQueryRouting() {
-  print("=== Query Routing Simulation ===")
-  print("")
-
-  print("Query 1: Find customers in California")
-  print("  Query: db.customers.find({ 'address.state': 'CA' })")
-  print("  Sharding: Geographic by state")
-  print("  Route: Would target shard-west only")
-  print("  Efficiency: High (single shard)")
-  print("")
-
-  print("Query 2: Find all auto policies")
-  print("  Query: db.policies.find({ policyType: 'Auto' })")
-  print("  Sharding: Range by policy type")
-  print("  Route: Would target shard-auto only")
-  print("  Efficiency: High (single shard)")
-  print("")
-
-  print("Query 3: Count all customers")
-  print("  Query: db.customers.countDocuments({})")
-  print("  Sharding: Any strategy")
-  print("  Route: Must query all shards and aggregate")
-  print("  Efficiency: Lower (requires scatter-gather)")
-  print("")
-
-  print("Query 4: Find customer by ID")
-  print("  Query: db.customers.findOne({ _id: 'specific_id' })")
-  print("  Sharding: Hash on _id")
-  print("  Route: Deterministic single shard")
-  print("  Efficiency: High (direct routing)")
-  print("")
-
-  // Demonstrate query analysis
-  print("=== Query Performance Analysis ===")
-  var start = new Date()
-  var customerCount = db.customers.countDocuments({ "address.state": "CA" })
-  var end = new Date()
-  print("Current (non-sharded): " + customerCount + " CA customers found in " + (end - start) + "ms")
-  print("Sharded scenario: Would be faster with geographic sharding")
-}
-
-simulateQueryRouting()
-```
-
-## Part B: Sharding Strategy Deep Dive (15 minutes)
-
-### Step 6: Sharding Command Simulation (Current Environment: Replica Set)
-
-```javascript
-// NOTE: Our current environment is a replica set, not a sharded cluster
-// The following commands would be used in a sharded environment
-
-print("=== Sharding Commands Simulation ===")
-print("Current environment: Replica Set")
-print("In a sharded cluster, you would run:")
-print("")
-
-print("1. Enable sharding on database:")
-print("   sh.enableSharding('insurance_company')")
-print("")
-
-print("2. Shard collections with different strategies:")
-print("   // Hashed sharding for customers")
-print("   sh.shardCollection('insurance_company.customers', { _id: 'hashed' })")
-print("")
-
-print("   // Range sharding for policies")
-print("   sh.shardCollection('insurance_company.policies', { region: 1, policyType: 1 })")
-print("")
-
-print("   // Compound sharding for claims by type and date")
-print("   sh.shardCollection('insurance_company.claims', { claimType: 1, incidentDate: 1 })")
-print("")
-
-print("3. Check sharding status:")
-print("   sh.status()")
-print("")
-
-// Demonstrate what we can do in current environment
-print("=== What we can do in our replica set environment ===")
-print("1. Analyze data distribution patterns")
-print("2. Plan shard key strategies")
-print("3. Simulate query routing")
-print("4. Test index strategies for sharded queries")
-```
-
-### Step 7: Load Test Data (Optional - Data Already Loaded)
-
-**Note:** The comprehensive data loader has already populated the insurance_company database with customer, policy, claim, and agent data. This step is optional and shows how you would generate additional test data if needed.
-
-**If you want to generate additional test data, use a separate collection:**
-```javascript
-// Generate additional test customers for sharding simulation
-print("Generating additional test customer data...");
-var customerTypes = ["Individual", "Business"];
-var states = ["CA", "NY", "TX", "FL", "IL", "PA", "OH", "GA", "NC", "MI"];
-
-for (var i = 1; i <= 1000; i++) {
-  var customerType = customerTypes[Math.floor(Math.random() * customerTypes.length)];
-  var state = states[Math.floor(Math.random() * states.length)];
-
-  db.test_customers_sharding.insertOne({
-    _id: "test_cust" + i,
-    name: customerType === "Individual" ? "Customer " + i : "Business Corp " + i,
-    email: "customer" + i + "@example.com",
-    phone: "555-" + String(Math.floor(Math.random() * 10000)).padStart(4, '0'),
-    type: customerType,
-    state: state,
-    registrationDate: new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28)),
-    accountBalance: Math.round((Math.random() * 50000 + 1000) * 100) / 100,
-    creditScore: customerType === "Individual" ? Math.floor(Math.random() * 400 + 400) : null,
-    businessSize: customerType === "Business" ? Math.floor(Math.random() * 1000 + 10) : null
-  });
-
-  if (i % 200 === 0) {
-    print("Inserted " + i + " test customers");
-  }
-}
-```
-
-**Or simply skip this step and use the existing data:**
-```javascript
-print("Using existing customer data from comprehensive loader");
-print("Customer count: " + db.customers.countDocuments());
-print("Policy count: " + db.policies.countDocuments());
-print("Claim count: " + db.claims.countDocuments());
-```
-
-**Generate Policy Data (Optional - Range Sharding):**
-```javascript
-// Generate additional test policies for range-based distribution
-print("Generating additional test policy data...");
-var regions = ["Northeast", "Southeast", "Midwest", "Southwest", "West"];
-var policyTypes = ["Auto", "Property", "Life", "Commercial", "Health", "Cyber"];
-var states = ["CA", "NY", "TX", "FL", "IL", "PA", "OH", "GA", "NC", "MI"];
-
-for (var i = 1; i <= 1500; i++) {
-  var region = regions[Math.floor(Math.random() * regions.length)];
-  var policyType = policyTypes[Math.floor(Math.random() * policyTypes.length)];
-  var state = states[Math.floor(Math.random() * states.length)];
-  var customerId = "test_cust" + Math.floor(Math.random() * 1000 + 1);
-
-  var coverageLimits = {
-    "Auto": [25000, 50000, 100000, 250000],
-    "Property": [200000, 350000, 500000, 750000, 1000000],
-    "Life": [100000, 250000, 500000, 1000000],
-    "Commercial": [500000, 1000000, 2000000, 5000000],
-    "Health": [50000, 100000, 250000, 500000]
-  };
-
-  var coverageLimit = coverageLimits[policyType][Math.floor(Math.random() * coverageLimits[policyType].length)];
-  var premium = coverageLimit * (0.001 + Math.random() * 0.004); // 0.1% to 0.5% of coverage
-
-  db.test_policies_sharding.insertOne({
-    _id: "test_policy" + i,
-    policyNumber: policyType.toUpperCase() + "-TEST-" + String(i).padStart(6, '0'),
-    customerId: customerId,
-    region: region,
-    state: state,
-    policyType: policyType,
-    coverageLimit: coverageLimit,
-    premium: Math.round(premium * 100) / 100,
-    effectiveDate: new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28)),
-    expirationDate: new Date(2025, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28)),
-    status: Math.random() > 0.9 ? "Pending" : "Active",
-    deductible: policyType === "Auto" ? [500, 1000, 2500][Math.floor(Math.random() * 3)] :
-                policyType === "Property" ? [1000, 2500, 5000][Math.floor(Math.random() * 3)] : 0
-  });
-
-  if (i % 300 === 0) {
-    print("Inserted " + i + " policies");
-  }
-}
-```
-
-**Generate Claims Data (Optional - Geographic Sharding):**
-```javascript
-// Generate additional test claims for geographic distribution
-print("Generating additional test claims data...");
-var states = ["CA", "NY", "TX", "FL", "IL", "PA", "OH", "GA", "NC", "MI"];
-var claimTypes = ["Auto Accident", "Property Damage", "Theft", "Fire", "Medical", "Liability"];
-var statuses = ["submitted", "under_review", "investigating", "approved", "denied", "pending"];
-
-for (var i = 1; i <= 800; i++) {
-  var state = states[Math.floor(Math.random() * states.length)];
-  var claimType = claimTypes[Math.floor(Math.random() * claimTypes.length)];
-  var status = statuses[Math.floor(Math.random() * statuses.length)];
-  var customerId = "test_cust" + Math.floor(Math.random() * 1000 + 1);
-  var policyId = "test_policy" + Math.floor(Math.random() * 1500 + 1);
-
-  var claimAmount = Math.round((Math.random() * 50000 + 500) * 100) / 100;
-  var settlementAmount = status === "approved" ? Math.round(claimAmount * (0.7 + Math.random() * 0.3) * 100) / 100 : null;
-
-  db.test_claims_sharding.insertOne({
-    _id: "test_claim" + i,
-    claimNumber: "CLM-TEST-" + new Date().getFullYear() + "-" + String(i).padStart(6, '0'),
-    customerId: customerId,
-    policyId: policyId,
-    state: state,
-    claimType: claimType,
-    incidentDate: new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28)),
-    filedDate: new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28)),
-    claimAmount: claimAmount,
-    settlementAmount: settlementAmount,
-    status: status,
-    description: claimType + " incident in " + state,
-    adjusterId: status !== "submitted" ? "adjuster" + Math.floor(Math.random() * 20 + 1) : null,
-    investigationNotes: status === "investigating" ? "Under investigation" : null
-  });
-
-  if (i % 200 === 0) {
-    print("Inserted " + i + " claims");
-  }
-}
-
-// Generate additional test agent data for territory-based sharding
-print("Generating additional test agent data...");
-var territories = ["North-CA", "South-CA", "NYC", "Upstate-NY", "Dallas-TX", "Houston-TX", "Miami-FL", "Tampa-FL"];
-for (var i = 1; i <= 150; i++) {
-  var territory = territories[Math.floor(Math.random() * territories.length)];
-
-  db.test_agents_sharding.insertOne({
-    territory: territory,
-    agentId: "test_agent" + i,
-    name: "Agent " + i,
-    email: "agent" + i + "@insurance.com",
-    phone: "555-" + String(Math.floor(Math.random() * 10000)).padStart(4, '0'),
-    hireDate: new Date(2020 + Math.floor(Math.random() * 5), Math.floor(Math.random() * 12), Math.floor(Math.random() * 28)),
-    performanceMetrics: {
-      policiesSold: Math.floor(Math.random() * 200 + 50),
-      commission: Math.round((Math.random() * 80000 + 30000) * 100) / 100,
-      customerSatisfaction: Math.round((Math.random() * 2 + 3) * 100) / 100, // 3.0 to 5.0
-      renewalRate: Math.round((Math.random() * 0.3 + 0.7) * 100) / 100 // 70% to 100%
-    }
-  });
-
-  if (i % 50 === 0) {
-    print("Inserted " + i + " agents");
-  }
-}
-```
-
-### Step 8: Analyze Distribution (Simulation for Replica Set)
-
-**In a Sharded Environment, You Would:**
-1. Navigate to `config` database in Compass
-2. View `chunks` collection with filters
-3. Monitor chunk distribution across shards
-
-**Replica Set Analysis (What We Can Do Now):**
-```javascript
-// Analyze actual data distribution patterns
 use insurance_company
-
-print("=== Current Data Distribution Analysis ===")
-print("(In a sharded environment, this would be spread across multiple shards)")
-print("")
-
-// Analyze customers by region/state
-print("Customer Distribution by State:")
-var customersByState = db.customers.aggregate([
-  { $group: { _id: "$address.state", count: { $sum: 1 } } },
-  { $sort: { count: -1 } }
-]).toArray()
-
-customersByState.forEach(function(result) {
-  print("  " + (result._id || "Unknown") + ": " + result.count + " customers")
-})
-
-// Analyze policies by type
-print("\nPolicy Distribution by Type:")
-var policiesByType = db.policies.aggregate([
-  { $group: { _id: "$policyType", count: { $sum: 1 } } },
-  { $sort: { count: -1 } }
-]).toArray()
-
-policiesByType.forEach(function(result) {
-  print("  " + (result._id || "Unknown") + ": " + result.count + " policies")
-})
-
-// Simulate shard distribution
-print("\n=== Simulated Shard Distribution ===")
-print("If this were sharded with 3 shards:")
-var totalDocs = db.customers.countDocuments()
-var docsPerShard = Math.ceil(totalDocs / 3)
-print("  Estimated docs per shard: " + docsPerShard)
-print("  Shard 0: ~" + Math.min(docsPerShard, totalDocs) + " documents")
-print("  Shard 1: ~" + Math.min(docsPerShard, Math.max(0, totalDocs - docsPerShard)) + " documents")
-print("  Shard 2: ~" + Math.max(0, totalDocs - (2 * docsPerShard)) + " documents")
+db.customers.countDocuments()
+db.policies.countDocuments()
+db.claims.countDocuments()
 ```
 
-## Part C: Zone Sharding and Management (5 minutes)
+You should see non-zero counts. The data is now in the sharded cluster, but the collections are NOT sharded yet — they all live on the primary shard. We will shard them next.
 
-### Step 9: Zone Sharding Concepts (Simulation)
+### Step 4: Enable Sharding and Shard Collections
 
+Sharding is enabled per database, then per collection.
+
+**Enable sharding on the database:**
 ```javascript
-// Zone sharding commands that would be used in a sharded environment
-print("=== Zone Sharding Simulation ===")
-print("In a sharded cluster, you would configure zones like this:")
-print("")
-
-print("1. Add shard tags for geographic regions:")
-print("   sh.addShardToZone('shard1rs', 'EASTERN-REGION')")
-print("   sh.addShardToZone('shard2rs', 'WESTERN-REGION')")
-print("")
-
-print("2. Create zone ranges for policies by region:")
-print("   sh.updateZoneKeyRange('insurance_company.policies',")
-print("     { region: 'Northeast', policyType: MinKey },")
-print("     { region: 'Northeast', policyType: MaxKey },")
-print("     'EASTERN-REGION')")
-print("")
-
-print("3. Create zone ranges for claims by type:")
-print("   sh.updateZoneKeyRange('insurance_company.claims',")
-print("     { claimType: 'Auto', incidentDate: MinKey },")
-print("     { claimType: 'Auto', incidentDate: MaxKey },")
-print("     'EASTERN-REGION')")
-print("")
-
-// Analyze what zone distribution would look like
-print("=== Analyzing Geographic Distribution for Zone Planning ===")
-print("Current data distribution by state (for zone planning):")
-
-var stateDistribution = db.customers.aggregate([
-  { $group: {
-      _id: "$address.state",
-      customers: { $sum: 1 }
-    }
-  },
-  { $addFields: {
-      suggestedZone: {
-        $cond: {
-          if: { $in: ["$_id", ["NY", "FL", "GA", "NC", "PA"]] },
-          then: "EASTERN-REGION",
-          else: "WESTERN-REGION"
-        }
-      }
-    }
-  },
-  { $sort: { customers: -1 } }
-]).toArray()
-
-print("\nState distribution with suggested zones:")
-stateDistribution.forEach(function(result) {
-  print("  " + (result._id || "Unknown") + ": " + result.customers + " customers → " + result.suggestedZone)
-})
+sh.enableSharding("insurance_company")
 ```
 
-**Monitor in Compass:**
-1. Navigate to `config` database
-2. View `shards` collection to see shard tags
-3. View `tags` collection to see zone ranges
+**Shard `customers` with a compound range key (geographic + ID):**
+```javascript
+// Index on the shard key MUST exist before shardCollection
+db.customers.createIndex({ "address.state": 1, customerId: 1 })
+sh.shardCollection("insurance_company.customers", { "address.state": 1, customerId: 1 })
+```
 
-### Step 10: Chunk Management Concepts (Simulation)
+**Shard `policies` with a hashed key for even write distribution:**
+```javascript
+db.policies.createIndex({ _id: "hashed" })
+sh.shardCollection("insurance_company.policies", { _id: "hashed" })
+```
+
+> Want to also shard `claims` with a compound `(policyType, incidentDate)` key? See **Stretch Goal 1** at the end of the lab.
+
+**Verify sharding configuration:**
+```javascript
+sh.status()
+```
+
+Look for the `insurance_company.customers` and `insurance_company.policies` entries with their shard keys and chunk metadata.
+
+### Step 5: Inspect Chunk Distribution
 
 ```javascript
-// Manual chunk operations that would be used in a sharded environment
-print("=== Chunk Management Simulation ===")
-print("In a sharded cluster, you would manage chunks like this:")
-print("")
+// See how docs are distributed across shards
+db.customers.getShardDistribution()
+```
 
-print("1. Split chunks manually:")
-print("   sh.splitAt('insurance_company.policies', { region: 'Midwest', policyType: 'Auto' })")
-print("   sh.splitAt('insurance_company.claims', { state: 'CA', incidentDate: new Date('2024-06-01') })")
-print("")
+```javascript
+db.policies.getShardDistribution()
+```
 
-print("2. Move chunks between shards:")
-print("   sh.moveChunk('insurance_company.policies',")
-print("     { region: 'Northeast', policyType: MinKey },")
-print("     'shard1rs')")
-print("")
+> With small sample data, you'll initially see only one chunk per collection on the primary shard. The next step manually splits and migrates chunks so you can observe true cross-shard distribution. For deeper config-database introspection see **Stretch Goal 3**.
 
-print("3. Balancer management:")
-print("   sh.stopBalancer()   // Stop during maintenance")
-print("   sh.startBalancer()  // Resume after maintenance")
-print("")
+### Step 6: Manually Split and Move Chunks
 
-// Analyze current data distribution that would benefit from chunk management
-use insurance_company
-print("=== Current Data Distribution Analysis ===")
-print("(This shows how data would be distributed across chunks)")
-print("")
+By default a freshly sharded small collection has one chunk on the primary shard. To demonstrate distribution, we will split a chunk and move it to the other shard.
 
-// Check actual data distribution by fields that would be shard keys
-if (db.policies.countDocuments() > 0) {
-  print("Policy distribution by type:")
-  var policyTypes = db.policies.aggregate([
-    { $group: { _id: "$policyType", count: { $sum: 1 } } },
-    { $sort: { count: -1 } }
-  ]).toArray()
-
-  policyTypes.forEach(function(result) {
-    print("  " + (result._id || "Unknown") + ": " + result.count + " policies")
-  })
+**Split the `customers` chunk at state = "NY":**
+```javascript
+// Idempotent: re-running after the chunk is already split is a no-op.
+try {
+  sh.splitAt(
+    "insurance_company.customers",
+    { "address.state": "NY", customerId: MinKey }
+  )
+} catch (e) {
+  if (/boundary key|already exists/i.test(e.message)) {
+    print("Chunk already split at this boundary — skipping.");
+  } else { throw e; }
 }
+```
 
-if (db.claims.countDocuments() > 0) {
-  print("\nClaims that would need chunk management:")
-  var totalClaims = db.claims.countDocuments()
-  print("  Total claims: " + totalClaims)
-  print("  Estimated chunks (64MB each): " + Math.ceil(totalClaims / 1000))
-}
+```javascript
+// View the new chunk boundaries
+sh.status()
+```
 
-print("\n=== Maintenance Window Simulation ===")
-print("During maintenance, you would:")
-print("1. Stop the balancer to prevent chunk migrations")
-print("2. Perform maintenance operations")
-print("3. Restart the balancer")
-print("4. Monitor for proper chunk distribution")
+You should now see two chunks for `insurance_company.customers`.
+
+**Move the upper chunk to the second shard:**
+```javascript
+sh.moveChunk(
+  "insurance_company.customers",
+  { "address.state": "NY", customerId: MinKey },
+  "shard2rs"
+)
+```
+
+**Re-check distribution:**
+```javascript
+db.customers.getShardDistribution()
+```
+
+You should now see documents on **both** `shard1rs` and `shard2rs`.
+
+### Step 7: Balancer Management
+
+The balancer automatically migrates chunks across shards to keep them even.
+
+```javascript
+// Current balancer mode
+sh.getBalancerState()
+```
+
+```javascript
+// Is the balancer actively running a round right now?
+sh.isBalancerRunning()
+```
+
+```javascript
+// Stop the balancer (e.g., during maintenance windows)
+sh.stopBalancer()
+sh.getBalancerState()
+```
+
+```javascript
+// Restart the balancer
+sh.startBalancer()
+sh.getBalancerState()
+```
+
+## Part C: Query Routing and Verification (10 minutes)
+
+### Step 8: Query Routing Observation
+
+Mongos routes queries based on the shard key. Inspect explain plans to see which shards are touched.
+
+**Targeted query (uses the `customers` shard key):**
+```javascript
+db.customers.find({ "address.state": "CA" }).explain("executionStats")
+```
+
+Look at `winningPlan.shards` — only the shards holding CA data should appear.
+
+**Scatter-gather query (no shard key in filter):**
+```javascript
+db.customers.find({ accountStatus: "Active" }).explain("executionStats")
+```
+
+This will fan out to **all** shards. Compare the two plans — that contrast (targeted vs. scatter-gather) is the core lesson on shard-key-aware query design. For a hashed-key direct lookup example see **Stretch Goal 4**.
+
+### Step 9: Final Verification
+
+Run the following to confirm the end-state:
+
+```javascript
+sh.status()
+```
+
+```javascript
+// Count documents per sharded collection
+print("customers: " + db.customers.countDocuments())
+print("policies:  " + db.policies.countDocuments())
+print("claims:    " + db.claims.countDocuments())
+```
+
+```javascript
+// Storage and per-shard breakdown
+db.customers.stats()
 ```
 
 ## Lab 12 Deliverables
-✅ **Sharding concepts**: Understood shard key selection, chunk distribution, and cluster architecture
-✅ **Insurance-specific sharding strategies** analyzed:
-   - Hashed sharding for customer distribution
-   - Range sharding for policies by region and type
-   - Geographic sharding for claims by state
-   - Territory-based sharding for agent data
-✅ **Zone sharding**: Designed geographic zone configurations for insurance regions
-✅ **Chunk distribution analysis**: Simulated distribution patterns for insurance operations
-✅ **Balancer management**: Understood maintenance window planning and balancer controls
+- **Sharded cluster verified**: connected to mongos at `localhost:27120`, observed two shards (`shard1rs`, `shard2rs`) and a config server.
+- **Sample data migrated**: copied `customers`, `policies`, `claims` from the replica set into the sharded cluster.
+- **Two sharding strategies applied to real collections** (a third is available in Stretch Goal 1):
+  - Compound range sharding on `customers` (`address.state, customerId`)
+  - Hashed sharding on `policies` (`_id`)
+- **Chunk operations performed**: split `customers` at `state=NY`, moved a chunk to `shard2rs`, observed cross-shard distribution.
+- **Balancer management**: stopped and restarted the balancer, inspected balancer state.
+- **Query routing**: used `explain()` to see targeted vs. scatter-gather routing on the live cluster.
+
+## Stretch Goals (Optional)
+
+If you finish Steps 1–9 with time to spare, these extensions deepen the sharding exercise. Each goal is independent — pick whichever interests you. They run against the same mongos connection (`mongodb://localhost:27120`) you used in Part B.
+
+### Stretch Goal 1: Range Sharding by Compound Key (Claims)
+
+Apply a third sharding strategy to the `claims` collection using a compound range key on `(policyType, incidentDate)`. This keeps claims for a single policy type clustered together and supports time-range queries.
+
+**Analyze claim type distribution first** (run on the **replica set** at port 27017):
+```javascript
+var claimsByType = db.claims.aggregate([
+  { $group: { _id: "$claimType", count: { $sum: 1 } } },
+  { $sort: { count: -1 } }
+]).toArray()
+
+claimsByType
+```
+
+**Shard `claims` with a compound range key (run on mongos):**
+```javascript
+db.claims.createIndex({ policyType: 1, incidentDate: 1 })
+sh.shardCollection("insurance_company.claims", { policyType: 1, incidentDate: 1 })
+```
+
+**Inspect the new distribution:**
+```javascript
+db.claims.getShardDistribution()
+```
+
+### Stretch Goal 2: Zone Sharding (Tag-Aware Sharding)
+
+Zone sharding lets you constrain ranges of a shard key to specific shards. This is useful for geographic data residency, tiered storage, or compliance.
+
+**Tag the shards with regional zone names:**
+```javascript
+sh.addShardToZone("shard1rs", "EASTERN-REGION")
+sh.addShardToZone("shard2rs", "WESTERN-REGION")
+```
+
+**Pin NY customers to the Eastern shard:**
+```javascript
+sh.updateZoneKeyRange(
+  "insurance_company.customers",
+  { "address.state": "NY", customerId: MinKey },
+  { "address.state": "NY", customerId: MaxKey },
+  "EASTERN-REGION"
+)
+```
+
+**Pin CA customers to the Western shard:**
+```javascript
+sh.updateZoneKeyRange(
+  "insurance_company.customers",
+  { "address.state": "CA", customerId: MinKey },
+  { "address.state": "CA", customerId: MaxKey },
+  "WESTERN-REGION"
+)
+```
+
+**Inspect tags and zone ranges:**
+```javascript
+// Tags assigned to each shard
+db.getSiblingDB("config").shards.find({}, { _id: 1, tags: 1 }).toArray()
+```
+
+```javascript
+// Zone-key ranges for sharded collections
+db.getSiblingDB("config").tags.find().toArray()
+```
+
+The balancer will move data into compliance with these zones over time. You can also manually trigger:
+```javascript
+sh.status()
+```
+
+**Cleanup zones (optional, leaves a clean state for replays):**
+```javascript
+sh.removeRangeFromZone(
+  "insurance_company.customers",
+  { "address.state": "NY", customerId: MinKey },
+  { "address.state": "NY", customerId: MaxKey }
+)
+sh.removeRangeFromZone(
+  "insurance_company.customers",
+  { "address.state": "CA", customerId: MinKey },
+  { "address.state": "CA", customerId: MaxKey }
+)
+sh.removeShardFromZone("shard1rs", "EASTERN-REGION")
+sh.removeShardFromZone("shard2rs", "WESTERN-REGION")
+```
+
+### Stretch Goal 3: Advanced Chunk and Metadata Inspection
+
+Look directly at the config database to see how MongoDB tracks shard metadata under the hood.
+
+**List config-server hosts:**
+```javascript
+// List config-server hosts (getCmdLineOpts must run against admin)
+db.getSiblingDB("admin").runCommand({ getCmdLineOpts: 1 })
+```
+
+**Per-collection shard metadata from the config DB:**
+```javascript
+// View per-collection shard metadata directly from the config DB
+db.getSiblingDB("config").collections.find(
+  { _id: /^insurance_company\./ },
+  { _id: 1, key: 1, unique: 1 }
+).toArray()
+```
+
+**Detailed sharding status:**
+```javascript
+// Detailed per-collection sharding status
+db.printShardingStatus()
+```
+
+**Inspect chunks via the config database:**
+```javascript
+// Inspect chunks via the config database
+db.getSiblingDB("config").chunks.aggregate([
+  { $lookup: {
+      from: "collections",
+      localField: "uuid",
+      foreignField: "uuid",
+      as: "coll"
+  }},
+  { $project: {
+      ns: { $arrayElemAt: ["$coll._id", 0] },
+      shard: 1,
+      min: 1,
+      max: 1
+  }}
+]).toArray()
+```
+
+### Stretch Goal 4: Balancer Internals and Hashed-Key Routing
+
+**Detailed balancer status for a specific collection:**
+```javascript
+// Detailed balancer status (chunk migrations, settings, etc.)
+sh.balancerCollectionStatus("insurance_company.customers")
+```
+
+**Hashed-key direct lookup explain plan:**
+```javascript
+db.policies.find({ _id: db.policies.findOne()._id }).explain("executionStats")
+```
+
+A hashed shard key gives you direct, deterministic routing for `_id` lookups but cannot serve range queries on `_id`.
+
+**Per-shard storage breakdown for a hashed-sharded collection:**
+```javascript
+db.policies.stats()
+```
+
+## Tear Down (Optional)
+
+When you are done with the sharded cluster:
+```bash
+./scripts/teardown_sharding.sh   # remove sharded cluster only (keeps replica set)
+./scripts/teardown.sh            # remove EVERYTHING (replica set + sharded cluster)
+```

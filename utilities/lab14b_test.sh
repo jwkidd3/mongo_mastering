@@ -9,7 +9,7 @@ set -u
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-CONN="mongodb://localhost:27017/?directConnection=true"
+CONN="${MONGO_URI:-mongodb://localhost:27017/?directConnection=true}"
 TEST_DB="insurance_company_js_test"
 TEST_POLICY="POL-JS-TEST-001"
 
@@ -56,7 +56,7 @@ fi
 cat > test.js <<'JS_EOF'
 const { MongoClient } = require('mongodb');
 
-const uri = 'mongodb://localhost:27017/?directConnection=true';
+const uri = process.env.MONGO_URI || 'mongodb://localhost:27017/?directConnection=true';
 const dbName = 'insurance_company_js_test';
 const collName = 'policies';
 const TEST_POLICY = 'POL-JS-TEST-001';

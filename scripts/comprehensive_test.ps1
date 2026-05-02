@@ -1,9 +1,16 @@
 # MongoDB Mastering Course - Comprehensive End-to-End Test (PowerShell)
-# Runs the complete flow: teardown -> setup -> data load -> validate -> teardown
-# Compatible with Windows PowerShell 5.1+ and PowerShell Core 6+
+# Runs the complete validation flow:
+#   teardown -> setup (rs + sharded) -> load data -> all test suites -> teardown
+#
+# Test suites executed (all run inside the `course-tools` Docker image so the
+# host needs ONLY Docker -- no WSL, Git Bash, mongosh, dotnet, node, or python):
+#   1. comprehensive_lab_validator.sh  (133 curated tests + 3 driver integrations)
+#   2. lab_fence_runner.sh             (176 per-fence tests across all 16 labs)
+#   3. ps_fence_check.sh               (38 PowerShell fence parse-checks via Docker)
 
 param(
-    [switch]$Help
+    [switch]$Help,
+    [switch]$SkipPwsh
 )
 
 if ($Help) {
@@ -11,140 +18,223 @@ if ($Help) {
 MongoDB Mastering Course - Comprehensive End-to-End Test
 
 USAGE:
-    .\comprehensive_test.ps1
+    .\comprehensive_test.ps1 [-SkipPwsh]
+
+OPTIONS:
+    -SkipPwsh   Skip the PowerShell fence check (avoids pulling pwsh Docker image)
+
+REQUIREMENTS:
+    - Docker Desktop (Linux containers). No WSL, Git Bash, mongosh, dotnet,
+      node, or python required on the host.
 
 WHAT IT DOES:
     1. Tears down any existing environment (errors ignored)
-    2. Runs setup.ps1 to provision a fresh 3-node replica set
-    3. Loads data\comprehensive_data_loader.js
-    4. Runs utilities\comprehensive_lab_validator.sh non-interactively (--quick)
-       Note: this is a bash script. On Windows, run from WSL or Git Bash.
-    5. Tears down the environment
-    6. Reports overall PASS/FAIL
+    2. Runs setup.ps1          (3-node replica set)
+    3. Runs setup_sharding.ps1 (config server, 2 shards, mongos)
+    4. Builds the course-tools image if missing, then loads data via that image
+    5. Runs three validation suites in sequence inside the course-tools image
+    6. Tears down both environments
+    7. Reports overall PASS/FAIL with per-suite breakdown
 
-DURATION: ~3-5 minutes
+DURATION: ~6-10 minutes (first run builds the course-tools image; subsequent runs faster)
 "@ -ForegroundColor Cyan
     exit 0
 }
 
 $ErrorActionPreference = "Continue"
 
-# Colors / helpers
-function Write-Status {
-    param([string]$Message)
-    Write-Host "[INFO] $Message" -ForegroundColor Blue
-}
-function Write-Success {
-    param([string]$Message)
-    Write-Host "[SUCCESS] $Message" -ForegroundColor Green
-}
-function Write-Warning {
-    param([string]$Message)
-    Write-Host "[WARNING] $Message" -ForegroundColor Yellow
-}
-function Write-Error {
-    param([string]$Message)
-    Write-Host "[ERROR] $Message" -ForegroundColor Red
-}
+function Write-Status  { param([string]$m) Write-Host "[INFO] $m"    -ForegroundColor Blue   }
+function Write-Success { param([string]$m) Write-Host "[SUCCESS] $m" -ForegroundColor Green  }
+function Write-Warn    { param([string]$m) Write-Host "[WARNING] $m" -ForegroundColor Yellow }
+function Write-Err     { param([string]$m) Write-Host "[ERROR] $m"   -ForegroundColor Red    }
 
-# Resolve directories
-$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
-$RepoRoot = Split-Path -Parent $ScriptDir
-$Validator = Join-Path $RepoRoot "utilities\comprehensive_lab_validator.sh"
+$ScriptDir  = Split-Path -Parent $MyInvocation.MyCommand.Definition
+$RepoRoot   = Split-Path -Parent $ScriptDir
+$Dockerfile = Join-Path $RepoRoot "utilities\Dockerfile.course-tools"
 $DataLoader = Join-Path $RepoRoot "data\comprehensive_data_loader.js"
-$SetupPs1 = Join-Path $ScriptDir "setup.ps1"
-$TeardownPs1 = Join-Path $ScriptDir "teardown.ps1"
+$SetupPs1            = Join-Path $ScriptDir "setup.ps1"
+$TeardownPs1         = Join-Path $ScriptDir "teardown.ps1"
+$SetupShardingPs1    = Join-Path $ScriptDir "setup_sharding.ps1"
+$TeardownShardingPs1 = Join-Path $ScriptDir "teardown_sharding.ps1"
+
+$Image    = "course-tools:latest"
+$Network  = "mongodb-net"
+$RsUri    = "mongodb://mongo1:27017/?directConnection=true&replicaSet=rs0"
+$ShUri    = "mongodb://mongo-mongos:27017/?directConnection=true"
 
 $OverallPass = $true
+$SuiteResults = @()
 
-Write-Host "==================================================" -ForegroundColor Blue
-Write-Host "MongoDB Mastering Course - Comprehensive Test" -ForegroundColor Blue
-Write-Host "==================================================" -ForegroundColor Blue
-Write-Host ""
+function Add-SuiteResult { param([string]$r) $script:SuiteResults += $r }
 
-# Step 1: Initial teardown (ignore errors)
-Write-Status "Step 1/5: Initial teardown (errors ignored)..."
-try {
-    & $TeardownPs1 *> $null
-    Write-Success "Initial teardown completed"
-} catch {
-    Write-Warning "Initial teardown reported issues (continuing anyway)"
+# Verify docker is available.
+$dockerCmd = Get-Command docker -ErrorAction SilentlyContinue
+if (-not $dockerCmd) {
+    Write-Err "docker not found on PATH. Install Docker Desktop and try again."
+    exit 127
 }
+
+# Build the course-tools image up-front if missing.
+function Ensure-CourseToolsImage {
+    & docker image inspect $Image *> $null
+    if ($LASTEXITCODE -ne 0) {
+        Write-Status "Building $Image (first run only) ..."
+        & docker build -t $Image -f $Dockerfile (Join-Path $RepoRoot "utilities")
+        if ($LASTEXITCODE -ne 0) {
+            Write-Err "Failed to build $Image"
+            exit 1
+        }
+    }
+}
+
+# Run a test script inside the course-tools container with all standard mounts.
+# Returns the container's exit code.
+function Invoke-CourseToolsScript {
+    param(
+        [string]$ContainerScript,        # /work/... path inside container
+        [string[]]$Arguments = @()
+    )
+    $args = @(
+        "run", "--rm",
+        "--network", $Network,
+        "-v", "${RepoRoot}:/work:rw",
+        "-v", "/var/run/docker.sock:/var/run/docker.sock",
+        "-e", "MONGO_URI=$RsUri",
+        "-e", "MONGOS_URI=$ShUri",
+        "-e", "CLEAN_RUN=false",
+        "-e", "COURSE_TOOLS_IN_CONTAINER=1",
+        "-e", "COURSE_TOOLS_HOST_ROOT=$RepoRoot",
+        "-w", "/work",
+        $Image,
+        $ContainerScript
+    ) + $Arguments
+    & docker @args
+    return $LASTEXITCODE
+}
+
+Write-Host "==================================================" -ForegroundColor Blue
+Write-Host "MongoDB Mastering Course - Comprehensive Test"     -ForegroundColor Blue
+Write-Host "==================================================" -ForegroundColor Blue
 Write-Host ""
 
-# Step 2: Setup
-Write-Status "Step 2/5: Running setup.ps1..."
+# Step 1: Initial teardown
+Write-Status "Step 1/8: Initial teardown of replica set + sharded cluster..."
+try { & $TeardownShardingPs1 *> $null } catch { }
+try { & $TeardownPs1         *> $null } catch { }
+Write-Success "Teardown completed"
+Write-Host ""
+
+# Step 2: Replica set setup
+Write-Status "Step 2/8: Running setup.ps1 (3-node replica set)..."
 & $SetupPs1
 if ($LASTEXITCODE -ne 0) {
-    Write-Error "Setup failed; aborting comprehensive test"
+    Write-Err "Replica set setup failed; aborting"
     exit 1
 }
-Write-Success "Setup completed"
+Write-Success "Replica set setup completed"
 Write-Host ""
 
-# Step 3: Load comprehensive data
-Write-Status "Step 3/5: Loading comprehensive data loader..."
+# Step 3: Sharded cluster setup
+Write-Status "Step 3/8: Running setup_sharding.ps1 (config + shards + mongos)..."
+& $SetupShardingPs1
+if ($LASTEXITCODE -ne 0) {
+    Write-Err "Sharded cluster setup failed; aborting"
+    try { & $TeardownPs1 *> $null } catch { }
+    exit 1
+}
+Write-Success "Sharded cluster setup completed"
+Write-Host ""
+
+# Build the course-tools image now that we know docker is functional.
+Ensure-CourseToolsImage
+
+# Step 4: Load comprehensive data via the course-tools image.
+Write-Status "Step 4/8: Loading comprehensive data loader (via course-tools)..."
 if (-not (Test-Path $DataLoader)) {
-    Write-Error "Cannot find data loader at: $DataLoader"
+    Write-Err "Cannot find data loader at: $DataLoader"
     $OverallPass = $false
+    Add-SuiteResult "Data load: SKIPPED (missing)"
 } else {
-    Push-Location $RepoRoot
-    try {
-        Get-Content $DataLoader | mongosh "mongodb://localhost:27017/?directConnection=true" --quiet
-        if ($LASTEXITCODE -eq 0) {
-            Write-Success "Data loaded"
-        } else {
-            Write-Error "Data load failed"
-            $OverallPass = $false
-        }
-    } finally {
-        Pop-Location
-    }
-}
-Write-Host ""
-
-# Step 4: Run lab validator non-interactively
-Write-Status "Step 4/5: Running comprehensive lab validator (--quick)..."
-if (-not (Test-Path $Validator)) {
-    Write-Error "Validator not found at: $Validator"
-    $OverallPass = $false
-} else {
-    # comprehensive_lab_validator.sh is a bash script.
-    # Try to invoke through bash (WSL or Git Bash must be on PATH).
-    $bashCmd = Get-Command bash -ErrorAction SilentlyContinue
-    if (-not $bashCmd) {
-        Write-Error "bash not found on PATH. Install WSL or Git Bash to run the validator."
-        $OverallPass = $false
+    $rc = Invoke-CourseToolsScript -ContainerScript "/bin/bash" `
+        -Arguments @("-c", "mongosh `"$RsUri`" --quiet < /work/data/comprehensive_data_loader.js > /dev/null")
+    if ($rc -eq 0) {
+        Write-Success "Data loaded"
+        Add-SuiteResult "Data load: PASS"
     } else {
-        & bash $Validator --quick
-        if ($LASTEXITCODE -eq 0) {
-            Write-Success "Lab validation completed"
-        } else {
-            Write-Error "Lab validation reported failures"
-            $OverallPass = $false
-        }
+        Write-Err "Data load failed"
+        $OverallPass = $false
+        Add-SuiteResult "Data load: FAIL"
     }
 }
 Write-Host ""
 
-# Step 5: Final teardown
-Write-Status "Step 5/5: Final teardown..."
-try {
-    & $TeardownPs1 *> $null
-    Write-Success "Teardown completed"
-} catch {
-    Write-Warning "Teardown reported issues"
+# Step 5: Curated validator
+Write-Status "Step 5/8: Suite 1/3 - comprehensive_lab_validator.sh (curated tests)..."
+$rc = Invoke-CourseToolsScript -ContainerScript "/work/utilities/comprehensive_lab_validator.sh" `
+    -Arguments @("--quick")
+if ($rc -eq 0) {
+    Write-Success "Curated validator passed"
+    Add-SuiteResult "Curated validator: PASS"
+} else {
+    Write-Err "Curated validator reported failures"
+    $OverallPass = $false
+    Add-SuiteResult "Curated validator: FAIL"
 }
+Write-Host ""
+
+# Step 6: Per-fence runner
+Write-Status "Step 6/8: Suite 2/3 - lab_fence_runner.sh (per-fence)..."
+$rc = Invoke-CourseToolsScript -ContainerScript "/work/utilities/lab_fence_runner.sh"
+if ($rc -eq 0) {
+    Write-Success "Per-fence runner passed"
+    Add-SuiteResult "Per-fence runner: PASS"
+} else {
+    Write-Err "Per-fence runner reported failures"
+    $OverallPass = $false
+    Add-SuiteResult "Per-fence runner: FAIL"
+}
+Write-Host ""
+
+# Step 7: PowerShell fence check
+if ($SkipPwsh) {
+    Write-Status "Step 7/8: Suite 3/3 - ps_fence_check.sh - SKIPPED (-SkipPwsh)"
+    Add-SuiteResult "PowerShell fence check: SKIPPED (-SkipPwsh)"
+} else {
+    Write-Status "Step 7/8: Suite 3/3 - ps_fence_check.sh (PowerShell parse-check via Docker)..."
+    $rc = Invoke-CourseToolsScript -ContainerScript "/work/utilities/ps_fence_check.sh"
+    if ($rc -eq 0) {
+        Write-Success "PowerShell fence check passed"
+        Add-SuiteResult "PowerShell fence check: PASS"
+    } else {
+        Write-Err "PowerShell fence check reported failures"
+        $OverallPass = $false
+        Add-SuiteResult "PowerShell fence check: FAIL"
+    }
+}
+Write-Host ""
+
+# Step 8: Final teardown
+Write-Status "Step 8/8: Final teardown of both environments..."
+try { & $TeardownShardingPs1 *> $null } catch { }
+try { & $TeardownPs1         *> $null } catch { }
+Write-Success "Teardown completed"
 Write-Host ""
 
 # Final report
+Write-Host "==================================================" -ForegroundColor Blue
+Write-Host "SUITE RESULTS"                                       -ForegroundColor Blue
+Write-Host "==================================================" -ForegroundColor Blue
+foreach ($r in $SuiteResults) {
+    Write-Host "  $r"
+}
+Write-Host ""
 Write-Host "==================================================" -ForegroundColor Blue
 if ($OverallPass) {
     Write-Success "COMPREHENSIVE TEST: PASS"
     Write-Host "==================================================" -ForegroundColor Blue
     exit 0
 } else {
-    Write-Error "COMPREHENSIVE TEST: FAIL"
+    Write-Err "COMPREHENSIVE TEST: FAIL"
     Write-Host "==================================================" -ForegroundColor Blue
     exit 1
 }

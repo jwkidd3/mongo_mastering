@@ -40,36 +40,31 @@ mongosh "mongodb://localhost:27017/?directConnection=true" --eval "use insurance
 
 > **Note:** This lab will create and use its own separate database (`insurance_company_csharp`) for the C# integration exercises. The comprehensive loader is still required to populate the shared course data used by other labs.
 
-## Part A: Project Setup (10 minutes)
+## Part A: Project Setup (5 minutes)
 
-### Step 1: Open VS Code and Create C# Project
+### Step 1: Get the Starter Code
+
+The starter code is in `labs/lab14/lab14a-csharp-starter/`. Copy it to your working directory and verify it builds:
+
 ```bash
-# Create insurance management project directory
-mkdir InsuranceManagementSystem
-cd InsuranceManagementSystem
-
-# Open in VS Code
-code .
-
-# Create new console application
-dotnet new console
-
-# Add MongoDB driver
-dotnet add package MongoDB.Driver
+cp -r labs/lab14/lab14a-csharp-starter ~/lab14a-mywork
+cd ~/lab14a-mywork
+dotnet build
 ```
 
-**In VS Code:**
-1. Open integrated terminal (Ctrl+` or Cmd+`)
-2. Ensure C# extension is installed and active
-3. VS Code will automatically detect the .NET project
+The build should succeed with no warnings — the project already has:
 
-### Step 2: Create Models in VS Code
+- `MongoDBPolicyService.csproj` referencing `MongoDB.Driver` 2.x
+- `appsettings.json` with the connection string (override via env vars `MongoDB__ConnectionString` / `MongoDB__DatabaseName` if needed)
+- `Services/MongoDBService.cs` with the `MongoClient` setup and typed collection helpers (don't modify)
+- `Program.cs` that loads config, constructs services, and runs cleanly
+- Skeleton `Models/Policy.cs`, `Models/Customer.cs`, and `Services/PolicyService.cs` files with `TODO` comments where you fill in the details
 
-**In VS Code, create new folder and file:**
-1. Right-click in Explorer → New Folder → "Models"
-2. Right-click Models folder → New File → "Policy.cs"
+Open the project in VS Code (`code .`). The C# extension will pick up the project automatically.
 
-**Create Models/Policy.cs:**
+### Step 2: Fill in the Models
+
+Open `Models/Policy.cs` and add the `[BsonElement]` properties below to the existing class skeleton (the `[BsonId]` Id property is already there):
 ```csharp
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
@@ -134,7 +129,7 @@ namespace InsuranceManagementSystem.Models
 }
 ```
 
-**Create Models/Customer.cs:**
+Open `Models/Customer.cs` and replace the skeleton with:
 ```csharp
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
@@ -225,7 +220,7 @@ namespace InsuranceManagementSystem.Models
 }
 ```
 
-**Create Models/Claim.cs:**
+Create a new file `Models/Claim.cs` (this one isn't in the starter):
 ```csharp
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
@@ -294,9 +289,9 @@ namespace InsuranceManagementSystem.Models
 }
 ```
 
-### Step 3: Create Database Service
+### Step 3: Database Service (already provided)
 
-**Create Services/MongoDBService.cs:**
+`Services/MongoDBService.cs` is already in the starter and exposes typed `IMongoCollection<T>` for `Policies` and `Customers`. For reference, here's what it contains — and you'll need to add a `Claims` collection accessor:
 ```csharp
 using MongoDB.Driver;
 using InsuranceManagementSystem.Models;
@@ -329,7 +324,7 @@ namespace InsuranceManagementSystem.Services
 
 ### Step 4: Implement Policy Service
 
-**Create Services/PolicyService.cs:**
+Open `Services/PolicyService.cs` (already in the starter with stubbed methods) and replace the stubs with these implementations:
 ```csharp
 using MongoDB.Driver;
 using MongoDB.Bson;
@@ -532,7 +527,7 @@ namespace InsuranceManagementSystem.Services
 }
 ```
 
-**Create Services/ClaimService.cs:**
+Create a new file `Services/ClaimService.cs` (not in the starter):
 ```csharp
 using MongoDB.Driver;
 using MongoDB.Bson;
@@ -689,7 +684,7 @@ namespace InsuranceManagementSystem.Services
 
 ### Step 5: Main Program Implementation
 
-**Update Program.cs:**
+The starter's `Program.cs` already handles config loading and service construction. Replace its body with the full implementation below to exercise CRUD + aggregation:
 ```csharp
 using InsuranceManagementSystem.Models;
 using InsuranceManagementSystem.Services;
@@ -980,7 +975,7 @@ class Program
 
 ### Step 6: Enhanced Error Handling
 
-**Create Services/ResilientInsuranceService.cs:**
+Create a new file `Services/ResilientInsuranceService.cs`:
 ```csharp
 using MongoDB.Driver;
 using InsuranceManagementSystem.Models;

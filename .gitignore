@@ -1,2 +1,13 @@
 .DS_Store
 CLAUDE.md
+.tmp/
+
+# Build / dependency artifacts in lab 14 starters
+node_modules/
+package-lock.json
+bin/
+obj/
+venv/
+__pycache__/
+*.pyc
+.env

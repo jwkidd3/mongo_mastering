@@ -1,0 +1,16 @@
+{
+  "name": "lab14b-javascript-starter",
+  "version": "1.0.0",
+  "description": "Lab 14B starter — Node.js + MongoDB driver insurance management scaffold",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "node --watch app.js",
+    "test": "node app.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "mongodb": "^6.8.0"
+  },
+  "license": "MIT"
+}

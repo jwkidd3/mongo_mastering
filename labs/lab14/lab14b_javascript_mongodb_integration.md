@@ -41,62 +41,33 @@ Verify the data loaded successfully:
 mongosh "mongodb://localhost:27017/?directConnection=true" --eval "use insurance_company; db.policies.countDocuments()"
 ```
 
-## Part A: Project Setup (10 minutes)
+## Part A: Project Setup (3 minutes)
 
-### Step 1: Create Node.js Project in VS Code
+### Step 1: Get the Starter Code
+
+The starter code is in `labs/lab14/lab14b-javascript-starter/`. Copy it to your working directory and install dependencies:
+
 ```bash
-# Create insurance management project directory
-mkdir InsuranceManagementJS
-cd InsuranceManagementJS
-
-# Open in VS Code
-code .
-
-# Initialize Node.js project
-npm init -y
-
-# Install MongoDB driver
-npm install mongodb
-
-# Install additional dependencies for better development
-npm install dotenv
+cp -r labs/lab14/lab14b-javascript-starter ~/lab14b-mywork
+cd ~/lab14b-mywork
+cp .env.example .env
+npm install
+npm start
 ```
 
-**In VS Code:**
-1. Open integrated terminal (Ctrl+` or Cmd+`)
-2. Ensure Node.js and JavaScript extensions are active
-3. VS Code will provide IntelliSense for Node.js and MongoDB
+`npm start` should print "Connected to MongoDB successfully" and exit cleanly. The starter already has:
 
-### Step 2: Create Project Structure in VS Code
+- `package.json` with the `mongodb` and `dotenv` dependencies
+- `.env.example` with `MONGODB_URI` defaulting to the local connection string
+- `config/database.js` — `DatabaseConnection` class wrapping `MongoClient` (don't modify)
+- `app.js` — entry point with init/cleanup wired up; `TODO`s mark where you'll add CRUD calls
+- Skeleton `models/Policy.js`, `models/Customer.js`, and `services/PolicyService.js` files with `TODO` comments where you fill in fields and method bodies
 
-**Using VS Code Explorer:**
-1. Right-click in Explorer → New Folder → "models"
-2. Right-click in Explorer → New Folder → "services"
-3. Right-click in Explorer → New Folder → "config"
-4. Right-click in Explorer → New File → "app.js"
-5. Right-click config folder → New File → "database.js"
-6. Right-click models folder → New File → "Policy.js"
-7. Right-click models folder → New File → "Customer.js"
-8. Right-click services folder → New File → "PolicyService.js"
+Open the project in VS Code (`code .`).
 
-**Or use terminal in VS Code:**
-```bash
-# Create directory structure
-mkdir models services config
+### Step 2: Reference — config/database.js
 
-# Create main files
-touch app.js config/database.js models/Policy.js models/Customer.js services/PolicyService.js
-```
-
-### Step 3: Environment Configuration
-
-**Create .env file:**
-```env
-MONGODB_URI=mongodb://localhost:27017
-DATABASE_NAME=insurance_company
-```
-
-**Create config/database.js:**
+This file is already in the starter. For reference, here's what it contains:
 ```javascript
 const { MongoClient } = require('mongodb');
 require('dotenv').config();
@@ -143,9 +114,9 @@ module.exports = DatabaseConnection;
 
 ## Part B: Data Models (10 minutes)
 
-### Step 1: Create Policy Model
+### Step 1: Fill in the Policy Model
 
-**Create models/Policy.js:**
+Open `models/Policy.js` (already in the starter) and replace the skeleton with:
 ```javascript
 const { ObjectId } = require('mongodb');
 
@@ -227,9 +198,9 @@ class Policy {
 module.exports = Policy;
 ```
 
-### Step 2: Create Customer Model
+### Step 2: Fill in the Customer Model
 
-**Create models/Customer.js:**
+Open `models/Customer.js` (already in the starter) and replace the skeleton with:
 ```javascript
 const { ObjectId } = require('mongodb');
 
@@ -325,9 +296,9 @@ module.exports = Customer;
 
 ## Part C: Business Logic Service (15 minutes)
 
-### Step 1: Create Policy Service
+### Step 1: Implement Policy Service
 
-**Create services/PolicyService.js:**
+Open `services/PolicyService.js` (already in the starter with stubbed methods) and replace the stubs with:
 ```javascript
 const { ObjectId } = require('mongodb');
 const Policy = require('../models/Policy');
@@ -541,9 +512,9 @@ module.exports = PolicyService;
 
 ## Part D: Main Application (10 minutes)
 
-### Step 1: Create Main Application
+### Step 1: Wire Up the Main Application
 
-**Create app.js:**
+The starter's `app.js` already handles connect/disconnect. Replace its body with the full implementation below:
 ```javascript
 const DatabaseConnection = require('./config/database');
 const PolicyService = require('./services/PolicyService');

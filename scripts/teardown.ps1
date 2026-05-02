@@ -52,12 +52,12 @@ function Write-Error {
     Write-Host "[ERROR] $Message" -ForegroundColor Red
 }
 
-# Check if containers exist
+# Check if containers exist (replica set + sharded cluster)
 Write-Status "Checking for MongoDB containers..."
 try {
     # Use cmd for better Windows compatibility
-    $containerList = cmd /c "docker ps -a --filter `"name=mongo`" --format `"{{.Names}}`" 2>nul"
-    $containers = $containerList | Where-Object { $_ -match "^mongo[123]$" }
+    $containerList = cmd /c "docker ps -a --format `"{{.Names}}`" 2>nul"
+    $containers = $containerList | Where-Object { $_ -match "^(mongo[123]|mongo-cfg|mongo-shard[12]|mongo-mongos)$" }
 
     if (-not $containers) {
         Write-Warning "No MongoDB containers found"
@@ -99,7 +99,7 @@ try {
 # Verify cleanup
 Write-Status "Verifying cleanup..."
 try {
-    $remainingContainers = docker ps -a --filter "name=mongo" --format "{{.Names}}" 2>$null | Where-Object { $_ -match "^mongo[123]$" }
+    $remainingContainers = docker ps -a --format "{{.Names}}" 2>$null | Where-Object { $_ -match "^(mongo[123]|mongo-cfg|mongo-shard[12]|mongo-mongos)$" }
     $remainingNetworks = docker network ls --filter "name=mongodb-net" --format "{{.Name}}" 2>$null
 
     $cleanupSuccess = $true
