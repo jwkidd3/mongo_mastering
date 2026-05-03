@@ -233,32 +233,29 @@ If you cannot connect to `localhost:27018` or `localhost:27019` on Windows:
 
    **Note**: This limits some replica set features but allows all basic MongoDB operations and most course labs to work.
 
-### 6. Run Comprehensive Lab Tests
+### 6. Run Comprehensive Lab Tests (Course-Author Validation)
 
-**Option A: Complete End-to-End Test (Recommended)**
-Tests entire environment setup, data loading, and lab validation:
+The single end-to-end test orchestrates teardown → setup → data load → all
+lab assertions (Labs 1–13 host-side, Lab 14 driver tests inside the
+`course-tools` image) → teardown. Run from macOS / Linux / WSL:
 
-**macOS/Linux:**
 ```bash
 utilities/comprehensive_test.sh
 ```
 
-**Windows PowerShell:**
-```powershell
-utilities\comprehensive_test.ps1
-```
+To skip the Lab 14 driver tests (avoids building the `course-tools` image —
+useful on the first run or when iterating on Labs 1-13 only):
 
-**Option B: Lab Validation Only**
-Validates data and key operations across all 16 labs (lab01–lab14c):
-
-**macOS/Linux:**
 ```bash
-mongosh "mongodb://localhost:27017/?directConnection=true" < utilities/lab_validation_comprehensive.js
+utilities/comprehensive_test.sh --skip-lab14
 ```
 
-**Windows PowerShell:**
+**Windows authors** validate via a leaner script that exercises the student
+day-1 flow (setup → mongosh `--file` data load → lab-1 verification →
+teardown):
+
 ```powershell
-Get-Content utilities\lab_validation_comprehensive.js | mongosh "mongodb://localhost:27017/?directConnection=true"
+.\utilities\validate_windows.ps1
 ```
 
 ### 7. Clean Up When Done
@@ -342,16 +339,16 @@ mongo_mastering/
 │       ├── lab14a-csharp-starter/
 │       ├── lab14b-javascript-starter/
 │       └── lab14c-python-starter/
-├── utilities/                    # Course-author tooling (validators, end-to-end tests)
-│   ├── Dockerfile.course-tools                        # Test-runner image (mongosh + dotnet + node + python)
-│   ├── run_tests_in_container.sh                      # Wrapper to run any test script in the container
-│   ├── comprehensive_test.sh / comprehensive_test.ps1 # End-to-end course validation (setup → tests → teardown)
-│   ├── comprehensive_lab_validator.sh                 # 133 curated tests + 3 driver integrations
-│   ├── lab_fence_runner.sh                            # 176 per-fence tests across all 16 labs
-│   ├── ps_fence_check.sh                              # 38 PowerShell fence parse-checks
-│   ├── lab14a_test.sh / lab14b_test.sh / lab14c_test.sh
-│   ├── lab_validation_comprehensive.js                # Sanity validation queries (mongosh script)
-│   └── fix_data_relationships.js                      # Data relationship repair helper
+├── utilities/                    # Course-author tooling
+│   ├── comprehensive_test.sh           # ONE end-to-end test (host CLI; setup → load → validate → teardown)
+│   ├── comprehensive_lab_validator.sh  # Host-side lab assertions (run via docker exec mongo1 mongosh)
+│   ├── validate_windows.ps1            # Lean Windows student-flow validator
+│   ├── Dockerfile.course-tools         # Image used ONLY for Lab 14 driver tests (dotnet + node + python)
+│   ├── lab14a_test.sh                  # Lab 14A C# driver integration test (runs in course-tools)
+│   ├── lab14b_test.sh                  # Lab 14B Node.js driver integration test (runs in course-tools)
+│   ├── lab14c_test.sh                  # Lab 14C Python driver integration test (runs in course-tools)
+│   ├── lab_validation_comprehensive.js # Sanity validation queries (mongosh script)
+│   └── fix_data_relationships.js       # Data relationship repair helper
 └── extras/                       # Supplemental reference guides
     ├── TROUBLESHOOTING.md        # Common student errors and fixes
     ├── comparison.md
@@ -447,16 +444,17 @@ mongo_mastering/
 - **Duration:** ~15 seconds
 
 #### **Comprehensive Test Script** - Complete End-to-End Validation
-- **`comprehensive_test.sh`** (macOS/Linux)
-- **`comprehensive_test.ps1`** (Windows PowerShell)
+- **`utilities/comprehensive_test.sh`** (macOS / Linux / WSL — single host-side script)
+- **`utilities/validate_windows.ps1`** (lean Windows day-1 flow validator)
 
 **What they do:**
-- Sets up complete 3-node MongoDB replica set
-- Loads all course data (Days 1, 2, 3)
-- Runs comprehensive lab validation (60+ tests)
-- Tears down environment completely
-- Provides detailed success/failure reporting
-- **Duration:** ~3-5 minutes
+- Set up the 3-node replica set + sharded cluster
+- Load all course data (`comprehensive_data_loader.js`)
+- Run lab assertions (Labs 1-13 host-side via `docker exec mongo1 mongosh`)
+- Run Lab 14 driver tests (C# / Node / Python) inside `course-tools` — the
+  ONLY container piece, kept because dotnet/node/python need a runtime
+- Tear the environment down
+- **Duration:** ~3-4 minutes (`--skip-lab14` cuts to ~2 minutes)
 
 ## Requirements
 
@@ -724,17 +722,18 @@ mongo_mastering/
 ├── setup.sh / setup.ps1            # Root convenience wrappers
 ├── teardown.sh / teardown.ps1      # Root convenience wrappers
 ├── test.sh / test.ps1              # Root convenience wrappers
-├── scripts/                        # Setup, teardown, and test scripts
+├── scripts/                        # Student-facing setup / teardown / smoke test
 │   ├── setup.sh / setup.ps1
 │   ├── teardown.sh / teardown.ps1
+│   ├── setup_sharding.sh / setup_sharding.ps1
+│   ├── teardown_sharding.sh / teardown_sharding.ps1
 │   ├── test.sh / test.ps1
-│   ├── comprehensive_test.sh / comprehensive_test.ps1
 │   ├── test_connection.js
-│   └── lab_validation_comprehensive.js
+│   └── update_course.bat
 ├── data/                           # Course data loaders & manual setup guides
 ├── labs/                           # 16 lab markdown files (lab01_*.md ... lab14c_*.md)
 ├── presentations/                  # Reveal.js HTML presentations (Day 1-3)
-├── utilities/                      # Heavyweight validators / data utilities
+├── utilities/                      # Course-author tooling (comprehensive_test.sh + lab14 image)
 └── extras/                         # Supplemental reference guides
 ```
 

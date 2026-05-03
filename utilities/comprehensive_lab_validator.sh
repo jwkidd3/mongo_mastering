@@ -11,11 +11,20 @@ set -e  # Exit on any error
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-# Connection URI (honor env var so we can run inside the course-tools
-# container against mongo1 by name). Default targets host port 27017.
+# Connection URIs default to talking to the cluster from INSIDE mongo1, which
+# is where this validator's mongosh calls run (we use `docker exec mongo1
+# mongosh`, so the host does not need mongosh installed). From inside mongo1,
+# `localhost:27017` is mongo1 itself, and `mongo-mongos:27017` is the sharded
+# router (both containers are on mongodb-net).
 : "${MONGO_URI:=mongodb://localhost:27017/?directConnection=true}"
-: "${MONGOS_URI:=mongodb://localhost:27120/?directConnection=true}"
+: "${MONGOS_URI:=mongodb://mongo-mongos:27017/?directConnection=true}"
 export MONGO_URI MONGOS_URI
+
+# All mongosh invocations go through this wrapper. Single point of change if we
+# ever need to switch back to host mongosh or to a different runner.
+mongosh_run() {
+    docker exec mongo1 mongosh "$@"
+}
 
 # Build a URI that targets a specific database. Splits on the first '?'
 # so existing query options (directConnection, replicaSet, etc.) are kept.
@@ -41,127 +50,27 @@ echo "========================================================================"
 echo "COMPREHENSIVE LAB VALIDATOR - Testing ALL Lab Commands (Labs 1-13)"
 echo "========================================================================"
 
-# Environment management: support non-interactive mode via CLI arg or env var.
-#   --quick  -> CLEAN_RUN=false (use existing environment, skip prompt)
-#   --clean  -> CLEAN_RUN=true  (full teardown -> setup -> load -> test -> cleanup)
-# Or set CLEAN_RUN=true|false in the environment to skip the prompt.
-# When no arg or env var is given, fall back to the interactive prompt.
-ENV_ARG="${1:-}"
-
-case "$ENV_ARG" in
-    --quick)
-        echo -e "${GREEN}Running quick test against existing environment (--quick)...${NC}"
-        CLEAN_RUN=false
-        ;;
+# This validator now assumes the environment (replica set + sharded cluster +
+# loaded course data) is already running. Environment lifecycle is handled by
+# comprehensive_test.sh, which calls this script. --quick is accepted for
+# backward compatibility; --clean is no longer supported here.
+case "${1:-}" in
+    --quick|"") : ;;
     --clean)
-        echo -e "${BLUE}Running total clean test with full environment lifecycle (--clean)...${NC}"
-        CLEAN_RUN=true
-        ;;
-    "")
-        # No CLI arg; honor CLEAN_RUN env var if set, otherwise prompt.
-        if [ "${CLEAN_RUN:-}" = "true" ]; then
-            echo -e "${BLUE}Running total clean test (CLEAN_RUN=true from env)...${NC}"
-        elif [ "${CLEAN_RUN:-}" = "false" ]; then
-            echo -e "${GREEN}Running quick test (CLEAN_RUN=false from env)...${NC}"
-        else
-            echo -e "${YELLOW}ENVIRONMENT MANAGEMENT OPTIONS:${NC}"
-            echo "1. Quick Test (use existing environment)"
-            echo "2. Total Clean Test Run (teardown → setup → data loading → test → cleanup)"
-            echo ""
-            read -p "Choose option (1 or 2): " ENV_CHOICE
-
-            case $ENV_CHOICE in
-                1)
-                    echo -e "${GREEN}Running quick test against existing environment...${NC}"
-                    CLEAN_RUN=false
-                    ;;
-                2)
-                    echo -e "${BLUE}Running total clean test with full environment lifecycle...${NC}"
-                    CLEAN_RUN=true
-                    ;;
-                *)
-                    echo -e "${RED}Invalid choice. Defaulting to quick test.${NC}"
-                    CLEAN_RUN=false
-                    ;;
-            esac
-        fi
+        echo -e "${RED}--clean is no longer supported here.${NC}" >&2
+        echo "Run comprehensive_test.sh for the full setup -> validate -> teardown flow." >&2
+        exit 2
         ;;
     *)
-        echo -e "${RED}Unknown argument: $ENV_ARG${NC}"
-        echo "Usage: $0 [--quick|--clean]"
+        echo -e "${RED}Unknown argument: $1${NC}" >&2
+        echo "Usage: $0 [--quick]" >&2
         exit 2
         ;;
 esac
 
 echo ""
-
-# Environment setup function
-setup_environment() {
-    echo "========================================================================"
-    echo -e "${BLUE}PHASE 1: ENVIRONMENT TEARDOWN & SETUP${NC}"
-    echo "========================================================================"
-
-    echo "🔄 Tearing down existing environment..."
-    SCRIPTS_DIR="$PROJECT_ROOT/scripts"
-    if (cd "$SCRIPTS_DIR" && ./teardown.sh) > /dev/null 2>&1; then
-        echo "✅ Environment teardown completed"
-    else
-        echo "⚠️  Teardown completed (may have been already clean)"
-    fi
-
-    echo "🚀 Setting up fresh MongoDB environment..."
-    if (cd "$SCRIPTS_DIR" && ./setup.sh) > setup_output.log 2>&1; then
-        echo "✅ Environment setup completed"
-        rm -f setup_output.log
-    else
-        echo "❌ Environment setup failed"
-        echo "Setup error output:"
-        cat setup_output.log 2>/dev/null || echo "No error output captured"
-        rm -f setup_output.log
-        exit 1
-    fi
-
-    # Return to project root for data loading
-    cd "$PROJECT_ROOT"
-
-    echo "📊 Loading comprehensive course data..."
-    if mongosh "$MONGO_URI" < data/comprehensive_data_loader.js > data_load_output.log 2>&1; then
-        echo "✅ Data loading completed"
-        rm -f data_load_output.log
-    else
-        echo "❌ Data loading failed"
-        echo "Data loading error output:"
-        cat data_load_output.log 2>/dev/null || echo "No error output captured"
-        rm -f data_load_output.log
-        exit 1
-    fi
-
-    echo ""
-}
-
-# Environment cleanup function
-cleanup_environment() {
-    echo ""
-    echo "========================================================================"
-    echo -e "${BLUE}PHASE 3: ENVIRONMENT CLEANUP${NC}"
-    echo "========================================================================"
-
-    echo "🧹 Cleaning up environment..."
-    SCRIPTS_DIR="$PROJECT_ROOT/scripts"
-    if (cd "$SCRIPTS_DIR" && ./teardown.sh) > /dev/null 2>&1; then
-        echo "✅ Environment cleanup completed"
-    else
-        echo "⚠️  Cleanup completed (may have been already clean)"
-    fi
-}
-
-# Run environment setup if clean run is selected
-if [ "$CLEAN_RUN" = true ]; then
-    setup_environment
-fi
-
 echo "========================================================================"
-echo -e "${BLUE}PHASE 2: COMPREHENSIVE LAB VALIDATION${NC}"
+echo -e "${BLUE}COMPREHENSIVE LAB VALIDATION${NC}"
 echo "========================================================================"
 echo "Testing all labs by executing the actual lab commands"
 echo
@@ -184,7 +93,7 @@ test_mongo_command() {
     # Execute the command and capture both stdout and stderr
     local _uri
     _uri="$(_uri_with_db "$MONGO_URI" "$database")"
-    if mongosh --quiet "$_uri" --eval "$command" >/dev/null 2>&1; then
+    if mongosh_run --quiet "$_uri" --eval "$command" >/dev/null 2>&1; then
         echo "✅ PASSED"
         PASSED_TESTS=$((PASSED_TESTS + 1))
     else
@@ -208,7 +117,7 @@ test_mongo_command_with_output() {
     # Execute the command and capture output
     local _uri
     _uri="$(_uri_with_db "$MONGO_URI" "$database")"
-    output=$(mongosh --quiet "$_uri" --eval "$command" 2>&1)
+    output=$(mongosh_run --quiet "$_uri" --eval "$command" 2>&1)
 
     if echo "$output" | grep -q "$expected_pattern"; then
         echo "✅ PASSED"
@@ -1376,55 +1285,10 @@ test_mongo_command \
     "use insurance_company; db.claims.deleteMany({ _id: { \$in: ['claim_cs_test1', 'claim_fraud_test'] } }); db.policies.deleteMany({ _id: 'policy_cs_test1' }); db.notifications.deleteMany({ \$or: [{ claimId: { \$in: ['claim_cs_test1', 'claim_fraud_test'] } }, { policyId: 'policy_cs_test1' }] }); db.fraud_alerts.deleteMany({ claimId: 'claim_fraud_test' }); db.activity_log.deleteMany({ userId: 'system' });" \
     ""
 
-echo "========================================================================"
-echo "LAB 14: Application Integration Tests (C# / JavaScript / Python drivers)"
-echo "========================================================================"
-
-# Helper to run a Lab 14 driver test script and roll its result into the
-# overall counters. Each script is treated as a single test.
-run_lab14_script() {
-    local description="$1"
-    local script_path="$2"
-
-    TOTAL_TESTS=$((TOTAL_TESTS + 1))
-    echo "🔍 Testing: $description"
-
-    if [ ! -x "$script_path" ]; then
-        echo "❌ FAILED - Script not found or not executable: $script_path"
-        FAILED_TESTS=$((FAILED_TESTS + 1))
-        FAILED_COMMANDS+=("$description")
-        echo
-        return
-    fi
-
-    local lab14_log
-    lab14_log="$(mktemp)"
-    if "$script_path" > "$lab14_log" 2>&1; then
-        echo "✅ PASSED"
-        PASSED_TESTS=$((PASSED_TESTS + 1))
-    else
-        echo "❌ FAILED"
-        FAILED_TESTS=$((FAILED_TESTS + 1))
-        FAILED_COMMANDS+=("$description")
-        echo "--- Output (tail) ---"
-        tail -20 "$lab14_log"
-        echo "---------------------"
-    fi
-    rm -f "$lab14_log"
-    echo
-}
-
-run_lab14_script \
-    "Lab 14A - C# MongoDB.Driver integration (insert/find/update/aggregate/delete)" \
-    "$SCRIPT_DIR/lab14a_test.sh"
-
-run_lab14_script \
-    "Lab 14B - Node.js mongodb driver integration (insert/find/update/aggregate/delete)" \
-    "$SCRIPT_DIR/lab14b_test.sh"
-
-run_lab14_script \
-    "Lab 14C - Python pymongo integration (insert/find/update/aggregate/delete)" \
-    "$SCRIPT_DIR/lab14c_test.sh"
+# Lab 14 driver integration tests (C# / JavaScript / Python) are run by
+# comprehensive_test.sh inside the course-tools image, which has dotnet, node,
+# and python installed. They are intentionally not invoked from here so this
+# validator stays a pure host-side mongosh assertion suite.
 
 # Final Results
 echo "========================================================================"
@@ -1437,7 +1301,7 @@ echo "Failed: $FAILED_TESTS"
 if [ $FAILED_TESTS -eq 0 ]; then
     echo -e "${GREEN}✅ ALL TESTS PASSED!${NC}"
     echo "Success Rate: 100%"
-    VALIDATION_SUCCESS=true
+    exit 0
 else
     echo -e "${RED}❌ SOME TESTS FAILED${NC}"
     echo "Success Rate: $(( (PASSED_TESTS * 100) / TOTAL_TESTS ))%"
@@ -1446,17 +1310,5 @@ else
     for cmd in "${FAILED_COMMANDS[@]}"; do
         echo "  - $cmd"
     done
-    VALIDATION_SUCCESS=false
-fi
-
-# Run environment cleanup if clean run was selected
-if [ "$CLEAN_RUN" = true ]; then
-    cleanup_environment
-fi
-
-# Exit with appropriate code
-if [ "$VALIDATION_SUCCESS" = true ]; then
-    exit 0
-else
     exit 1
 fi
