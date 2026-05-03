@@ -64,13 +64,17 @@ mongosh "mongodb://localhost:27017/?directConnection=true" --file data/comprehen
 
 ### Verify the data loaded
 
-The verification command below works in any tool — Compass shell or CLI:
-
-```javascript
+**From a terminal (mongosh CLI):**
+```bash
 mongosh "mongodb://localhost:27017/insurance_company?directConnection=true" --eval "db.policies.countDocuments()"
 ```
 
-It should print a number greater than zero.
+**From the Compass MONGOSH tab** (already connected to the cluster):
+```javascript
+db.getSiblingDB('insurance_company').policies.countDocuments()
+```
+
+Either should print a number greater than zero.
 
 ## Tasks
 

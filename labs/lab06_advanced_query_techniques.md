@@ -102,8 +102,11 @@ use insurance_company
 
 1. **Text Index Creation and Search**
    ```javascript
-   // Drop existing text index first (data loader creates one)
-   db.policies.dropIndex("name_text_policyType_text")
+   // Drop any existing text index on policies (loader may create one with a
+   // different name on different runs, so look it up dynamically).
+   db.policies.getIndexes()
+     .filter(i => Object.values(i.key || {}).includes("text"))
+     .forEach(i => db.policies.dropIndex(i.name))
 
    // Create text index on policies collection
    db.policies.createIndex({

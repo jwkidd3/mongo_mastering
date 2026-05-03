@@ -91,10 +91,10 @@ db.policies.countDocuments({ policyNumber: /POL-TEST/ })
 
 ### Step 3: Read from Secondary
 
-Connect directly to a secondary member:
+Connect directly to a secondary member (`setup.{sh,ps1}` exposes mongo2 on host port 27018 and mongo3 on 27019):
 
 ```bash
-mongosh --port 27018 --directConnection
+mongosh "mongodb://localhost:27018/?directConnection=true"
 ```
 
 Enable secondary reads (required on secondaries):

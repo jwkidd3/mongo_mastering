@@ -168,16 +168,20 @@ var sessionDb = session2.getDatabase("insurance_company");
 // 6c: Find test data to work with
 var customer = sessionDb.customers.findOne({});
 var policy = sessionDb.policies.findOne({ customerId: customer.customerId });
-if (!policy) {
-  print("No policy found for customer " + customer.customerId + ", skipping...");
+// If we found a policy, continue. Otherwise abort the transaction here and
+// stop -- do NOT run 6d/6e if `policy` is null.
+if (policy) {
+  print("Testing rollback scenario...");
+} else {
+  print("No policy found for customer " + customer.customerId + ". Aborting and skipping the rest of step 6.");
   session2.abortTransaction();
   session2.endSession();
 }
-print("Testing rollback scenario...");
 ```
 
 ```javascript
 // 6d: Create a test claim (part of transaction)
+// Skip this and the rest of step 6 if 6c reported no policy.
 var claimResult = sessionDb.claims.insertOne({ claimNumber: "ROLLBACK-TEST-" + new Date().getTime(), customerId: customer.customerId, policyNumber: policy.policyNumber, claimAmount: NumberDecimal("50000.00"), status: "submitted", filedDate: new Date(), description: "Test claim for rollback demonstration" });
 print("Claim created: " + claimResult.insertedId);
 ```
