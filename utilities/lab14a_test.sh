@@ -1,8 +1,20 @@
 #!/bin/bash
 
-# Lab 14A Test - C# MongoDB Driver Integration
-# Verifies that a minimal C# console app using MongoDB.Driver can perform
-# the representative CRUD + aggregation operations covered in Lab 14A.
+# Lab 14A Test - C# / MongoDB.Driver smoke
+#
+# What this verifies (passes for the SHIPPED starter):
+#   1. labs/lab14/lab14a-csharp-starter/ compiles (dotnet build)
+#   2. The starter's wired-up Program.cs / appsettings.json connect
+#      successfully to the cluster
+#   3. A canonical CRUD + aggregation flow against the same cluster
+#      succeeds end-to-end (synthetic test driver -- catches regressions
+#      in the MongoDB.Driver dep, the dotnet SDK, and the cluster)
+#
+# What this does NOT verify: the student's COMPLETED lab. The starter's
+# Services/PolicyService.cs ships with TODO stubs by design (Step 4 of
+# the lab asks students to implement them). To self-check completed
+# work, students should run `dotnet run` in their own copy and compare
+# output with the lab markdown's "Run the Application" section.
 
 set -u
 
@@ -43,8 +55,47 @@ cleanup() {
 trap cleanup EXIT
 
 cd "$WORK_DIR" || exit 2
-
 echo "Working directory: $WORK_DIR"
+
+# ============================================================================
+# Phase 1: Build and run the SHIPPED lab14a-csharp-starter project as-is.
+# Catches regressions in the starter's csproj / appsettings / Program.cs.
+# ============================================================================
+STARTER_SRC="$PROJECT_ROOT/labs/lab14/lab14a-csharp-starter"
+STARTER_COPY="$WORK_DIR/starter"
+echo ""
+echo "[Phase 1] Building shipped starter ($STARTER_SRC)..."
+cp -r "$STARTER_SRC" "$STARTER_COPY"
+(
+    cd "$STARTER_COPY" || exit 2
+    if ! dotnet build -c Release -nologo --verbosity quiet > "$WORK_DIR/starter-build.log" 2>&1; then
+        echo -e "${RED}FAIL${NC}: lab14a-csharp-starter does not build"
+        tail -40 "$WORK_DIR/starter-build.log"
+        exit 1
+    fi
+    echo -e "${GREEN}PASS${NC}: shipped starter builds"
+
+    # Run the starter -- it should connect, print "Connected to ...", and exit 0.
+    if ! MONGO_URI="$CONN" dotnet run -c Release --no-build --verbosity quiet > "$WORK_DIR/starter-run.log" 2>&1; then
+        echo -e "${RED}FAIL${NC}: shipped starter exited non-zero on run"
+        tail -40 "$WORK_DIR/starter-run.log"
+        exit 1
+    fi
+    if ! grep -q "Connected to " "$WORK_DIR/starter-run.log"; then
+        echo -e "${RED}FAIL${NC}: shipped starter did not print 'Connected to ...'"
+        tail -40 "$WORK_DIR/starter-run.log"
+        exit 1
+    fi
+    echo -e "${GREEN}PASS${NC}: shipped starter connects to the cluster"
+) || exit 1
+
+# ============================================================================
+# Phase 2: Synthetic CRUD smoke -- exercises the MongoDB.Driver against the
+# cluster end-to-end (insert / find / update / aggregate / delete / verify).
+# ============================================================================
+echo ""
+echo "[Phase 2] Driver-stack CRUD smoke test..."
+mkdir -p "$WORK_DIR/smoke" && cd "$WORK_DIR/smoke" || exit 2
 echo "Creating C# console project..."
 
 # Create dotnet console project (suppress noisy output)

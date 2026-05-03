@@ -1,8 +1,16 @@
 #!/bin/bash
 
-# Lab 14B Test - Node.js MongoDB Driver Integration
-# Verifies that a minimal Node.js script using the official `mongodb` package
-# can perform the representative CRUD + aggregation operations covered in Lab 14B.
+# Lab 14B Test - Node.js / mongodb driver smoke
+#
+# What this verifies (passes for the SHIPPED starter):
+#   1. labs/lab14/lab14b-javascript-starter/ installs (`npm install`)
+#   2. The starter's app.js parses without syntax errors (`node -c`)
+#   3. A canonical CRUD + aggregation flow against the cluster succeeds
+#      end-to-end (synthetic test driver -- catches regressions in the
+#      mongodb npm package, the node runtime, and the cluster)
+#
+# What this does NOT verify: the student's COMPLETED lab. The starter's
+# services/policyService.js ships with TODO stubs by design.
 
 set -u
 
@@ -38,6 +46,38 @@ trap cleanup EXIT
 
 cd "$WORK_DIR" || exit 2
 echo "Working directory: $WORK_DIR"
+
+# ============================================================================
+# Phase 1: Install + syntax-check the SHIPPED lab14b-javascript-starter.
+# ============================================================================
+STARTER_SRC="$PROJECT_ROOT/labs/lab14/lab14b-javascript-starter"
+STARTER_COPY="$WORK_DIR/starter"
+echo ""
+echo "[Phase 1] Validating shipped starter ($STARTER_SRC)..."
+cp -r "$STARTER_SRC" "$STARTER_COPY"
+(
+    cd "$STARTER_COPY" || exit 2
+    if ! npm install --no-audit --no-fund --silent > "$WORK_DIR/starter-install.log" 2>&1; then
+        echo -e "${RED}FAIL${NC}: lab14b-javascript-starter dependencies do not install"
+        tail -40 "$WORK_DIR/starter-install.log"
+        exit 1
+    fi
+    echo -e "${GREEN}PASS${NC}: shipped starter dependencies install"
+
+    if ! node -c app.js > "$WORK_DIR/starter-syntax.log" 2>&1; then
+        echo -e "${RED}FAIL${NC}: shipped starter app.js has syntax errors"
+        cat "$WORK_DIR/starter-syntax.log"
+        exit 1
+    fi
+    echo -e "${GREEN}PASS${NC}: shipped starter app.js parses"
+) || exit 1
+
+# ============================================================================
+# Phase 2: Synthetic CRUD smoke -- exercises the mongodb driver end-to-end.
+# ============================================================================
+echo ""
+echo "[Phase 2] Driver-stack CRUD smoke test..."
+mkdir -p "$WORK_DIR/smoke" && cd "$WORK_DIR/smoke" || exit 2
 
 # npm init -y (silent)
 if ! npm init -y >/dev/null 2>&1; then

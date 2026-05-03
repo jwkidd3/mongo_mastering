@@ -1,8 +1,16 @@
 #!/bin/bash
 
-# Lab 14C Test - Python pymongo Driver Integration
-# Verifies that a minimal Python script using pymongo can perform the
-# representative CRUD + aggregation operations covered in Lab 14C.
+# Lab 14C Test - Python / pymongo smoke
+#
+# What this verifies (passes for the SHIPPED starter):
+#   1. labs/lab14/lab14c-python-starter/ requirements install in a venv
+#   2. The starter's main.py byte-compiles without SyntaxError
+#   3. A canonical CRUD + aggregation flow against the cluster succeeds
+#      end-to-end (synthetic test driver -- catches regressions in
+#      pymongo, the python runtime, and the cluster)
+#
+# What this does NOT verify: the student's COMPLETED lab. The starter's
+# services/policy_service.py ships with TODO stubs by design.
 
 set -u
 
@@ -38,6 +46,45 @@ trap cleanup EXIT
 
 cd "$WORK_DIR" || exit 2
 echo "Working directory: $WORK_DIR"
+
+# ============================================================================
+# Phase 1: Install + byte-compile the SHIPPED lab14c-python-starter.
+# ============================================================================
+STARTER_SRC="$PROJECT_ROOT/labs/lab14/lab14c-python-starter"
+STARTER_COPY="$WORK_DIR/starter"
+echo ""
+echo "[Phase 1] Validating shipped starter ($STARTER_SRC)..."
+# Copy without committed __pycache__ noise
+cp -r "$STARTER_SRC" "$STARTER_COPY"
+find "$STARTER_COPY" -type d -name '__pycache__' -exec rm -rf {} + 2>/dev/null || true
+echo "Creating venv for starter validation..."
+if ! python3 -m venv "$WORK_DIR/starter-venv" >/dev/null 2>&1; then
+    echo -e "${RED}FAIL${NC}: could not create starter venv"
+    exit 1
+fi
+STARTER_PY="$WORK_DIR/starter-venv/bin/python"
+STARTER_PIP="$WORK_DIR/starter-venv/bin/pip"
+"$STARTER_PIP" install --quiet --upgrade pip >/dev/null 2>&1 || true
+if ! "$STARTER_PIP" install --quiet -r "$STARTER_COPY/requirements.txt" > "$WORK_DIR/starter-install.log" 2>&1; then
+    echo -e "${RED}FAIL${NC}: lab14c-python-starter requirements do not install"
+    tail -40 "$WORK_DIR/starter-install.log"
+    exit 1
+fi
+echo -e "${GREEN}PASS${NC}: shipped starter requirements install"
+
+if ! "$STARTER_PY" -m compileall -q "$STARTER_COPY" > "$WORK_DIR/starter-compile.log" 2>&1; then
+    echo -e "${RED}FAIL${NC}: shipped starter has Python syntax errors"
+    cat "$WORK_DIR/starter-compile.log"
+    exit 1
+fi
+echo -e "${GREEN}PASS${NC}: shipped starter byte-compiles"
+
+# ============================================================================
+# Phase 2: Synthetic CRUD smoke -- exercises pymongo end-to-end.
+# ============================================================================
+echo ""
+echo "[Phase 2] Driver-stack CRUD smoke test..."
+mkdir -p "$WORK_DIR/smoke" && cd "$WORK_DIR/smoke" || exit 2
 
 # Create venv
 echo "Creating Python venv..."
