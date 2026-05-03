@@ -657,7 +657,156 @@ for customer_doc in customer_docs:
         print(f"   Total Annual Premium: ${total_premium:,.2f}")
 ```
 
-## Part G: Error Handling and Best Practices (5 minutes)
+## Part G: Multi-Document Transactions (10 minutes)
+
+The starter ships with `services/claim_service.py` and `models/claim.py` skeletons (Claim parity with Policy / Customer). Implement claim CRUD as practice, then add the atomic-filing method below.
+
+### Implement claim CRUD in `ClaimService`
+
+Mirror what you did for `PolicyService`: fill in `create_claim`, `get_claim_by_number`, `get_claims_by_customer`, `update_claim_status`, `delete_claim`. Use `self.collection`.
+
+### Add `file_claim_atomically` — multi-collection transaction
+
+A claim filing should atomically (a) insert the claim, (b) increment the policy's `claimsCount` + `lastClaimDate`, and (c) write an `audit_log` row. PyMongo gives you `client.start_session()` and `session.with_transaction()` to batch them. `with_transaction()` automatically retries the whole callback on `TransientTransactionError`.
+
+```python
+# services/claim_service.py
+from datetime import datetime
+from pymongo.read_concern import ReadConcern
+from pymongo.write_concern import WriteConcern
+
+def file_claim_atomically(self, claim_data: dict) -> dict:
+    claim = Claim.from_dict({**claim_data, "claimNumber": claim_data["claim_number"]})
+    try:
+        claim.validate()
+    except ValueError as exc:
+        return {"success": False, "errors": [str(exc)]}
+
+    def _txn(session):
+        # 1. Insert claim
+        self.collection.insert_one(claim.to_dict(), session=session)
+
+        # 2. Increment the policy's claimsCount + lastClaimDate
+        self.db.policies.update_one(
+            {"policyNumber": claim_data["policy_number"]},
+            {
+                "$inc": {"claimsCount": 1},
+                "$set": {"lastClaimDate": datetime.utcnow(), "updatedAt": datetime.utcnow()},
+            },
+            session=session,
+        )
+
+        # 3. Audit log
+        self.db.audit_log.insert_one(
+            {
+                "operation": "claim_filed",
+                "claimNumber": claim_data["claim_number"],
+                "timestamp": datetime.utcnow(),
+            },
+            session=session,
+        )
+        return {"success": True, "claim_number": claim_data["claim_number"]}
+
+    with self.client.start_session() as session:
+        return session.with_transaction(
+            _txn,
+            read_concern=ReadConcern("majority"),
+            write_concern=WriteConcern(w="majority"),
+        )
+```
+
+> `session.with_transaction()` does the retry-on-`TransientTransactionError` for you — raise inside the callback to abort.
+
+### Drive it from `main.py`
+
+```python
+result = claim_service.file_claim_atomically({
+    "claim_number":  "CLM-PY-DEMO",
+    "customer_id":   "CUST000001",
+    "policy_number": "POL-AUTO-001",
+    "claim_type":    "Auto Accident",
+    "claim_amount":  Decimal("12500"),
+    "description":   "Driver-side transaction demo",
+})
+print("Atomic file:", result)
+```
+
+Expected: `{'success': True, 'claim_number': 'CLM-PY-DEMO'}`. Check `audit_log` and the policy's `claimsCount` in Compass.
+
+## Part H: Watching Changes (10 minutes)
+
+The same change-stream concept lab 13 demonstrated in mongosh is available from PyMongo via `collection.watch()`. The driver returns a `ChangeStream` you iterate as a normal Python iterable.
+
+### Add `watch_claims` to `ClaimService`
+
+```python
+# services/claim_service.py
+import threading
+from pymongo.errors import PyMongoError
+
+def watch_claims(self, handler, pipeline=None, stop_event=None):
+    """Open a change stream and call handler(event) for each event."""
+    if pipeline is None:
+        pipeline = [{
+            "$match": {
+                "operationType": "insert",
+                "fullDocument.claimAmount": {"$gte": 50000}
+            }
+        }]
+
+    try:
+        with self.collection.watch(pipeline, full_document="updateLookup") as cursor:
+            for event in cursor:
+                if stop_event is not None and stop_event.is_set():
+                    return
+                try:
+                    handler(event)
+                except Exception as exc:                  # noqa: BLE001
+                    print(f"[watcher] handler error: {exc}")
+    except PyMongoError as exc:
+        if stop_event is None or not stop_event.is_set():
+            raise
+```
+
+### Drive it from `main.py`
+
+```python
+import threading
+
+stop = threading.Event()
+
+def on_event(evt):
+    c = evt["fullDocument"]
+    print(f"[watcher] {evt['operationType']} {c['claimNumber']} amount={c['claimAmount']}")
+
+watcher = threading.Thread(
+    target=claim_service.watch_claims,
+    kwargs={"handler": on_event, "stop_event": stop},
+    daemon=True,
+)
+watcher.start()
+
+# Give the cursor time to attach, then trigger an event
+import time
+time.sleep(0.5)
+claim_service.file_claim_atomically({
+    "claim_number":  "CLM-PY-WATCH-DEMO",
+    "customer_id":   "CUST000001",
+    "policy_number": "POL-AUTO-001",
+    "claim_type":    "Auto Accident",
+    "claim_amount":  Decimal("75000"),                # above the 50000 filter
+    "description":   "change-stream demo",
+})
+time.sleep(1.5)
+stop.set()
+watcher.join(timeout=2)
+```
+
+Expected stdout: one line `[watcher] insert CLM-PY-WATCH-DEMO amount=75000`.
+
+> Production listeners run as long-lived workers. After processing each event, persist `event["_id"]` (the resume token) so a restart can pick up where the previous run left off (`{"resumeAfter": token}`).
+
+## Part I: Error Handling and Best Practices (5 minutes)
 
 **Cell 15 - Error Handling Demo:**
 ```python
@@ -708,10 +857,12 @@ print("=" * 50)
 print("\n✅ What You've Accomplished:")
 print("   • Built insurance management system in Jupyter")
 print("   • Integrated PyMongo with modern Python patterns")
-print("   • Created interactive data models and services")
+print("   • Created interactive data models and services for Policy, Customer, AND Claim")
 print("   • Implemented CRUD operations with validation")
 print("   • Performed advanced queries and aggregation")
 print("   • Created data visualizations")
+print("   • Multi-document transactions via session.with_transaction()")
+print("   • Change streams via collection.watch() with server-side $match filtering")
 print("   • Applied professional error handling")
 
 print("\n📚 Key Concepts Covered:")
