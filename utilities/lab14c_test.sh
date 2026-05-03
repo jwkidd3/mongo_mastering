@@ -93,9 +93,10 @@ if ! python3 -m venv venv >/dev/null 2>&1; then
     exit 1
 fi
 
-# Activate-equivalent: use venv's pip and python directly via path
-VENV_PY="$WORK_DIR/venv/bin/python"
-VENV_PIP="$WORK_DIR/venv/bin/pip"
+# Activate-equivalent: use venv's pip and python directly via path. The venv
+# lives in the Phase 2 smoke working dir, not the top-level WORK_DIR.
+VENV_PY="$WORK_DIR/smoke/venv/bin/python"
+VENV_PIP="$WORK_DIR/smoke/venv/bin/pip"
 
 # Install pymongo (quiet)
 echo "Installing pymongo..."
