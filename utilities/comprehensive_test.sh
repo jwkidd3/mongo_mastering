@@ -10,7 +10,7 @@
 #   2. scripts/setup.sh           (3-node replica set)
 #   3. scripts/setup_sharding.sh  (config + shards + mongos)
 #   4. Load data/comprehensive_data_loader.js into the replica set
-#   5. utilities/comprehensive_lab_validator.sh --quick  (host-side, uses
+#   5. utilities/lab_validator.sh --quick  (host-side, uses
 #      `docker exec mongo1 mongosh` so no host mongosh is required)
 #   6. Lab 14 driver integration tests (C# / Node / Python) -- the ONLY part
 #      that uses a container, because dotnet/node/python need an environment
@@ -157,10 +157,10 @@ else
 fi
 echo ""
 
-# Step 5: Comprehensive lab validator (host-side, no container).
-print_status "Step 5/7: Running comprehensive_lab_validator.sh (Labs 1-13)..."
+# Step 5: Lab validator (host-side, no container).
+print_status "Step 5/7: Running lab_validator.sh (Labs 1-13)..."
 if MONGO_URI="$RS_URI" MONGOS_URI="$SH_URI" \
-        "${UTILITIES_DIR}/comprehensive_lab_validator.sh" --quick; then
+        "${UTILITIES_DIR}/lab_validator.sh" --quick; then
     print_success "Lab validator passed"
     record_suite "Lab validator (1-13): PASS"
 else

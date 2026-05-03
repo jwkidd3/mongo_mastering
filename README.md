@@ -341,13 +341,12 @@ mongo_mastering/
 │       └── lab14c-python-starter/
 ├── utilities/                    # Course-author tooling
 │   ├── comprehensive_test.sh           # ONE end-to-end test (host CLI; setup → load → validate → teardown)
-│   ├── comprehensive_lab_validator.sh  # Host-side lab assertions (run via docker exec mongo1 mongosh)
+│   ├── lab_validator.sh                # Host-side lab assertions (called by comprehensive_test.sh)
 │   ├── validate_windows.ps1            # Lean Windows student-flow validator
 │   ├── Dockerfile.course-tools         # Image used ONLY for Lab 14 driver tests (dotnet + node + python)
 │   ├── lab14a_test.sh                  # Lab 14A C# driver integration test (runs in course-tools)
 │   ├── lab14b_test.sh                  # Lab 14B Node.js driver integration test (runs in course-tools)
 │   ├── lab14c_test.sh                  # Lab 14C Python driver integration test (runs in course-tools)
-│   ├── lab_validation_comprehensive.js # Sanity validation queries (mongosh script)
 │   └── fix_data_relationships.js       # Data relationship repair helper
 └── extras/                       # Supplemental reference guides
     ├── TROUBLESHOOTING.md        # Common student errors and fixes

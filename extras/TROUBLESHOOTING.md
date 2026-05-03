@@ -220,9 +220,11 @@ MongoServerError: E11000 duplicate key error collection: insurance_company.polic
    ```
 2. To restore the full course dataset cleanly, re-run the comprehensive loader:
    ```bash
-   docker exec -it mongo1 mongosh \
-     "mongodb://localhost:27017/?directConnection=true" \
-     /utilities/lab_validation_comprehensive.js
+   docker run --rm --network mongodb-net \
+     --mount "type=bind,src=$(pwd),dst=/work" -w /work \
+     mongo:8.0 mongosh \
+     "mongodb://mongo1:27017/?directConnection=true&replicaSet=rs0" \
+     --quiet --file /work/data/comprehensive_data_loader.js
    ```
 3. To start from a totally clean slate, tear down and set up again:
    ```bash
