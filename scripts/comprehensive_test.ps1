@@ -48,8 +48,12 @@ function Write-Success { param([string]$m) Write-Host "[SUCCESS] $m" -Foreground
 function Write-Warn    { param([string]$m) Write-Host "[WARNING] $m" -ForegroundColor Yellow }
 function Write-Err     { param([string]$m) Write-Host "[ERROR] $m"   -ForegroundColor Red    }
 
-$ScriptDir  = Split-Path -Parent $MyInvocation.MyCommand.Definition
-$RepoRoot   = Split-Path -Parent $ScriptDir
+# $PSScriptRoot is the directory of THIS script; it is the most reliable way
+# to locate the repo regardless of how the script was invoked (relative path,
+# absolute path, dot-sourced, pwsh -File, etc.). Resolve-Path canonicalizes
+# the parent so we always end up with an absolute, normalized host path.
+$ScriptDir  = $PSScriptRoot
+$RepoRoot   = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 
 # When this script runs inside a container (e.g. pwsh-runner) we still issue
 # `docker run` calls against the HOST daemon via the mounted socket. The host
@@ -79,11 +83,24 @@ if ($HostRepoRoot -ne $RepoRoot) {
     Write-Status "Detected host repo path: $HostRepoRoot (in-container: $RepoRoot)"
 }
 
-# Docker Desktop on Windows accepts both `C:\path` and `C:/path`, but the
-# forward-slash form is more reliable -- the backslash form trips Docker's
-# argument parser and trips `ps_fence_check.sh` when it concatenates
-# COURSE_TOOLS_HOST_ROOT with /work-suffix paths. On macOS/Linux this is a no-op.
-$HostRepoRootDocker = $HostRepoRoot -replace '\\', '/'
+# Build candidate host-path forms for the docker bind-mount source. Docker
+# Desktop on Windows is finicky: depending on backend (WSL2 vs Hyper-V) and
+# CLI version it accepts different forms. We try them in order until one
+# actually exposes the repo inside the container, then memoize the winner.
+#
+# On Linux/macOS the path is already POSIX so the first form works and the
+# rest are duplicates that get deduped.
+$HostRepoRootSlash    = $HostRepoRoot -replace '\\', '/'                  # C:/Users/foo/repo
+$HostRepoRootBackslash = $HostRepoRoot                                    # C:\Users\foo\repo
+$HostRepoRootMnt      = $HostRepoRootSlash -replace '^([A-Za-z]):/', '/$1/' # /c/Users/foo/repo
+
+# Deduped, ordered list of candidates to probe.
+$HostPathCandidates = @($HostRepoRootSlash, $HostRepoRootBackslash, $HostRepoRootMnt) |
+    Select-Object -Unique
+
+# Filled in by Test-CourseToolsMount once a working form is found.
+$script:HostRepoRootDocker = $null
+$script:MountStyle         = $null   # "--mount" or "-v"
 
 $Dockerfile = Join-Path $RepoRoot "utilities\Dockerfile.course-tools"
 $DataLoader = Join-Path $RepoRoot "data\comprehensive_data_loader.js"
@@ -122,27 +139,80 @@ function Ensure-CourseToolsImage {
     }
 }
 
+# Build the mount-related portion of a `docker run` arg list using whichever
+# style was proven to work by Test-CourseToolsMount.
+function Get-MountArgs {
+    param([string]$HostPath, [string]$Style)
+    if ($Style -eq "-v") {
+        return @(
+            "-v", "${HostPath}:/work:rw",
+            "-v", "/var/run/docker.sock:/var/run/docker.sock"
+        )
+    }
+    return @(
+        "--mount", "type=bind,src=${HostPath},dst=/work",
+        "--mount", "type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock"
+    )
+}
+
+# Probe each (path-form, mount-style) combination by running a tiny container
+# that lists a known file. The first combination whose exit code is 0 wins
+# and gets stored in $script:HostRepoRootDocker / $script:MountStyle.
+function Test-CourseToolsMount {
+    Write-Status "Verifying repo bind-mount works against Docker daemon..."
+    Write-Host  "  RepoRoot:     $RepoRoot"
+    Write-Host  "  HostRepoRoot: $HostRepoRoot"
+    Write-Host  "  Candidates:   $($HostPathCandidates -join ' | ')"
+
+    $sentinel = "/work/utilities/lab_fence_runner.sh"
+    foreach ($style in @("--mount", "-v")) {
+        foreach ($cand in $HostPathCandidates) {
+            $mountArgs = Get-MountArgs -HostPath $cand -Style $style
+            $probeArgs = @("run", "--rm") + $mountArgs + @(
+                "--entrypoint", "/bin/sh",
+                $Image,
+                "-c", "test -f $sentinel"
+            )
+            & docker @probeArgs *> $null
+            if ($LASTEXITCODE -eq 0) {
+                $script:HostRepoRootDocker = $cand
+                $script:MountStyle         = $style
+                Write-Success "Bind mount works: style=$style src=$cand"
+                return
+            }
+        }
+    }
+
+    Write-Err "No bind-mount form exposes $sentinel inside the container."
+    Write-Err "Tried styles: --mount, -v"
+    Write-Err "Tried sources: $($HostPathCandidates -join ' | ')"
+    Write-Err ""
+    Write-Err "On Windows: open Docker Desktop > Settings > Resources > File Sharing"
+    Write-Err "and confirm the drive containing the repo is shared. Then re-run."
+    exit 1
+}
+
 # Run a test script inside the course-tools container with all standard mounts.
-# Returns the container's exit code.
+# Returns the container's exit code. Test-CourseToolsMount must have run first.
 function Invoke-CourseToolsScript {
     param(
         [string]$ContainerScript,        # /work/... path inside container
         [string[]]$Arguments = @()
     )
-    # Use --mount (key=value, comma-separated) instead of -v (colon-separated).
-    # On Windows the host path contains a drive-letter colon, and Docker's -v
-    # parser sometimes silently mounts an empty dir when colons collide, which
-    # is why /work/utilities/*.sh appears "missing" inside the container.
+    if (-not $script:HostRepoRootDocker) {
+        Write-Err "Internal error: Invoke-CourseToolsScript called before Test-CourseToolsMount"
+        return 1
+    }
+    $mountArgs = Get-MountArgs -HostPath $script:HostRepoRootDocker -Style $script:MountStyle
     $dockerArgs = @(
         "run", "--rm",
-        "--network", $Network,
-        "--mount", "type=bind,src=${HostRepoRootDocker},dst=/work",
-        "--mount", "type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock",
+        "--network", $Network
+    ) + $mountArgs + @(
         "-e", "MONGO_URI=$RsUri",
         "-e", "MONGOS_URI=$ShUri",
         "-e", "CLEAN_RUN=false",
         "-e", "COURSE_TOOLS_IN_CONTAINER=1",
-        "-e", "COURSE_TOOLS_HOST_ROOT=$HostRepoRootDocker",
+        "-e", "COURSE_TOOLS_HOST_ROOT=$($script:HostRepoRootDocker)",
         "-w", "/work",
         $Image,
         $ContainerScript
@@ -186,6 +256,10 @@ Write-Host ""
 
 # Build the course-tools image now that we know docker is functional.
 Ensure-CourseToolsImage
+
+# Probe bind-mount styles/paths and pick the one that actually works on this
+# host. Runs before steps 4-7, all of which depend on /work being populated.
+Test-CourseToolsMount
 
 # Step 4: Load comprehensive data via the course-tools image.
 Write-Status "Step 4/8: Loading comprehensive data loader (via course-tools)..."
