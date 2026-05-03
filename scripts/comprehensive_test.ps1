@@ -50,6 +50,41 @@ function Write-Err     { param([string]$m) Write-Host "[ERROR] $m"   -Foreground
 
 $ScriptDir  = Split-Path -Parent $MyInvocation.MyCommand.Definition
 $RepoRoot   = Split-Path -Parent $ScriptDir
+
+# When this script runs inside a container (e.g. pwsh-runner) we still issue
+# `docker run` calls against the HOST daemon via the mounted socket. The host
+# daemon only knows host paths, so bind-mounts must use the host's repo path,
+# not the in-container path. Resolution order:
+#   1. $env:COURSE_TOOLS_HOST_ROOT (explicit override)
+#   2. If we're inside a container, ask the docker daemon for our own mounts
+#      and find the host Source whose Destination matches $RepoRoot.
+#   3. Fall back to $RepoRoot (correct when running on the host directly).
+function Resolve-HostRepoRoot {
+    param([string]$InContainerPath)
+    if ($env:COURSE_TOOLS_HOST_ROOT) { return $env:COURSE_TOOLS_HOST_ROOT }
+    if (-not (Test-Path "/.dockerenv")) { return $InContainerPath }
+    try {
+        $hn = (Get-Content -Raw /etc/hostname).Trim()
+        $raw = & docker inspect $hn 2>$null | Out-String
+        if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($raw)) { return $InContainerPath }
+        $obj = $raw | ConvertFrom-Json
+        foreach ($m in $obj[0].Mounts) {
+            if ($m.Destination -eq $InContainerPath) { return $m.Source }
+        }
+    } catch { }
+    return $InContainerPath
+}
+$HostRepoRoot = Resolve-HostRepoRoot $RepoRoot
+if ($HostRepoRoot -ne $RepoRoot) {
+    Write-Status "Detected host repo path: $HostRepoRoot (in-container: $RepoRoot)"
+}
+
+# Docker Desktop on Windows accepts both `C:\path` and `C:/path`, but the
+# forward-slash form is more reliable -- the backslash form trips Docker's
+# argument parser and trips `ps_fence_check.sh` when it concatenates
+# COURSE_TOOLS_HOST_ROOT with /work-suffix paths. On macOS/Linux this is a no-op.
+$HostRepoRootDocker = $HostRepoRoot -replace '\\', '/'
+
 $Dockerfile = Join-Path $RepoRoot "utilities\Dockerfile.course-tools"
 $DataLoader = Join-Path $RepoRoot "data\comprehensive_data_loader.js"
 $SetupPs1            = Join-Path $ScriptDir "setup.ps1"
@@ -94,21 +129,21 @@ function Invoke-CourseToolsScript {
         [string]$ContainerScript,        # /work/... path inside container
         [string[]]$Arguments = @()
     )
-    $args = @(
+    $dockerArgs = @(
         "run", "--rm",
         "--network", $Network,
-        "-v", "${RepoRoot}:/work:rw",
+        "-v", "${HostRepoRootDocker}:/work:rw",
         "-v", "/var/run/docker.sock:/var/run/docker.sock",
         "-e", "MONGO_URI=$RsUri",
         "-e", "MONGOS_URI=$ShUri",
         "-e", "CLEAN_RUN=false",
         "-e", "COURSE_TOOLS_IN_CONTAINER=1",
-        "-e", "COURSE_TOOLS_HOST_ROOT=$RepoRoot",
+        "-e", "COURSE_TOOLS_HOST_ROOT=$HostRepoRootDocker",
         "-w", "/work",
         $Image,
         $ContainerScript
     ) + $Arguments
-    & docker @args
+    & docker @dockerArgs
     return $LASTEXITCODE
 }
 
