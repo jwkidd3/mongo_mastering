@@ -43,7 +43,7 @@ mongosh "mongodb://localhost:27017/?directConnection=true" < data/comprehensive_
 Verify the data loaded successfully:
 
 ```bash
-mongosh "mongodb://localhost:27017/?directConnection=true" --eval "use insurance_company; db.policies.countDocuments()"
+mongosh "mongodb://localhost:27017/insurance_company?directConnection=true" --eval "db.policies.countDocuments()"
 ```
 
 ## Part A: Get the Starter Code (3 minutes)

@@ -40,7 +40,7 @@ mongosh "mongodb://localhost:27017/?directConnection=true" < data/comprehensive_
 Verify the data loaded successfully:
 
 ```bash
-mongosh "mongodb://localhost:27017/?directConnection=true" --eval "use insurance_company; db.policies.countDocuments()"
+mongosh "mongodb://localhost:27017/insurance_company?directConnection=true" --eval "db.policies.countDocuments()"
 ```
 
 > **Note:** This lab will create and use its own separate database (`insurance_company_csharp`) for the C# integration exercises. The comprehensive loader is still required to populate the shared course data used by other labs.
