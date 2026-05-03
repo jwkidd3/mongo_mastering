@@ -11,25 +11,66 @@
 - Terminal/command prompt access
 - **Course data loaded** (see instructions below)
 
-## Prerequisites: Load Course Data
+## Choose Your Tool: MongoDB Compass or `mongosh` CLI
 
-Before starting this lab, ensure the MongoDB environment is running and course data is loaded:
+You can drive every command in this course with either tool. Both connect to the same MongoDB instance and run the same commands — pick whichever you're more comfortable with. Other labs will reference back to this section when they show data-load steps.
+
+### Option A: MongoDB Compass (recommended for first-time users)
+
+[MongoDB Compass](https://www.mongodb.com/products/tools/compass) is the official GUI. It includes a built-in `MongoSH` shell tab, so you get the full mongosh experience without installing anything else and without running into platform-specific shell quirks (like PowerShell's `<` redirection — see Option B).
+
+1. **Install Compass** if you don't already have it.
+2. **Connect**: paste this into the connection string field and click **Connect**:
+   ```
+   mongodb://localhost:27017/?directConnection=true
+   ```
+3. **Open the embedded shell**: at the bottom of the Compass window, click the **`>_ MONGOSH`** tab. You're now in a full `mongosh` prompt — every command shown in this course works here.
+
+### Option B: `mongosh` command line
+
+If you prefer the CLI, [install mongosh](https://www.mongodb.com/try/download/shell) and connect from any terminal:
 
 ```bash
-# From the project root
+mongosh "mongodb://localhost:27017/?directConnection=true"
+```
+
+Works identically on macOS, Linux, WSL, and Windows PowerShell.
+
+## Prerequisites: Load Course Data
+
+Pick the tool you connected with above, then load the comprehensive course data.
+
+### From Compass's `MONGOSH` tab
+
+Either run `load()` with the absolute path to the loader file (forward slashes work on Windows too):
+
+```javascript
+load('/absolute/path/to/mongo_mastering/data/comprehensive_data_loader.js')
+```
+
+Or open `data/comprehensive_data_loader.js` in any editor, copy the full contents, and paste them into the `MONGOSH` tab.
+
+### From the `mongosh` CLI
+
+**macOS / Linux / WSL:**
+```bash
 mongosh "mongodb://localhost:27017/?directConnection=true" < data/comprehensive_data_loader.js
 ```
 
-> **Windows (PowerShell):** PowerShell does not forward `<` into `mongosh` — the command will error. Use `--file` instead:
-> ```powershell
-> mongosh "mongodb://localhost:27017/?directConnection=true" --file data/comprehensive_data_loader.js
-> ```
+**Windows PowerShell:** PowerShell does not forward `<` into `mongosh`. Use `--file`:
+```powershell
+mongosh "mongodb://localhost:27017/?directConnection=true" --file data/comprehensive_data_loader.js
+```
 
-Verify the data loaded successfully:
+### Verify the data loaded
 
-```bash
+The verification command below works in any tool — Compass shell or CLI:
+
+```javascript
 mongosh "mongodb://localhost:27017/insurance_company?directConnection=true" --eval "db.policies.countDocuments()"
 ```
+
+It should print a number greater than zero.
 
 ## Tasks
 

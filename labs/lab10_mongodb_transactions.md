@@ -26,6 +26,8 @@ mongosh --eval "db.runCommand('ping')"
 ```
 
 **Load Course Data:**
+> **New to MongoDB tooling?** See [Lab 1 — Choose Your Tool](lab01_mongodb_shell_mastery.md#choose-your-tool-mongodb-compass-or-mongosh-cli) for the Compass UI alternative (no shell-redirection issues, works the same on every OS).
+
 ```bash
 mongosh < data/comprehensive_data_loader.js
 ```

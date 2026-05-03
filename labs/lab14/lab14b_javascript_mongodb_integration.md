@@ -30,6 +30,8 @@ mongosh --eval "db.runCommand('ping')"
 
 Before starting this lab, ensure the MongoDB environment is running and course data is loaded:
 
+> **New to MongoDB tooling?** See [Lab 1 — Choose Your Tool](../lab01_mongodb_shell_mastery.md#choose-your-tool-mongodb-compass-or-mongosh-cli) for the Compass UI alternative (no shell-redirection issues, works the same on every OS).
+
 ```bash
 # From the project root
 mongosh "mongodb://localhost:27017/?directConnection=true" < data/comprehensive_data_loader.js
