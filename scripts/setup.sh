@@ -127,14 +127,16 @@ print_success "Replica set initialized"
 print_status "Waiting for replica set to stabilize (30 seconds)..."
 sleep 30
 
-# Step 6: Set write concern from host
+# Step 6: Set write concern (run mongosh via `docker exec` so we don't depend
+# on mongosh being installed on the host -- WSL/Linux setups frequently don't
+# have it, and the whole point of the course-tools image is to keep the host
+# requirements to "Docker only").
 print_status "Setting write concern..."
-# Wait for primary to be elected and host connection to be available
-max_attempts=15
+# Wait for primary to be elected; poll inside mongo1 itself.
+max_attempts=20
 attempt=1
 while [ $attempt -le $max_attempts ]; do
-    # Check if we can connect and the primary is ready
-    if mongosh --quiet --eval "db.hello().isWritablePrimary" > /dev/null 2>&1; then
+    if docker exec mongo1 mongosh --quiet --eval 'db.hello().isWritablePrimary' 2>/dev/null | grep -q '^true$'; then
         break
     fi
     print_status "  Attempt $attempt/$max_attempts - waiting for primary election..."
@@ -143,16 +145,15 @@ while [ $attempt -le $max_attempts ]; do
 done
 
 if [ $attempt -gt $max_attempts ]; then
-    print_error "Could not connect to primary after $max_attempts attempts"
-    print_status "Checking container status..."
+    print_error "Primary was not elected after $max_attempts attempts"
+    print_status "Container status:"
     docker ps --filter name=mongo
-    print_status "Checking replica set status from container..."
-    docker exec mongo1 mongosh --quiet --eval "rs.status().ok" || true
+    print_status "Replica set status from mongo1:"
+    docker exec mongo1 mongosh --quiet --eval "rs.status()" || true
     exit 1
 fi
 
-mongosh --quiet --eval "
-// Ensure we're connected to primary and set write concern
+docker exec mongo1 mongosh --quiet --eval "
 db = db.getMongo().getDB('admin');
 db.adminCommand({
   setDefaultRWConcern: 1,
@@ -164,14 +165,14 @@ print_success "Write concern configured"
 # Step 7: Verify setup
 print_status "Verifying replica set status..."
 echo ""
-mongosh --quiet --eval "
+docker exec mongo1 mongosh --quiet --eval "
 rs.status().members.forEach(function(m) { print('  ' + m.name + ': ' + m.stateStr); });
 "
 echo ""
 
 # Step 8: Test basic operations
 print_status "Testing basic operations..."
-mongosh --quiet --eval "
+docker exec mongo1 mongosh --quiet --eval "
 use test_setup;
 db.test.insertOne({message: 'Setup test', timestamp: new Date()});
 var doc = db.test.findOne();
