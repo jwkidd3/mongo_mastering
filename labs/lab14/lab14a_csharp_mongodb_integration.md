@@ -1107,7 +1107,144 @@ namespace InsuranceManagementSystem.Services
 }
 ```
 
-### Step 7: Run the Application
+## Part D: Multi-Document Transactions (10 minutes)
+
+A single business action often touches multiple collections — file a claim AND increment the policy's `claimsCount` AND insert an `audit_log` row. To keep them consistent, run them in a transaction. The driver gives you an `IClientSessionHandle` that batches the operations atomically across the replica set.
+
+### Step 7: Add a `FileClaimAtomicallyAsync` method to `ClaimService`
+
+```csharp
+// Append to Services/ClaimService.cs
+public async Task<bool> FileClaimAtomicallyAsync(Claim claim)
+{
+    using var session = await _mongoService.Client.StartSessionAsync();
+    session.StartTransaction(new TransactionOptions(
+        readConcern:  ReadConcern.Majority,
+        writeConcern: WriteConcern.WMajority));
+
+    try
+    {
+        // 1. Insert the new claim
+        await _claims.InsertOneAsync(session, claim);
+
+        // 2. Increment the policy's claimsCount and update lastClaimDate
+        var policyFilter = Builders<Policy>.Filter.Eq(p => p.PolicyNumber, claim.PolicyNumber);
+        var policyUpdate = Builders<Policy>.Update
+            .Inc(p => p.ClaimsCount, 1)
+            .Set(p => p.LastClaimDate, claim.FiledDate);
+        await _policies.UpdateOneAsync(session, policyFilter, policyUpdate);
+
+        // 3. Audit-log the operation
+        var audit = new BsonDocument {
+            { "operation",   "claim_filed"          },
+            { "claimNumber", claim.ClaimNumber       },
+            { "timestamp",   DateTime.UtcNow         }
+        };
+        await _mongoService.Database.GetCollection<BsonDocument>("audit_log")
+            .InsertOneAsync(session, audit);
+
+        await session.CommitTransactionAsync();
+        return true;
+    }
+    catch (Exception)
+    {
+        await session.AbortTransactionAsync();
+        throw;
+    }
+}
+```
+
+### Step 8: Wrap with retry-on-`TransientTransactionError`
+
+MongoDB's transaction protocol can fail mid-flight if the primary steps down. The driver tags such failures with the `TransientTransactionError` label — you should retry the whole transaction (not just the failed operation).
+
+```csharp
+// In ClaimService.cs
+public async Task<bool> FileClaimWithRetryAsync(Claim claim, int maxAttempts = 3)
+{
+    for (int attempt = 1; attempt <= maxAttempts; attempt++)
+    {
+        try
+        {
+            return await FileClaimAtomicallyAsync(claim);
+        }
+        catch (MongoException ex) when (ex.HasErrorLabel("TransientTransactionError") && attempt < maxAttempts)
+        {
+            await Task.Delay(100 * attempt);   // small backoff
+        }
+    }
+    return false;
+}
+```
+
+Call `claimService.FileClaimWithRetryAsync(myClaim)` from `Program.cs` to exercise it.
+
+## Part E: Watching Changes (10 minutes)
+
+The same change-stream concept lab 13 demonstrated in mongosh is available from C# via `IMongoCollection<T>.Watch()`. The driver returns an `IAsyncCursor<ChangeStreamDocument<T>>` you iterate with `MoveNextAsync`.
+
+### Step 9: Add a `WatchClaimsAsync` method to `ClaimService`
+
+```csharp
+// Append to Services/ClaimService.cs
+using MongoDB.Driver;
+using MongoDB.Driver.Linq;
+
+public async Task WatchClaimsAsync(int forSeconds = 10, CancellationToken ct = default)
+{
+    // Server-side filter: only insert events with claimAmount >= 50000
+    var pipeline = new EmptyPipelineDefinition<ChangeStreamDocument<Claim>>()
+        .Match(x =>
+            x.OperationType == ChangeStreamOperationType.Insert &&
+            x.FullDocument.ClaimAmount >= 50000);
+
+    var options = new ChangeStreamOptions {
+        FullDocument = ChangeStreamFullDocumentOption.UpdateLookup
+    };
+
+    var deadline = DateTime.UtcNow.AddSeconds(forSeconds);
+    using var cursor = await _claims.WatchAsync(pipeline, options, ct);
+
+    Console.WriteLine($"[watcher] Listening for high-value claim inserts ({forSeconds}s)...");
+    while (DateTime.UtcNow < deadline && await cursor.MoveNextAsync(ct))
+    {
+        foreach (var change in cursor.Current)
+        {
+            var c = change.FullDocument;
+            Console.WriteLine($"[watcher] {change.OperationType} {c.ClaimNumber} amount={c.ClaimAmount}");
+            // In a real system, raise a fraud alert / notify investigators / etc.
+        }
+    }
+    Console.WriteLine("[watcher] done");
+}
+```
+
+### Step 10: Drive it from `Program.cs`
+
+```csharp
+// In Program.cs, after services are wired up:
+var watcherTask = claimService.WatchClaimsAsync(forSeconds: 8);
+
+// Trigger an event the filter should pick up
+await Task.Delay(1000);
+await claimService.FileClaimWithRetryAsync(new Claim {
+    ClaimNumber  = "CLM-CS-DEMO",
+    PolicyNumber = "POL-AUTO-001",
+    CustomerId   = "CUST000001",
+    ClaimAmount  = 75000m,             // above the 50000 threshold
+    Status       = "submitted",
+    FiledDate    = DateTime.UtcNow,
+    Description  = "Driver-side change-stream demo"
+});
+
+await watcherTask;
+```
+
+You should see one `[watcher] insert CLM-CS-DEMO amount=75000` line, proving the change-stream cursor received the server-pushed event.
+
+> Production listeners run as long-lived background services and persist a resume token after each successfully processed event. See `ChangeStreamOptions.ResumeAfter` for the C# equivalent of mongosh's `resumeAfter`.
+
+### Step 11: Run the Application
 
 ```bash
 # Build and run the insurance management application
@@ -1115,7 +1252,7 @@ dotnet build
 dotnet run
 ```
 
-### Step 8: Verify in Compass
+### Step 12: Verify in Compass
 
 1. Connect Compass to the C# database: `mongodb://localhost:27017,localhost:27018,localhost:27019/?replicaSet=rs0`
 2. Navigate to `insurance_company_csharp` database
@@ -1127,19 +1264,10 @@ dotnet run
 5. Observe the policy and claim relationships through the `customerId` and `policyNumber` fields
 
 ## Lab 14A Deliverables
-✅ **C# MongoDB integration** for insurance management with strongly-typed models:
-   - Policy management system
-   - Claims processing system
-   - Customer data management
-✅ **Complete insurance CRUD operations** implementation:
-   - Policy creation, updates, renewals, and cancellations
-   - Claim filing, status updates, approvals, and settlements
-   - Customer risk assessment and history tracking
-✅ **Insurance-specific aggregation queries**:
-   - Policy statistics by type and region
-   - Claims analytics by status and type
-   - High-risk policy identification
-   - Expiring policy alerts
-✅ **Error handling and resilience** patterns for critical insurance operations
+✅ **C# MongoDB integration** for insurance management with strongly-typed models (Policy, Claim, Customer)
+✅ **Complete insurance CRUD operations**: policy / claim / customer creation, updates, deletes
+✅ **Insurance-specific aggregation queries**: stats by type, region, status; expiring-policy alerts
+✅ **Error handling and resilience** patterns (retry with exponential backoff)
+✅ **Multi-document transactions**: atomic claim-filing across `claims` + `policies` + `audit_log` with `TransientTransactionError` retry
+✅ **Change streams** in C#: `IMongoCollection<T>.WatchAsync()` with a server-side `$match` filter receiving live events
 ✅ **Connection to replica set** from C# insurance management application
-✅ **Real-world insurance scenarios** with proper data relationships and business logic
