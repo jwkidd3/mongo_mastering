@@ -18,50 +18,7 @@ scripts/setup.sh
 scripts\setup.ps1
 ```
 
-**Windows Docker Desktop Requirements**:
-- Ensure Docker Desktop is running and fully started
-- Use "Use the WSL 2 based engine" setting if available
-- If networking issues persist, try restarting Docker Desktop
-
-### Windows-Specific Setup: Hosts File Configuration
-
-**Windows users may need to update the hosts file** to resolve Docker container hostnames. If you encounter "ENOTFOUND mongo1", "mongo2", or "mongo3" errors, follow these steps:
-
-#### Option 1: Automatic Hosts File Update (Run as Administrator)
-```powershell
-# Open PowerShell as Administrator and run:
-Add-Content -Path "$env:windir\System32\drivers\etc\hosts" -Value "127.0.0.1 mongo1"
-Add-Content -Path "$env:windir\System32\drivers\etc\hosts" -Value "127.0.0.1 mongo2"
-Add-Content -Path "$env:windir\System32\drivers\etc\hosts" -Value "127.0.0.1 mongo3"
-```
-
-#### Option 2: Manual Hosts File Update
-1. **Open Notepad as Administrator**:
-   - Press `Win + S`, type "notepad"
-   - Right-click "Notepad" → "Run as administrator"
-
-2. **Open the hosts file**:
-   - In Notepad: File → Open
-   - Navigate to: `C:\Windows\System32\drivers\etc\`
-   - Change file type filter to "All Files"
-   - Select and open the `hosts` file
-
-3. **Add the following lines at the end**:
-   ```
-   127.0.0.1 mongo1
-   127.0.0.1 mongo2
-   127.0.0.1 mongo3
-   ```
-
-4. **Save the file** (Ctrl+S)
-
-#### Option 3: Use Direct Connection (Alternative)
-If you prefer not to modify the hosts file, use the `directConnection=true` parameter in all MongoDB connections:
-```bash
-mongosh "mongodb://localhost:27017/?directConnection=true"
-```
-
-**Note**: After updating the hosts file, Windows will resolve mongo1, mongo2, and mongo3 to localhost, allowing normal MongoDB operations without the directConnection parameter.
+**Windows users:** Docker Desktop must be running with the WSL 2 backend. The course uses `directConnection=true` in every URI, which sidesteps the need for hosts-file edits. (If you still see `ENOTFOUND mongo1` errors, see [TROUBLESHOOTING.md → "ENOTFOUND mongo1 / mongo2 / mongo3"](extras/TROUBLESHOOTING.md).)
 
 ### 2. Load Course Data
 
