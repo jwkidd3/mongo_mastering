@@ -11,6 +11,30 @@
 - Terminal/command prompt access
 - **Course data loaded** (see instructions below)
 
+## Tooling Check (do this first, 2 minutes)
+
+The whole course needs Docker. Day 3's Lab 14 *also* needs one of `dotnet` (Lab 14A), `node` (Lab 14B), or `python3` (Lab 14C). Verify what you have now so a missing tool doesn't surprise you on Day 3.
+
+**macOS / Linux / WSL:**
+```bash
+docker --version            # required for every lab
+mongosh --version           # required for CLI path; not needed if you'll use Compass
+dotnet --version            # only needed if you'll do Lab 14A (C#)
+node --version              # only needed if you'll do Lab 14B (Node.js)
+python3 --version           # only needed if you'll do Lab 14C (Python)
+```
+
+**Windows PowerShell:**
+```powershell
+docker --version
+mongosh --version
+dotnet --version
+node --version
+python --version
+```
+
+If `docker --version` fails, install Docker Desktop and re-run. If `mongosh --version` fails *and* you don't want to install it, use MongoDB Compass instead — its embedded `MONGOSH` tab is a full mongosh, so you only need Docker. The Lab 14 language tools can be installed before Day 3.
+
 ## Choose Your Tool: MongoDB Compass or `mongosh` CLI
 
 You can drive every command in this course with either tool. Both connect to the same MongoDB instance and run the same commands — pick whichever you're more comfortable with. Other labs will reference back to this section when they show data-load steps.
