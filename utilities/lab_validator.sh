@@ -20,10 +20,17 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 : "${MONGOS_URI:=mongodb://mongo-mongos:27017/?directConnection=true}"
 export MONGO_URI MONGOS_URI
 
-# All mongosh invocations go through this wrapper. Single point of change if we
-# ever need to switch back to host mongosh or to a different runner.
+# All mongosh invocations go through this wrapper.
+#   - Default: `docker exec mongo1 mongosh ...`. The host doesn't need mongosh.
+#   - MONGOSH_DIRECT=1: use plain `mongosh ...`. Set this when running this
+#     script INSIDE a container that already has mongosh (e.g. mongo1 itself,
+#     used by validate_windows.ps1 to avoid the host-bash dependency).
 mongosh_run() {
-    docker exec mongo1 mongosh "$@"
+    if [ "${MONGOSH_DIRECT:-}" = "1" ]; then
+        mongosh "$@"
+    else
+        docker exec mongo1 mongosh "$@"
+    fi
 }
 
 # Build a URI that targets a specific database. Splits on the first '?'
