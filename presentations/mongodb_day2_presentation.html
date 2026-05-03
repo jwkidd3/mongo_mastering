@@ -118,10 +118,23 @@
             font-size: 0.75em;
             overflow-y: auto;
             max-height: 90vh;
+            /* Lab callouts use data-background-color for the slide backdrop,
+               which makes Reveal auto-set slide text to white. Override that
+               so text on the peach card is readable. */
+            color: #1f2d24 !important;
+        }
+
+        .reveal .lab-slide h3,
+        .reveal .lab-slide h4,
+        .reveal .lab-slide p,
+        .reveal .lab-slide li,
+        .reveal .lab-slide strong,
+        .reveal .lab-slide em {
+            color: #1f2d24 !important;
         }
 
         .reveal .lab-slide h3 {
-            color: #d32f2f !important;
+            color: #b21f1f !important;   /* keep title in lab-callout red */
             margin-top: 0;
             margin-bottom: 0.5em;
             font-size: 1.2em;
@@ -147,8 +160,13 @@
             margin: 0.3em 0;
         }
 
+        .reveal .lab-slide pre code {
+            color: #1a1a1a !important;   /* code block on peach: near-black */
+        }
+
         .reveal .lab-slide code {
             font-size: 0.85em;
+            color: #1a1a1a !important;
         }
 
         .reveal .objectives {
