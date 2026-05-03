@@ -155,6 +155,30 @@ function Get-MountArgs {
     )
 }
 
+# Strip CRLF from .sh files in utilities/ and scripts/. On Windows checkouts
+# with core.autocrlf=true (the default) git rewrites .sh files with CRLF; the
+# kernel then can't exec their shebang line ("#!/bin/bash\r" -> looks for
+# "/bin/bash\r") and Docker surfaces this as "exec /work/...: no such file or
+# directory" -- an error that LOOKS like the bind mount is broken but isn't.
+#
+# This is a no-op on macOS/Linux (sed exits 0, nothing changes). On Windows
+# it edits the files in-place via the bind mount, fixing existing checkouts
+# without requiring a re-clone. Future fresh checkouts are protected by the
+# .gitattributes file at the repo root.
+function Repair-ShellLineEndings {
+    Write-Status "Normalizing .sh line endings (defensive against Windows CRLF checkouts)..."
+    $mountArgs = Get-MountArgs -HostPath $script:HostRepoRootDocker -Style $script:MountStyle
+    $fixArgs = @("run", "--rm") + $mountArgs + @(
+        "--entrypoint", "/bin/sh",
+        $Image,
+        "-c", "find /work/utilities /work/scripts -maxdepth 2 -type f -name '*.sh' -exec sed -i 's/\r$//' {} +"
+    )
+    & docker @fixArgs *> $null
+    if ($LASTEXITCODE -ne 0) {
+        Write-Warn "Line-ending normalization exited $LASTEXITCODE (continuing anyway)"
+    }
+}
+
 # Probe each (path-form, mount-style) combination by running a tiny container
 # that lists a known file. The first combination whose exit code is 0 wins
 # and gets stored in $script:HostRepoRootDocker / $script:MountStyle.
@@ -178,6 +202,7 @@ function Test-CourseToolsMount {
                 $script:HostRepoRootDocker = $cand
                 $script:MountStyle         = $style
                 Write-Success "Bind mount works: style=$style src=$cand"
+                Repair-ShellLineEndings
                 return
             }
         }
