@@ -73,8 +73,10 @@ function Exit-WithLog {
 # to locate the repo regardless of how the script was invoked (relative path,
 # absolute path, dot-sourced, pwsh -File, etc.). Resolve-Path canonicalizes
 # the parent so we always end up with an absolute, normalized host path.
-$ScriptDir  = $PSScriptRoot
-$RepoRoot   = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+$UtilitiesDir = $PSScriptRoot
+$RepoRoot     = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+# Student-facing setup/teardown scripts live in scripts/, not next to this file.
+$ScriptsDir   = Join-Path $RepoRoot "scripts"
 
 # When this script runs inside a container (e.g. pwsh-runner) we still issue
 # `docker run` calls against the HOST daemon via the mounted socket. The host
@@ -125,10 +127,10 @@ $script:MountStyle         = $null   # "--mount" or "-v"
 
 $Dockerfile = Join-Path $RepoRoot "utilities\Dockerfile.course-tools"
 $DataLoader = Join-Path $RepoRoot "data\comprehensive_data_loader.js"
-$SetupPs1            = Join-Path $ScriptDir "setup.ps1"
-$TeardownPs1         = Join-Path $ScriptDir "teardown.ps1"
-$SetupShardingPs1    = Join-Path $ScriptDir "setup_sharding.ps1"
-$TeardownShardingPs1 = Join-Path $ScriptDir "teardown_sharding.ps1"
+$SetupPs1            = Join-Path $ScriptsDir "setup.ps1"
+$TeardownPs1         = Join-Path $ScriptsDir "teardown.ps1"
+$SetupShardingPs1    = Join-Path $ScriptsDir "setup_sharding.ps1"
+$TeardownShardingPs1 = Join-Path $ScriptsDir "teardown_sharding.ps1"
 
 $Image    = "course-tools:latest"
 $Network  = "mongodb-net"

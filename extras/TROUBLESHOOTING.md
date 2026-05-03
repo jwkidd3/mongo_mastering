@@ -222,7 +222,7 @@ MongoServerError: E11000 duplicate key error collection: insurance_company.polic
    ```bash
    docker exec -it mongo1 mongosh \
      "mongodb://localhost:27017/?directConnection=true" \
-     /scripts/lab_validation_comprehensive.js
+     /utilities/lab_validation_comprehensive.js
    ```
 3. To start from a totally clean slate, tear down and set up again:
    ```bash

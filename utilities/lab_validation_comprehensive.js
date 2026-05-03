@@ -1,6 +1,6 @@
 // ===== LAB VALIDATION COMPREHENSIVE (SANITY CHECK) =====
 // MongoDB Mastering Course - Quick lab data sanity validator
-// Usage: mongosh "mongodb://localhost:27017/?directConnection=true" < scripts/lab_validation_comprehensive.js
+// Usage: mongosh "mongodb://localhost:27017/?directConnection=true" < utilities/lab_validation_comprehensive.js
 // Purpose: Run lightweight PASS/FAIL sanity queries against the loaded course data.
 // For the full bash-based validator covering every lab command, see:
 //   utilities/comprehensive_lab_validator.sh

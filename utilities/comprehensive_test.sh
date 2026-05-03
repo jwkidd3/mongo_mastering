@@ -57,14 +57,15 @@ print_success() { echo -e "${GREEN}[SUCCESS]${NC} $1"; }
 print_warning() { echo -e "${YELLOW}[WARNING]${NC} $1"; }
 print_error()   { echo -e "${RED}[ERROR]${NC} $1"; }
 
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-REPO_ROOT="$( cd "${SCRIPT_DIR}/.." && pwd )"
+UTILITIES_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+REPO_ROOT="$( cd "${UTILITIES_DIR}/.." && pwd )"
+SCRIPTS_DIR="${REPO_ROOT}/scripts"
 DOCKERFILE="${REPO_ROOT}/utilities/Dockerfile.course-tools"
 DATA_LOADER="${REPO_ROOT}/data/comprehensive_data_loader.js"
-SETUP_SH="${SCRIPT_DIR}/setup.sh"
-TEARDOWN_SH="${SCRIPT_DIR}/teardown.sh"
-SETUP_SHARDING_SH="${SCRIPT_DIR}/setup_sharding.sh"
-TEARDOWN_SHARDING_SH="${SCRIPT_DIR}/teardown_sharding.sh"
+SETUP_SH="${SCRIPTS_DIR}/setup.sh"
+TEARDOWN_SH="${SCRIPTS_DIR}/teardown.sh"
+SETUP_SHARDING_SH="${SCRIPTS_DIR}/setup_sharding.sh"
+TEARDOWN_SHARDING_SH="${SCRIPTS_DIR}/teardown_sharding.sh"
 
 IMAGE="course-tools:latest"
 NETWORK="mongodb-net"

@@ -240,12 +240,12 @@ Tests entire environment setup, data loading, and lab validation:
 
 **macOS/Linux:**
 ```bash
-scripts/comprehensive_test.sh
+utilities/comprehensive_test.sh
 ```
 
 **Windows PowerShell:**
 ```powershell
-scripts\comprehensive_test.ps1
+utilities\comprehensive_test.ps1
 ```
 
 **Option B: Lab Validation Only**
@@ -253,12 +253,12 @@ Validates data and key operations across all 16 labs (lab01–lab14c):
 
 **macOS/Linux:**
 ```bash
-mongosh "mongodb://localhost:27017/?directConnection=true" < scripts/lab_validation_comprehensive.js
+mongosh "mongodb://localhost:27017/?directConnection=true" < utilities/lab_validation_comprehensive.js
 ```
 
 **Windows PowerShell:**
 ```powershell
-Get-Content scripts\lab_validation_comprehensive.js | mongosh "mongodb://localhost:27017/?directConnection=true"
+Get-Content utilities\lab_validation_comprehensive.js | mongosh "mongodb://localhost:27017/?directConnection=true"
 ```
 
 ### 7. Clean Up When Done
@@ -315,15 +315,14 @@ scripts\teardown.ps1
 ### 📂 Directory Overview
 ```
 mongo_mastering/
-├── scripts/                      # Setup, teardown, and test scripts
+├── scripts/                      # Student-facing: setup / teardown / smoke test
 │   ├── setup.sh / setup.ps1                     # Replica set setup
 │   ├── teardown.sh / teardown.ps1               # Replica set cleanup
 │   ├── setup_sharding.sh / setup_sharding.ps1   # Sharded cluster (Lab 12)
 │   ├── teardown_sharding.sh / teardown_sharding.ps1
 │   ├── test.sh / test.ps1                       # Quick connection test
-│   ├── comprehensive_test.sh / comprehensive_test.ps1  # Full end-to-end test
 │   ├── test_connection.js                       # Basic MongoDB connection test
-│   └── lab_validation_comprehensive.js          # Sanity validation queries
+│   └── update_course.bat                        # `git pull` helper for Windows students
 ├── data/                         # Course data & loading scripts
 │   ├── comprehensive_data_loader.js  # Complete 3-day course data (recommended)
 │   ├── day1_data_loader.js           # Day 1 fundamentals data
@@ -343,14 +342,16 @@ mongo_mastering/
 │       ├── lab14a-csharp-starter/
 │       ├── lab14b-javascript-starter/
 │       └── lab14c-python-starter/
-├── utilities/                    # Validators, fence runner, container image
-│   ├── Dockerfile.course-tools         # Test-runner image (mongosh + dotnet + node + python)
-│   ├── run_tests_in_container.sh       # Wrapper to run any test script in the container
-│   ├── comprehensive_lab_validator.sh  # 133 curated tests + 3 driver integrations
-│   ├── lab_fence_runner.sh             # 176 per-fence tests across all 16 labs
-│   ├── ps_fence_check.sh               # 38 PowerShell fence parse-checks
+├── utilities/                    # Course-author tooling (validators, end-to-end tests)
+│   ├── Dockerfile.course-tools                        # Test-runner image (mongosh + dotnet + node + python)
+│   ├── run_tests_in_container.sh                      # Wrapper to run any test script in the container
+│   ├── comprehensive_test.sh / comprehensive_test.ps1 # End-to-end course validation (setup → tests → teardown)
+│   ├── comprehensive_lab_validator.sh                 # 133 curated tests + 3 driver integrations
+│   ├── lab_fence_runner.sh                            # 176 per-fence tests across all 16 labs
+│   ├── ps_fence_check.sh                              # 38 PowerShell fence parse-checks
 │   ├── lab14a_test.sh / lab14b_test.sh / lab14c_test.sh
-│   └── fix_data_relationships.js       # Data relationship repair helper
+│   ├── lab_validation_comprehensive.js                # Sanity validation queries (mongosh script)
+│   └── fix_data_relationships.js                      # Data relationship repair helper
 └── extras/                       # Supplemental reference guides
     ├── TROUBLESHOOTING.md        # Common student errors and fixes
     ├── comparison.md
