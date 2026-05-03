@@ -760,7 +760,145 @@ use insurance_company
 db.policies.find({"policyNumber": "POL-JS-2024-001"})
 ```
 
-## Part F: Extensions and Best Practices (5 minutes)
+## Part F: Multi-Document Transactions (10 minutes)
+
+The starter includes `services/ClaimService.js` and `models/Claim.js` skeletons (Claim parity with Policy / Customer). Implement claim CRUD as practice, then add the atomic-filing method below.
+
+### Step 1: Implement claim CRUD in `ClaimService`
+
+Mirror what you did for `PolicyService`: fill in `createClaim`, `getClaimByNumber`, `getClaimsByCustomer`, `updateClaimStatus`, `deleteClaim`. Use the `claims` collection.
+
+### Step 2: Add `fileClaimAtomically` — multi-collection transaction
+
+A claim filing should atomically (a) insert the claim, (b) increment the policy's claim count, and (c) write an audit-log row. The driver gives you `client.withSession()` and `session.withTransaction()` to batch them. `withTransaction` automatically retries on `TransientTransactionError`.
+
+```javascript
+// services/ClaimService.js
+async fileClaimAtomically(claimData) {
+    const claim = new Claim(claimData);
+    const validation = claim.validate();
+    if (!validation.isValid) {
+        return { success: false, errors: validation.errors };
+    }
+
+    return this.client.withSession(async (session) => {
+        const out = await session.withTransaction(async () => {
+            // 1. Insert the claim
+            await this.collection.insertOne(claim.toMongo(), { session });
+
+            // 2. Increment the policy's claimsCount + lastClaimDate
+            await this.db.collection('policies').updateOne(
+                { policyNumber: claim.policyNumber },
+                {
+                    $inc: { claimsCount: 1 },
+                    $set: { lastClaimDate: claim.filedDate, updatedAt: new Date() }
+                },
+                { session }
+            );
+
+            // 3. Audit log
+            await this.db.collection('audit_log').insertOne(
+                { operation: 'claim_filed', claimNumber: claim.claimNumber, timestamp: new Date() },
+                { session }
+            );
+
+            return { success: true, claimNumber: claim.claimNumber };
+        }, {
+            readConcern:  { level: 'majority' },
+            writeConcern: { w: 'majority' }
+        });
+        return out;
+    });
+}
+```
+
+> `session.withTransaction()` does the retry-on-`TransientTransactionError` for you — you do **not** need to wrap it in a manual loop. Just throw inside the callback to abort.
+
+### Step 3: Drive it from `app.js`
+
+```javascript
+// In app.js, after services are wired up:
+const result = await claimService.fileClaimAtomically({
+    claimNumber: 'CLM-JS-DEMO',
+    customerId:  'CUST000001',
+    policyNumber: 'POL-AUTO-001',
+    claimType:   'Auto Accident',
+    claimAmount: 12500,
+    description: 'Driver-side transaction demo'
+});
+console.log('Atomic file:', result);
+```
+
+Expected: `{ success: true, claimNumber: 'CLM-JS-DEMO' }`. Check `audit_log` and the policy's `claimsCount` in Compass — both should reflect the atomic update.
+
+## Part G: Watching Changes (10 minutes)
+
+The same change-stream concept lab 13 demonstrated in mongosh is available from Node.js via `collection.watch()`. The driver returns an async iterator — you consume events with `for await (const event of cursor)`.
+
+### Step 1: Add `watchClaims` to `ClaimService`
+
+```javascript
+// services/ClaimService.js
+async watchClaims(handler, { signal, pipeline = [] } = {}) {
+    // Server-side $match: only insert events with claimAmount >= 50000
+    const defaultPipeline = pipeline.length ? pipeline : [
+        { $match: { operationType: 'insert', 'fullDocument.claimAmount': { $gte: 50000 } } }
+    ];
+
+    const cursor = this.collection.watch(defaultPipeline, {
+        fullDocument: 'updateLookup'
+    });
+
+    if (signal) {
+        signal.addEventListener('abort', () => cursor.close());
+    }
+
+    try {
+        for await (const event of cursor) {
+            try {
+                await handler(event);
+            } catch (err) {
+                console.error('[watcher] handler error:', err);
+            }
+        }
+    } catch (err) {
+        if (!signal || !signal.aborted) throw err;
+    }
+}
+```
+
+### Step 2: Drive it from `app.js`
+
+```javascript
+// In app.js: start the watcher in the background, then trigger an event,
+// then stop it after a short window.
+const ac = new AbortController();
+const watcherPromise = claimService.watchClaims(
+    (evt) => {
+        const c = evt.fullDocument;
+        console.log(`[watcher] ${evt.operationType} ${c.claimNumber} amount=${c.claimAmount}`);
+    },
+    { signal: ac.signal }
+);
+
+await new Promise(r => setTimeout(r, 500));     // give the cursor time to attach
+await claimService.fileClaimAtomically({
+    claimNumber: 'CLM-JS-WATCH-DEMO',
+    customerId:  'CUST000001',
+    policyNumber: 'POL-AUTO-001',
+    claimAmount: 75000,                           // above the 50000 filter
+    description: 'change-stream demo'
+});
+await new Promise(r => setTimeout(r, 1500));    // let the event reach the cursor
+ac.abort();
+await watcherPromise;
+```
+
+Expected stdout: one line `[watcher] insert CLM-JS-WATCH-DEMO amount=75000`.
+
+> Production listeners run as long-lived workers. After processing each event, persist `event._id` (the resume token) so a restart can pick up where the previous run left off (`{ resumeAfter: token }`).
+
+## Part H: Extensions and Best Practices (5 minutes)
 
 ### Step 1: Add Additional Features
 
@@ -812,7 +950,11 @@ npm install --save-dev jest
 ✅ **Created a complete Node.js insurance management application**
 ✅ **Integrated MongoDB driver with modern JavaScript patterns**
 ✅ **Implemented CRUD operations with proper error handling**
-✅ **Built reusable models and services**
+✅ **Built reusable models and services for Policy, Customer, AND Claim**
+✅ **Multi-document transactions** via `client.withSession` + `session.withTransaction`
+   (atomic claim filing across `claims` + `policies` + `audit_log`)
+✅ **Change streams** in Node.js: `collection.watch()` with `for await` iteration,
+   server-side `$match` filtering, and AbortController-based cancellation
 ✅ **Demonstrated advanced MongoDB features (aggregation, indexing)**
 ✅ **Applied insurance industry best practices**
 
