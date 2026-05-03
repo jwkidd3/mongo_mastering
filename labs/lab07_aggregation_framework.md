@@ -288,7 +288,9 @@ use insurance_company
    ])
    ```
 
-### Part D: Multi-Pipeline Analytics — `$facet`, `$bucket`, `$unionWith` (15 minutes)
+### Part D (Stretch): Multi-Pipeline Analytics — `$facet`, `$bucket`, `$unionWith` (15 minutes)
+
+> ⏱ **Stretch — covers production aggregation operators beyond the core 45 minutes of Parts A-C.** If class is on schedule, the instructor may include this; otherwise it's self-study material.
 
 These four operators are how production MongoDB applications build dashboards, tiered reports, and combined data views in a single round-trip.
 
@@ -391,7 +393,9 @@ These four operators are how production MongoDB applications build dashboards, t
    ])
    ```
 
-### Part E: Window Functions — `$setWindowFields` (10 minutes)
+### Part E (Stretch): Window Functions — `$setWindowFields` (10 minutes)
+
+> ⏱ **Stretch — pairs with Part D.** Covers SQL-window-function intuition in MongoDB. Self-study if class is on schedule.
 
 Window functions compute values across a "window" of related documents without collapsing the rows. Think of it as `$group`'s richer cousin: you can rank, accumulate, and look at neighbors while keeping each input row in the output.
 

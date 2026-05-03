@@ -1,10 +1,10 @@
-# Lab 8: Indexing Strategies and Performance Optimization (60 minutes)
+# Lab 8: Indexing Strategies and Performance Optimization (45 minutes core + 25 minutes stretch)
 
 ## Learning Objectives
 - Create and optimize indexes for different query patterns
 - Analyze query performance using explain plans
-- Understand index types and their use cases (compound, text, partial, wildcard, TTL, hidden)
-- Apply the **ESR rule** (Equality → Sort → Range) when designing compound indexes
+- Understand index types and their use cases (compound, text, partial — plus wildcard, TTL, hidden as stretch)
+- Apply the **ESR rule** (Equality → Sort → Range) when designing compound indexes (stretch)
 
 ## Prerequisites: Environment Setup
 
@@ -181,9 +181,11 @@ mongosh < data/comprehensive_data_loader.js
    db.test_policies.createIndex({ annualPremium: 1 })
    ```
 
-### Part C: Specialized Index Types (20 minutes)
+### Part C (Stretch): Specialized Index Types (15 minutes)
 
-The four index types below cover production cases the basic compound/text/partial set doesn't.
+> ⏱ **Stretch — covers production index types beyond the core 45 minutes of Parts A-B.** If class is on schedule, the instructor may include this; otherwise it's self-study material.
+
+The three index types below cover production cases the basic compound/text/partial set doesn't.
 
 1. **Wildcard indexes** — index every field at any depth, useful when documents have unpredictable shapes (user-defined attributes, attribute bags, etc.).
 
@@ -261,7 +263,9 @@ The four index types below cover production cases the basic compound/text/partia
 
    Output should read **IXSCAN → COLLSCAN → IXSCAN**, proving you can test index removal at zero cost.
 
-### Part D: The ESR Rule for Compound Indexes (10 minutes)
+### Part D (Stretch): The ESR Rule for Compound Indexes (10 minutes)
+
+> ⏱ **Stretch — pairs with Part C.** Covers the canonical compound-index design rule. Self-study if class is on schedule.
 
 When designing a compound index for a query that mixes equality, sort, and range predicates, order the keys **Equality → Sort → Range**. The optimizer can fully use the index left-to-right, the sort comes for free, and the range scan is bounded.
 
