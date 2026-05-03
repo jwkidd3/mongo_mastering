@@ -40,69 +40,136 @@ mongosh < data/comprehensive_data_loader.js
 
 ## Tasks
 
-### Part A: Schema Design Patterns (25 minutes)
+### Part A: Embed vs. Reference — Hands-On Comparison (25 minutes)
 
-**⚠️ Note: The following are example schemas for reference and learning purposes only. Do not execute these commands - they are provided to illustrate MongoDB schema design patterns.**
+The single most consequential schema decision is whether to **embed** related data inside a parent document or **reference** it from another collection. Instead of reading about the tradeoff, build the same customer-and-claims dataset both ways and measure the difference yourself.
 
-1. **Insurance Claims Schema**
-   Design collections for insurance claims with embedded incident details and investigation notes:
-   ```javascript
-   // EXAMPLE ONLY - Do not execute
-   // Claims collection with embedded investigation
-   {
-     _id: ObjectId("..."),
-     claimNumber: "CLM-2024-001234",
-     policyId: ObjectId("..."),
-     incidentDescription: "Vehicle collision at intersection",
-     adjuster: {
-       _id: ObjectId("..."),
-       name: "Sarah Johnson",
-       email: "sarah.johnson@insuranceco.com",
-       licenseNumber: "ADJ-5678"
-     },
-     incidentTypes: ["collision", "property damage", "injury"],
-     investigationNotes: [
-       {
-         _id: ObjectId("..."),
-         investigator: "Mike Thompson",
-         note: "Photos taken, police report obtained",
-         createdAt: ISODate("...")
-       }
-     ],
-     filedAt: ISODate("..."),
-     estimatedAmount: 8500
-   }
-   ```
+```javascript
+use insurance_company
 
-2. **Insurance Policy System**
-   ```javascript
-   // EXAMPLE ONLY - Do not execute
-   // Policy with coverage options pattern
-   {
-     _id: ObjectId("..."),
-     policyNumber: "POL-AUTO-2024-5678",
-     policyType: "Auto",
-     carrier: "SafeGuard Insurance",
-     coverageOptions: [
-       {
-         coverageCode: "COLL-500",
-         coverageType: "Collision",
-         deductible: 500,
-         limit: 25000,
-         premium: {
-           monthly: 85,
-           annual: 1020,
-           discountApplied: 120
-         }
-       }
-     ],
-     policyDetails: {
-       effectiveDate: ISODate("2024-01-01"),
-       expirationDate: ISODate("2024-12-31"),
-       renewalType: "Auto-Renewal"
-     }
-   }
-   ```
+// Reset the demo collections so this is rerun-safe
+db.cm_embedded.drop()
+db.cm_referenced_customers.drop()
+db.cm_referenced_claims.drop()
+```
+
+#### Build the same data, embedded
+
+```javascript
+// One customer document carries the claims array inline.
+db.cm_embedded.insertOne({
+    customerId: "C-EMB-001",
+    name: "Alice Embedded",
+    email: "alice@example.com",
+    claims: [
+        { claimNumber: "CLM-E-1", claimType: "Auto",     amount: 4200, status: "approved",     filedAt: new Date("2024-01-10") },
+        { claimNumber: "CLM-E-2", claimType: "Property", amount:  900, status: "submitted",    filedAt: new Date("2024-03-22") },
+        { claimNumber: "CLM-E-3", claimType: "Auto",     amount: 1800, status: "under_review", filedAt: new Date("2024-05-08") }
+    ]
+})
+```
+
+#### Build the same data, referenced
+
+```javascript
+// Customers and claims in separate collections, linked by customerId.
+db.cm_referenced_customers.insertOne({
+    customerId: "C-REF-001",
+    name: "Bob Referenced",
+    email: "bob@example.com"
+})
+db.cm_referenced_claims.insertMany([
+    { claimNumber: "CLM-R-1", customerId: "C-REF-001", claimType: "Auto",     amount: 4200, status: "approved",     filedAt: new Date("2024-01-10") },
+    { claimNumber: "CLM-R-2", customerId: "C-REF-001", claimType: "Property", amount:  900, status: "submitted",    filedAt: new Date("2024-03-22") },
+    { claimNumber: "CLM-R-3", customerId: "C-REF-001", claimType: "Auto",     amount: 1800, status: "under_review", filedAt: new Date("2024-05-08") }
+])
+db.cm_referenced_claims.createIndex({ customerId: 1 })   // critical for the lookup below
+```
+
+#### Compare: "give me Alice and all her claims" — one round-trip vs many
+
+```javascript
+// Embedded: ONE find. The whole result is in one document.
+db.cm_embedded.findOne({ customerId: "C-EMB-001" })
+
+// Referenced: TWO finds (or one $lookup aggregation).
+db.cm_referenced_customers.aggregate([
+    { $match: { customerId: "C-REF-001" } },
+    { $lookup: {
+        from: "cm_referenced_claims",
+        localField: "customerId",
+        foreignField: "customerId",
+        as: "claims"
+    }}
+])
+```
+
+Both return the same logical shape. The embedded read is one cursor with one document; the referenced read joins two collections. **For "give me everything about one customer," embed wins on read cost.**
+
+#### Compare: "approve claim CLM-X-2" — how do the writes look?
+
+```javascript
+// Embedded: positional update INTO the array. Have to find the array element.
+db.cm_embedded.updateOne(
+    { customerId: "C-EMB-001", "claims.claimNumber": "CLM-E-2" },
+    { $set: { "claims.$.status": "approved" } }
+)
+
+// Referenced: targeted update on a single claim document.
+db.cm_referenced_claims.updateOne(
+    { claimNumber: "CLM-R-2" },
+    { $set: { status: "approved" } }
+)
+```
+
+Both work. Look at `explain("executionStats")` for each — the referenced update's `totalDocsExamined` is 1 (with the index); the embedded update's is also 1 but it pulls / rewrites the entire customer document including all *other* claims. **For "update one item in a many list," referenced wins on write cost.**
+
+#### Compare: "list all approved claims across the whole system"
+
+```javascript
+// Embedded: must $unwind every customer's claims array first.
+db.cm_embedded.aggregate([
+    { $unwind: "$claims" },
+    { $match: { "claims.status": "approved" } },
+    { $project: { _id: 0, customer: "$name", claim: "$claims.claimNumber", amount: "$claims.amount" } }
+])
+
+// Referenced: direct find -- the claims collection is already the right shape.
+db.cm_referenced_claims.find({ status: "approved" })
+```
+
+The referenced query is shorter, faster, and uses any index on `status` directly. **For cross-cutting queries on the "many" side, referenced wins decisively.**
+
+#### When does embed lose hard?
+
+```javascript
+// Pretend Alice files 100,000 claims over a decade. The single embedded doc grows
+// past MongoDB's 16 MB document limit and INSERTS START FAILING. There's no fix
+// other than re-modeling. Referenced has no such ceiling.
+
+// Pretend you also want to query "show me all claims filed in Q1 2024 across
+// all customers ordered by amount." With embed, every query walks every
+// customer document. With reference, you index claims.filedAt + claims.amount
+// and answer in milliseconds.
+```
+
+#### The rule of thumb
+
+| Pattern | Embed when | Reference when |
+|---|---|---|
+| **Read pattern** | You always fetch parent + children together | You sometimes need just the children, or just the parent |
+| **Write pattern** | Children rarely change individually | Children change independently of the parent |
+| **Cardinality** | Bounded — small known max (e.g. addresses per user, < 10) | Unbounded or large (claims per customer, posts per user) |
+| **Query target** | Cross-cutting queries always start from the parent | You query the children directly (by status, date, amount) |
+
+The course's `insurance_company` data uses **both**: customers are referenced from policies (large cardinality, queried independently), but `coverageTypes` are embedded inside each policy (small cardinality, always read with the policy). Look at `db.policies.findOne()` — note both shapes coexisting.
+
+```javascript
+// Cleanup
+db.cm_embedded.drop()
+db.cm_referenced_customers.drop()
+db.cm_referenced_claims.drop()
+```
 
 ### Part B: Schema Implementation and Validation (20 minutes)
 
