@@ -551,14 +551,45 @@ Database
                 </section>
 
                 <section>
+                    <h3>Choose Your Tool: Compass or mongosh CLI</h3>
+                    <p class="code-title">Two ways to drive MongoDB — pick whichever you prefer</p>
+                    <div class="two-column">
+                        <div>
+                            <h4>🧭 MongoDB Compass (GUI)</h4>
+                            <ul style="font-size: 0.8em;">
+                                <li>Official GUI — install once, connect to any cluster</li>
+                                <li>Embedded <code>&gt;_ MONGOSH</code> tab is full mongosh</li>
+                                <li>Cross-platform; no shell quirks</li>
+                                <li>Recommended for first-time users</li>
+                            </ul>
+                            <pre style="font-size: 0.7em;"><code class="language-text">Connection string:
+mongodb://localhost:27017/?directConnection=true</code></pre>
+                        </div>
+                        <div>
+                            <h4>⌨️ mongosh CLI</h4>
+                            <ul style="font-size: 0.8em;">
+                                <li>Install from mongodb.com/try/download/shell</li>
+                                <li>Same commands as the Compass tab</li>
+                                <li>Required for piping / scripts / CI</li>
+                            </ul>
+                            <pre style="font-size: 0.7em;"><code class="language-bash">mongosh "mongodb://localhost:27017/?directConnection=true"</code></pre>
+                        </div>
+                    </div>
+                    <div class="info-box fragment">
+                        <p style="font-size: 0.75em;"><strong>Always use <code>directConnection=true</code></strong> when connecting from your host. Without it, the driver tries to discover replica-set members by their internal Docker hostnames (mongo1, mongo2, mongo3) which your host can't resolve.</p>
+                    </div>
+                </section>
+
+                <section>
                     <h3>MongoDB Shell Fundamentals</h3>
                     <p class="code-title">Connecting and Basic Commands</p>
                     <pre><code class="language-javascript">
-// Connect to MongoDB
-mongosh
+// Connect to MongoDB (host port mapping; directConnection bypasses
+// replica-set hostname discovery from outside Docker)
+mongosh "mongodb://localhost:27017/?directConnection=true"
 
 // Connect with authentication
-mongosh "mongodb://username:password@host:port/database"
+mongosh "mongodb://username:password@host:port/database?directConnection=true"
 
 // Basic navigation
 show dbs              // Show databases
@@ -659,9 +690,11 @@ prompt = function() {
 
                     <div class="highlight-box">
                         <h4>📊 Before Starting - Load Course Data</h4>
-                        <pre style="font-size: 0.75em; margin: 0.2em 0;"><code class="language-bash">cd data
-mongosh < day1_data_loader.js</code></pre>
-                        <p style="font-size: 0.65em; margin: 0.2em 0;">✅ Wait for "DAY 1 INSURANCE DATA LOADING COMPLETE!" message</p>
+                        <pre style="font-size: 0.7em; margin: 0.2em 0;"><code class="language-bash"># From the project root (works on macOS / Linux / WSL / Windows)
+mongosh "mongodb://localhost:27017/?directConnection=true" \
+  --file data/comprehensive_data_loader.js</code></pre>
+                        <p style="font-size: 0.65em; margin: 0.2em 0;">✅ Wait for "Your 3-day MongoDB Mastering Course environment is ready!"</p>
+                        <p style="font-size: 0.6em; margin: 0.2em 0; opacity: 0.8;">Compass users: open the <code>&gt;_ MONGOSH</code> tab and run <code>load('&lt;absolute path&gt;/data/comprehensive_data_loader.js')</code>.</p>
                     </div>
 
                     <div class="highlight-box">
