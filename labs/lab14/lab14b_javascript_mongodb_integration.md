@@ -760,6 +760,8 @@ use insurance_company
 db.policies.find({"policyNumber": "POL-JS-2024-001"})
 ```
 
+> ✅ **Checkpoint — basic Lab 14B complete.** You have a working Node.js insurance app with Policy + Customer CRUD. If class is short on time you can stop here. Parts F-G add the Claim domain, transactions, and change streams.
+
 ## Part F: Claims Domain — Model, Service, and Transactions (20 minutes)
 
 The starter ships `services/ClaimService.js` and `models/Claim.js` as skeletons. This part walks through the Claim domain in the same depth Part B/C used for Policy.
@@ -1075,6 +1077,8 @@ console.log('Atomic file:', result);
 ```
 
 Expected: `{ success: true, claimNumber: 'CLM-JS-DEMO' }`. Check `audit_log` and the policy's `claimsCount` in Compass — both should reflect the atomic update.
+
+> ✅ **Checkpoint — Lab 14B + Claim CRUD + transactions complete.** You can stop here. Part G adds change-stream listeners.
 
 ## Part G: Watching Changes (10 minutes)
 

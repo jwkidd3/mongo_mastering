@@ -657,6 +657,8 @@ for customer_doc in customer_docs:
         print(f"   Total Annual Premium: ${total_premium:,.2f}")
 ```
 
+> ✅ **Checkpoint — basic Lab 14C complete.** You have a working Python insurance app with Policy + Customer CRUD plus visualization. If class is short on time you can stop here. Parts G-H add the Claim domain, transactions, and change streams.
+
 ## Part G: Claims Domain — Model, Service, and Transactions (20 minutes)
 
 The starter ships `services/claim_service.py` and `models/claim.py` as skeletons. This part walks through the Claim domain in the same depth Part C/D used for Policy.
@@ -989,6 +991,8 @@ print("Atomic file:", result)
 ```
 
 Expected: `{'success': True, 'claim_number': 'CLM-PY-DEMO'}`. Check `audit_log` and the policy's `claimsCount` in Compass.
+
+> ✅ **Checkpoint — Lab 14C + Claim CRUD + transactions complete.** You can stop here. Part H adds change-stream listeners.
 
 ## Part H: Watching Changes (10 minutes)
 

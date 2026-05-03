@@ -1107,6 +1107,8 @@ namespace InsuranceManagementSystem.Services
 }
 ```
 
+> ✅ **Checkpoint — basic Lab 14A complete.** If class is wrapping up or you're short on time, you have a working insurance management system in C# with full CRUD, aggregation, and resilience. Parts D and E below are the "Mastering" extensions; you can return to them later.
+
 ## Part D: Multi-Document Transactions (10 minutes)
 
 A single business action often touches multiple collections — file a claim AND increment the policy's `claimsCount` AND insert an `audit_log` row. To keep them consistent, run them in a transaction. The driver gives you an `IClientSessionHandle` that batches the operations atomically across the replica set.
@@ -1178,6 +1180,8 @@ public async Task<bool> FileClaimWithRetryAsync(Claim claim, int maxAttempts = 3
 ```
 
 Call `claimService.FileClaimWithRetryAsync(myClaim)` from `Program.cs` to exercise it.
+
+> ✅ **Checkpoint — Lab 14A + transactions complete.** You can stop here and you've covered everything most production C# / MongoDB applications use. Part E below is change streams (event-driven listeners).
 
 ## Part E: Watching Changes (10 minutes)
 
