@@ -66,13 +66,19 @@ Pick the tool you connected with above, then load the comprehensive course data.
 
 ### From Compass's `MONGOSH` tab
 
-Either run `load()` with the absolute path to the loader file (forward slashes work on Windows too):
+Compass's embedded shell does **not** run from your repo directory — its working directory is Compass's own install location. So `load('data/...')` will fail with `ENOENT`. Use an **absolute path**:
 
 ```javascript
 load('/absolute/path/to/mongo_mastering/data/comprehensive_data_loader.js')
 ```
 
-Or open `data/comprehensive_data_loader.js` in any editor, copy the full contents, and paste them into the `MONGOSH` tab.
+To find the absolute path:
+- **macOS / Linux / WSL:** in a terminal at the repo root, run `pwd` — that's the prefix to add.
+  Example: `load('/Users/jane/courses/mongo_mastering/data/comprehensive_data_loader.js')`
+- **Windows PowerShell:** at the repo root, run `(Get-Location).Path`. Forward slashes work in `load()` even on Windows.
+  Example: `load('C:/Users/Jane/mongo_mastering/data/comprehensive_data_loader.js')`
+
+Or, if pasting paths is painful, open `data/comprehensive_data_loader.js` in any editor, copy the full contents, and paste them into the `MONGOSH` tab.
 
 ### From the `mongosh` CLI
 
@@ -99,6 +105,8 @@ db.getSiblingDB('insurance_company').policies.countDocuments()
 ```
 
 Either should print a number greater than zero.
+
+> **Watch out — `mongosh ... --eval "use db; db.foo()"` does NOT work.** In `--eval` mode, the `use` shell helper greedily consumes the rest of the input as the database name (including the semicolon!) and the second statement never runs. Always either put the database in the URI (`mongodb://.../insurance_company?...`) as shown above, or use `db.getSiblingDB('insurance_company').foo()` as the JS form.
 
 ## Tasks
 
