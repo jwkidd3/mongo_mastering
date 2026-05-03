@@ -28,6 +28,11 @@ mongosh --eval "db.runCommand('ping')"
 mongosh < data/comprehensive_data_loader.js
 ```
 
+> **Windows (PowerShell):** PowerShell does not forward `<` into `mongosh` — the command will error. Use `--file` instead:
+> ```powershell
+> mongosh "mongodb://localhost:27017/?directConnection=true" --file data/comprehensive_data_loader.js
+> ```
+
 ## Part A: Change Stream Infrastructure Setup (15 minutes)
 
 ### Step 1: Create Supporting Collections for Change Stream Processing

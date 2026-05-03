@@ -31,6 +31,11 @@ mongosh --eval "db.runCommand('ping')"
 mongosh < data/comprehensive_data_loader.js
 ```
 
+> **Windows (PowerShell):** PowerShell does not forward `<` into `mongosh` — the command will error. Use `--file` instead:
+> ```powershell
+> mongosh "mongodb://localhost:27017/?directConnection=true" --file data/comprehensive_data_loader.js
+> ```
+
 **Expected data counts:** 13 policies, 20 customers, 15 claims, 10 agents, 5 branches, 3 reviews
 
 **Collections available:** `policies`, `claims`, `customers`, `agents`, `branches`, `payments`, `reviews`

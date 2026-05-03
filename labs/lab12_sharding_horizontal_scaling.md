@@ -41,6 +41,11 @@ mongosh --eval "db.runCommand('ping')"
 mongosh < data/comprehensive_data_loader.js
 ```
 
+> **Windows (PowerShell):** PowerShell does not forward `<` into `mongosh` — the command will error. Use `--file` instead:
+> ```powershell
+> mongosh "mongodb://localhost:27017/?directConnection=true" --file data/comprehensive_data_loader.js
+> ```
+
 ### Prerequisites: Provision the Sharded Cluster
 
 Lab 12 requires a real sharded cluster. Provision it with the course script:
