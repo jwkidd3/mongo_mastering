@@ -10,6 +10,28 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/highlight/monokai.min.css">
 
     <style>
+        /* === Overflow safety: keep slide content visible when it exceeds the
+           1280x900 viewport. Without this rule, content past the bottom edge
+           silently disappears in present mode. The lab-slide rule below
+           already handles lab callouts; this covers regular content slides. */
+        .reveal .slides > section > section,
+        .reveal .slides > section:not(:has(section)) {
+            overflow-y: auto;
+            max-height: 88vh;
+        }
+        .reveal .slides section pre {
+            max-width: 100%;
+            overflow-x: auto;
+        }
+        /* Long code blocks shrink font slightly so 25-30 line snippets fit
+           without scrollbars. Keeps inline code unchanged. */
+        .reveal .slides section pre code {
+            font-size: 0.55em;
+            line-height: 1.18;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
         .reveal {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
@@ -1059,35 +1081,28 @@ const changeStream = db.orders.watch([], {
                 </section>
 
                 <section>
-                    <h2>Order Processing Example</h2>
+                    <h2>Order Processing Example (1/2) — New-Order Watcher</h2>
                     <div class="code-container">
-                        <div class="code-title">Order Workflow with Change Streams (Node.js Application)</div>
-                        <pre><code class="language-javascript">// Order processing pipeline
-class OrderProcessor {
-  constructor() {
-    this.setupChangeStreams();
-  }
-  
+                        <div class="code-title">Watch for inserts; validate, charge, advance to "processing"</div>
+                        <pre><code class="language-javascript">class OrderProcessor {
+  constructor() { this.setupChangeStreams(); }
+
   setupChangeStreams() {
-    // Watch for new orders
     const newOrderStream = db.orders.watch([
       { $match: { operationType: 'insert' } }
     ]);
-    
+
     newOrderStream.on('change', async (change) => {
       const order = change.fullDocument;
-      
       try {
         await this.validateInventory(order);
         await this.processPayment(order);
-        
+
         await db.orders.updateOne(
           { _id: order._id },
           { $set: { status: 'processing', processedAt: new Date() } }
         );
-        
         await this.triggerFulfillment(order);
-        
       } catch (error) {
         await db.orders.updateOne(
           { _id: order._id },
@@ -1095,25 +1110,37 @@ class OrderProcessor {
         );
       }
     });
-    
-    // Watch for status updates
-    const statusStream = db.orders.watch([
-      { $match: { 
-        operationType: 'update',
-        'updateDescription.updatedFields.status': { $exists: true }
-      }}
-    ]);
-    
-    statusStream.on('change', (change) => {
-      const orderId = change.documentKey._id;
-      const newStatus = change.updateDescription.updatedFields.status;
-      
-      this.sendStatusNotification(orderId, newStatus);
-      this.updateOrderAnalytics(orderId, newStatus);
-    });
+
+    // Status-update watcher continues on next slide ↓
   }
 }</code></pre>
                     </div>
+                </section>
+
+                <section>
+                    <h2>Order Processing Example (2/2) — Status-Update Watcher</h2>
+                    <div class="code-container">
+                        <div class="code-title">Watch for status-field updates and fan out notifications</div>
+                        <pre><code class="language-javascript">// (continues inside setupChangeStreams() above)
+
+const statusStream = db.orders.watch([
+  { $match: {
+      operationType: 'update',
+      'updateDescription.updatedFields.status': { $exists: true }
+  }}
+]);
+
+statusStream.on('change', (change) => {
+  const orderId   = change.documentKey._id;
+  const newStatus = change.updateDescription.updatedFields.status;
+
+  this.sendStatusNotification(orderId, newStatus);
+  this.updateOrderAnalytics(orderId, newStatus);
+});</code></pre>
+                    </div>
+                    <p class="small-text" style="margin-top: 0.6em;">
+                        Two streams = two responsibilities: one drives the order lifecycle on insert, the other reacts to whoever (CRM, fulfillment, refund-bot, …) changes the status field.
+                    </p>
                 </section>
 
                 <section>

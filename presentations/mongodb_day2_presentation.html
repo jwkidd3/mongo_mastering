@@ -10,6 +10,28 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/highlight/monokai.min.css">
 
     <style>
+        /* === Overflow safety: keep slide content visible when it exceeds the
+           1280x900 viewport. Without this rule, content past the bottom edge
+           silently disappears in present mode. The lab-slide rule below
+           already handles lab callouts; this covers regular content slides. */
+        .reveal .slides > section > section,
+        .reveal .slides > section:not(:has(section)) {
+            overflow-y: auto;
+            max-height: 88vh;
+        }
+        .reveal .slides section pre {
+            max-width: 100%;
+            overflow-x: auto;
+        }
+        /* Long code blocks shrink font slightly so 25-30 line snippets fit
+           without scrollbars. Keeps inline code unchanged. */
+        .reveal .slides section pre code {
+            font-size: 0.55em;
+            line-height: 1.18;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
         .reveal {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
