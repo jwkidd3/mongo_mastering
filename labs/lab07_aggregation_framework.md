@@ -288,6 +288,121 @@ use insurance_company
    ])
    ```
 
+### Part D: Multi-Pipeline Analytics — `$facet`, `$bucket`, `$unionWith` (15 minutes)
+
+These four operators are how production MongoDB applications build dashboards, tiered reports, and combined data views in a single round-trip.
+
+1. **`$facet`** — run multiple sub-pipelines against the same input documents in parallel. One query, many independent results.
+
+   ```javascript
+   // One round-trip dashboard: counts by type, top earners, premium distribution
+   db.policies.aggregate([
+     { $match: { isActive: true } },
+     { $facet: {
+         "byType":         [{ $group: { _id: "$policyType", count: { $sum: 1 }, avgPremium: { $avg: "$annualPremium" } } },
+                            { $sort: { count: -1 } }],
+         "topEarners":     [{ $sort: { annualPremium: -1 } }, { $limit: 5 },
+                            { $project: { _id: 0, policyNumber: 1, policyType: 1, annualPremium: 1 } }],
+         "premiumStats":   [{ $group: { _id: null, total: { $sum: "$annualPremium" }, min: { $min: "$annualPremium" }, max: { $max: "$annualPremium" }, avg: { $avg: "$annualPremium" } } }]
+     }}
+   ])
+   ```
+
+   The output is a single document with three keys (`byType`, `topEarners`, `premiumStats`), each holding the result of its sub-pipeline. Notice this is one query — much cheaper than three round-trips.
+
+2. **`$bucket`** — group documents into explicit ranges (premium tiers, age brackets, score buckets). Useful for histograms.
+
+   ```javascript
+   db.policies.aggregate([
+     { $match: { isActive: true } },
+     { $bucket: {
+         groupBy: "$annualPremium",
+         boundaries: [0, 1000, 2500, 5000, 10000, Infinity],
+         default: "Other",
+         output: {
+             policyCount: { $sum: 1 },
+             totalRevenue: { $sum: "$annualPremium" },
+             samplePolicies: { $push: { policyNumber: "$policyNumber", premium: "$annualPremium" } }
+         }
+     }},
+     { $project: { _id: 0, premiumTier: "$_id", policyCount: 1, totalRevenue: 1, sampleSize: { $size: "$samplePolicies" } } }
+   ])
+   ```
+
+   Each output `_id` is a left-edge boundary (`0`, `1000`, `2500`, ...). Documents whose `annualPremium` falls into `[boundary[i], boundary[i+1])` go into that bucket.
+
+3. **`$bucketAuto`** — same idea as `$bucket` but you specify how many buckets and MongoDB picks the boundaries automatically (equal-frequency). Useful when you don't know the data distribution.
+
+   ```javascript
+   db.policies.aggregate([
+     { $match: { isActive: true } },
+     { $bucketAuto: {
+         groupBy: "$annualPremium",
+         buckets: 4,
+         output: { count: { $sum: 1 }, avgPremium: { $avg: "$annualPremium" } }
+     }}
+   ])
+   ```
+
+4. **`$unionWith`** — combine documents from multiple collections (or sub-pipelines) into one stream. Like SQL's `UNION ALL`. Useful for "all activity" or "combined catalog" views.
+
+   ```javascript
+   // Show all customer-facing financial events: premium payments AND claim filings,
+   // tagged so we know which is which. Single sorted timeline.
+   db.payments.aggregate([
+     { $project: { _id: 0, customerId: 1, amount: 1, date: "$paymentDate", source: { $literal: "payment" } } },
+     { $unionWith: {
+         coll: "claims",
+         pipeline: [
+             { $project: { _id: 0, customerId: 1, amount: "$claimAmount", date: "$filedDate", source: { $literal: "claim" } } }
+         ]
+     }},
+     { $sort: { date: -1 } },
+     { $limit: 10 }
+   ])
+   ```
+
+### Part E: Window Functions — `$setWindowFields` (10 minutes)
+
+Window functions compute values across a "window" of related documents without collapsing the rows. Think of it as `$group`'s richer cousin: you can rank, accumulate, and look at neighbors while keeping each input row in the output.
+
+```javascript
+// For each policy, show its rank within its policyType by annualPremium,
+// the running total of premium for that type (ordered by date),
+// and a moving 3-policy average premium.
+db.policies.aggregate([
+    { $match: { isActive: true } },
+    { $setWindowFields: {
+        partitionBy: "$policyType",
+        sortBy: { effectiveDate: 1 },
+        output: {
+            premiumRank: {
+                $rank: {}
+            },
+            runningTotal: {
+                $sum: "$annualPremium",
+                window: { documents: ["unbounded", "current"] }
+            },
+            movingAvg3: {
+                $avg: "$annualPremium",
+                window: { documents: [-1, 1] }
+            }
+        }
+    }},
+    { $project: { _id: 0, policyNumber: 1, policyType: 1, effectiveDate: 1, annualPremium: 1, premiumRank: 1, runningTotal: 1, movingAvg3: 1 } },
+    { $sort: { policyType: 1, effectiveDate: 1 } },
+    { $limit: 8 }
+])
+```
+
+Key knobs:
+- `partitionBy` — split documents into independent groups (here: per `policyType`); the window resets at partition boundaries.
+- `sortBy` — order *within* each partition. Required when window operators care about position (`$rank`, running totals, lag/lead).
+- `window: { documents: ["unbounded", "current"] }` — running total from the start of the partition through the current row.
+- `window: { documents: [-1, 1] }` — moving window of 3 rows centered on current.
+
+Try changing `$rank` to `$denseRank` or `$documentNumber` and re-running to see the differences. Add `$shift` (window functions' equivalent of SQL `LAG`/`LEAD`) to see prior-row deltas.
+
 ## Cleanup and Environment Teardown
 
 ### Environment Teardown
@@ -310,6 +425,8 @@ cd scripts
 ✅ **Join Operations**: Used $lookup to combine data from multiple collections
 ✅ **Data Transformation**: Implemented $project, $unwind, and computed fields
 ✅ **Business Analytics**: Created insurance metrics dashboards using complex pipelines
+✅ **Multi-pipeline analytics**: $facet (parallel sub-pipelines), $bucket / $bucketAuto (histograms), $unionWith (cross-collection)
+✅ **Window functions**: $setWindowFields with $rank, running totals, and moving averages
 
 ## Challenge Exercises
 
