@@ -64,10 +64,31 @@ db.hello()
 rs.conf()
 ```
 
+**Expected output (key fields from the JSON, names match `setup.{sh,ps1}`):**
+
+```javascript
+// rs.status() returns:
+{
+  set: 'rs0',
+  members: [
+    { name: 'mongo1:27017', stateStr: 'PRIMARY',   health: 1, ... },
+    { name: 'mongo2:27017', stateStr: 'SECONDARY', health: 1, ... },
+    { name: 'mongo3:27017', stateStr: 'SECONDARY', health: 1, ... }
+  ],
+  ok: 1
+}
+
+// db.hello() returns (when run on the primary):
+{ isWritablePrimary: true, hosts: ['mongo1:27017','mongo2:27017','mongo3:27017'], setName: 'rs0', ... }
+```
+
 **What to look for:**
-- 3 members total
-- 1 PRIMARY, 2 SECONDARY
-- All members healthy (health: 1)
+- 3 members total — `members.length === 3`
+- 1 PRIMARY, 2 SECONDARY — `stateStr` values
+- All members healthy — every `health: 1`
+- `ok: 1` at the top level
+
+If you see `health: 0` on any member or fewer than 3 members, your cluster didn't come up cleanly — re-run `scripts/setup.sh` (or `setup.ps1`).
 
 ## Part B: Write to Primary, Read from Secondary (15 minutes)
 

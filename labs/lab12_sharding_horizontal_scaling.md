@@ -207,7 +207,12 @@ db.policies.countDocuments()
 db.claims.countDocuments()
 ```
 
-You should see non-zero counts. The data is now in the sharded cluster, but the collections are NOT sharded yet — they all live on the primary shard. We will shard them next.
+**Expected output (against the loaded comprehensive dataset):**
+- `db.customers.countDocuments()` → **20**
+- `db.policies.countDocuments()` → **16**
+- `db.claims.countDocuments()` → **18**
+
+If you see 0 for any of these, the migration step above didn't run successfully — re-run it before continuing. The data is now in the sharded cluster, but the collections are NOT sharded yet — they all live on the primary shard. We will shard them next.
 
 ### Step 4: Enable Sharding and Shard Collections
 
@@ -251,7 +256,17 @@ db.customers.getShardDistribution()
 db.policies.getShardDistribution()
 ```
 
-> With small sample data, you'll initially see only one chunk per collection on the primary shard. The next step manually splits and migrates chunks so you can observe true cross-shard distribution. For deeper config-database introspection see **Stretch Goal 3**.
+**Expected output:** with the small loaded dataset (20 customers, 16 policies), `getShardDistribution()` reports **100% on a single shard** for each collection. Output shape:
+```
+Shard <shard0> at <connection>:
+  data: ... docs : 20    chunks : 1
+  estimated data per chunk : ... estimated docs per chunk : 20
+Totals
+  data : ... docs : 20  chunks : 1
+  Shard <shard0> contains 100% data, 100% docs in cluster, ...
+```
+
+> Initially you see only one chunk per collection on the primary shard — the data set isn't large enough for the auto-balancer to split it. The next step manually splits and migrates chunks so you can observe true cross-shard distribution. For deeper config-database introspection see **Stretch Goal 3**.
 
 ### Step 6: Manually Split and Move Chunks
 

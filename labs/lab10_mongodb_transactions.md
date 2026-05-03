@@ -144,6 +144,14 @@ print("Customer updated: " + customerUpdate.modifiedCount);
 print("New policy created: " + newPolicyResult.insertedId);
 ```
 
+**Expected output for Step 5g:**
+```
+✅ Transaction committed successfully
+Customer updated: 1
+New policy created: ObjectId('...')
+```
+If `customerUpdate.modifiedCount` is `0`, the customer's `totalPolicies` was already at the same value (no-op update). The transaction still commits cleanly. If you see an exception, see TROUBLESHOOTING.md → "Transaction errors."
+
 ```javascript
 // 5h: End the session
 session.endSession();

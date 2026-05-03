@@ -123,6 +123,15 @@ use insurance_company
    }).sort({ score: { $meta: "textScore" } })
    ```
 
+   **Expected output:** the search returns the 4 `policyType: "Auto"` policies first (highest text-match score on `Auto`), followed by any policies whose other text fields match `Coverage` or `Protection`. To inspect the score itself, project it:
+   ```javascript
+   db.policies.find(
+     { $text: { $search: "Auto Coverage Protection" } },
+     { policyNumber: 1, policyType: 1, score: { $meta: "textScore" } }
+   ).sort({ score: { $meta: "textScore" } }).limit(5)
+   // Each returned doc has a `score` field; Auto policies score highest.
+   ```
+
 2. **Regex Pattern Matching**
    ```javascript
    // Find customers with phone numbers in 555 area code

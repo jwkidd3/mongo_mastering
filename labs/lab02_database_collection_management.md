@@ -142,6 +142,11 @@ mongosh "mongodb://localhost:27017/insurance_company?directConnection=true" --ev
    db.customers.totalIndexSize()
    ```
 
+   **Expected output:**
+   - `show collections` lists ~12 collections from the loader (`agents`, `branches`, `claims`, `customers`, `notifications`, `payments`, `policies`, `properties`, `resume_tokens`, `reviews`, `vehicles`) plus the lab-2 collections you just created (`lab2_customers`, `audit_logs`, `new_policies`).
+   - `db.audit_logs.isCapped()` → **`true`**
+   - `db.customers.getIndexes()` returns at least the default `_id_` index plus any indexes the loader created. Each entry has a `name` and `key` field.
+
 3. **Collection Modification and Maintenance**
    ```javascript
    // Rename collection (using test collection to avoid breaking later labs)

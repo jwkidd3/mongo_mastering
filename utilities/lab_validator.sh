@@ -138,6 +138,46 @@ test_mongo_command_with_output() {
 }
 
 echo "========================================================================"
+echo "DATA INVARIANTS: pinned counts from comprehensive_data_loader.js"
+echo "========================================================================"
+echo "If any of these fail, the loader produced different counts than the labs"
+echo "document as 'Expected output'. Update either the loader or the labs."
+echo
+
+# These four assertions guard the specific counts the lab markdown calls out
+# in "Expected output" blocks. If the loader changes, fix the lab text first
+# OR adjust the assertion -- don't silently let it drift.
+test_mongo_command_with_output \
+    "DATA - policies.countDocuments() == 16" \
+    "var n = db.policies.countDocuments(); if (n !== 16) throw new Error('expected 16 policies, got ' + n); print('OK ' + n);" \
+    "insurance_company" \
+    "OK 16"
+
+test_mongo_command_with_output \
+    "DATA - policies(policyType=Auto).countDocuments() == 4" \
+    "var n = db.policies.countDocuments({policyType:'Auto'}); if (n !== 4) throw new Error('expected 4 Auto policies, got ' + n); print('OK ' + n);" \
+    "insurance_company" \
+    "OK 4"
+
+test_mongo_command_with_output \
+    "DATA - policies(isActive=true).countDocuments() == 15" \
+    "var n = db.policies.countDocuments({isActive:true}); if (n !== 15) throw new Error('expected 15 active policies, got ' + n); print('OK ' + n);" \
+    "insurance_company" \
+    "OK 15"
+
+test_mongo_command_with_output \
+    "DATA - customers.countDocuments() == 20" \
+    "var n = db.customers.countDocuments(); if (n !== 20) throw new Error('expected 20 customers, got ' + n); print('OK ' + n);" \
+    "insurance_company" \
+    "OK 20"
+
+test_mongo_command_with_output \
+    "DATA - claims.countDocuments() == 18" \
+    "var n = db.claims.countDocuments(); if (n !== 18) throw new Error('expected 18 claims, got ' + n); print('OK ' + n);" \
+    "insurance_company" \
+    "OK 18"
+
+echo "========================================================================"
 echo "LAB 1: MongoDB Shell Mastery - Testing Actual Lab Commands"
 echo "========================================================================"
 

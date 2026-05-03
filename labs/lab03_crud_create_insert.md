@@ -84,6 +84,13 @@ mongosh < data/comprehensive_data_loader.js
    })
    ```
 
+   **Expected output for each `insertOne` call:**
+   ```javascript
+   { acknowledged: true, insertedId: ObjectId('...') }   // for the auto-generated _id form
+   { acknowledged: true, insertedId: 'POL-HOME-101' }    // for the explicit _id form (your string is the _id)
+   ```
+   `acknowledged: true` means MongoDB confirmed the write to the primary. If you see a thrown error like `E11000 duplicate key`, the cleanup step at the top didn't fully clear; re-run it.
+
 2. **Understanding ObjectId and Document Structure**
    ```javascript
    // Examine ObjectId generation

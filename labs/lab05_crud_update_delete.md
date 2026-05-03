@@ -85,6 +85,10 @@ mongosh < data/comprehensive_data_loader.js
    db.policies.findOne({policyNumber: "POL-AUTO-001"}, {claimCount: 1, renewalCount: 1})
    ```
 
+   **Expected output for Step 1:**
+   - `updateOne` returns `{ acknowledged: true, matchedCount: 1, modifiedCount: 1, ... }`. If `matchedCount: 0`, the policy doesn't exist (data not loaded? typo?).
+   - The `findOne` verification calls return the updated document with the new fields.
+
 2. **Multiple Document Updates**
    ```javascript
    // Update all documents in category
@@ -122,6 +126,10 @@ mongosh < data/comprehensive_data_loader.js
    // Verify the 5% discount was applied
    db.policies.find({policyType: "Auto"}, {policyNumber: 1, annualPremium: 1}).limit(3)
    ```
+
+   **Expected output for Step 2:**
+   - The `updateMany` calls return `{ acknowledged: true, matchedCount: 4, modifiedCount: 4 }` for the Auto-type queries (4 Auto policies in the loaded data).
+   - After the `$mul: 0.95` discount, Auto premiums are 5% lower. E.g. `POL-AUTO-001` was `1299.99` → after discount `1234.99` (rounded depending on precision).
 
 3. **Array Update Operations**
    ```javascript

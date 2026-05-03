@@ -63,6 +63,12 @@ mongosh < data/comprehensive_data_loader.js
    db.policies.findOne({policyType: "Auto"}) !== null
    ```
 
+   **Expected output (against the loaded comprehensive dataset):**
+   - `db.policies.countDocuments()` → **16**
+   - `db.policies.countDocuments({policyType: "Auto"})` → **4**
+   - `db.policies.countDocuments({isActive: true})` → **15** (15 active, 1 inactive)
+   - `db.policies.findOne({policyType: "Auto"})` returns one policy document with fields like `policyNumber`, `policyType: "Auto"`, `customerId`, `annualPremium`, `coverageLimit`, `isActive`, etc.
+
 2. **Comparison Operators**
    ```javascript
    // Equality and inequality
