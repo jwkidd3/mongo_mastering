@@ -657,15 +657,272 @@ for customer_doc in customer_docs:
         print(f"   Total Annual Premium: ${total_premium:,.2f}")
 ```
 
-## Part G: Multi-Document Transactions (10 minutes)
+## Part G: Claims Domain — Model, Service, and Transactions (20 minutes)
 
-The starter ships with `services/claim_service.py` and `models/claim.py` skeletons (Claim parity with Policy / Customer). Implement claim CRUD as practice, then add the atomic-filing method below.
+The starter ships `services/claim_service.py` and `models/claim.py` as skeletons. This part walks through the Claim domain in the same depth Part C/D used for Policy.
 
-### Implement claim CRUD in `ClaimService`
+### Step 1: Fill in the Claim dataclass
 
-Mirror what you did for `PolicyService`: fill in `create_claim`, `get_claim_by_number`, `get_claims_by_customer`, `update_claim_status`, `delete_claim`. Use `self.collection`.
+Open `models/claim.py` and complete the dataclass fields and helpers. Mirror `models/policy.py`.
 
-### Add `file_claim_atomically` — multi-collection transaction
+```python
+# models/claim.py
+from __future__ import annotations
+from dataclasses import dataclass, field
+from datetime import datetime
+from decimal import Decimal
+from typing import Any, Optional
+
+from bson import ObjectId
+
+
+@dataclass
+class Claim:
+    claim_number:      str               = ""
+    customer_id:       str               = ""
+    policy_number:     str               = ""
+    claim_type:        str               = ""               # Auto, Property, Life, Health
+    claim_amount:      Decimal           = Decimal("0")
+    status:            str               = "submitted"      # submitted/under_review/approved/denied/settled
+    incident_date:     Optional[datetime] = None
+    filed_date:        datetime          = field(default_factory=datetime.utcnow)
+    description:       str               = ""
+    settlement_amount: Optional[Decimal] = None
+    approved_by:       Optional[str]     = None
+    approval_date:     Optional[datetime] = None
+    denial_reason:     Optional[str]     = None
+    adjuster_id:       Optional[str]     = None
+    created_at:        datetime          = field(default_factory=datetime.utcnow)
+    updated_at:        datetime          = field(default_factory=datetime.utcnow)
+    _id:               ObjectId          = field(default_factory=ObjectId)
+
+    VALID_STATUSES = {"submitted", "under_review", "investigating", "approved", "denied", "settled"}
+
+    def validate(self) -> None:
+        """Raise ValueError if the claim is not valid."""
+        errors = []
+        if not self.claim_number:                          errors.append("claim_number is required")
+        if not self.customer_id:                           errors.append("customer_id is required")
+        if not self.policy_number:                         errors.append("policy_number is required")
+        if Decimal(self.claim_amount) <= 0:                errors.append("claim_amount must be > 0")
+        if self.status not in self.VALID_STATUSES:
+            errors.append(f"status must be one of {sorted(self.VALID_STATUSES)}")
+        if errors:
+            raise ValueError("; ".join(errors))
+
+    def days_open(self) -> int:
+        return max(0, (datetime.utcnow() - self.filed_date).days)
+
+    def get_summary(self) -> dict[str, Any]:
+        return {
+            "claim_number": self.claim_number,
+            "status":       self.status,
+            "amount":       str(self.claim_amount),
+            "days_open":    self.days_open(),
+        }
+
+    def to_dict(self) -> dict[str, Any]:
+        """Convert to camelCase dict for MongoDB."""
+        return {
+            "_id":              self._id,
+            "claimNumber":      self.claim_number,
+            "customerId":       self.customer_id,
+            "policyNumber":     self.policy_number,
+            "claimType":        self.claim_type,
+            "claimAmount":      str(self.claim_amount),       # store as string to preserve precision
+            "status":           self.status,
+            "incidentDate":     self.incident_date,
+            "filedDate":        self.filed_date,
+            "description":      self.description,
+            "settlementAmount": str(self.settlement_amount) if self.settlement_amount is not None else None,
+            "approvedBy":       self.approved_by,
+            "approvalDate":     self.approval_date,
+            "denialReason":     self.denial_reason,
+            "adjusterId":       self.adjuster_id,
+            "createdAt":        self.created_at,
+            "updatedAt":        self.updated_at,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "Claim":
+        """Build a Claim from a Mongo document (camelCase fields)."""
+        return cls(
+            _id              = data.get("_id", ObjectId()),
+            claim_number     = data.get("claimNumber", ""),
+            customer_id      = data.get("customerId", ""),
+            policy_number    = data.get("policyNumber", ""),
+            claim_type       = data.get("claimType", ""),
+            claim_amount     = Decimal(str(data.get("claimAmount", "0"))),
+            status           = data.get("status", "submitted"),
+            incident_date    = data.get("incidentDate"),
+            filed_date       = data.get("filedDate", datetime.utcnow()),
+            description      = data.get("description", ""),
+            settlement_amount= Decimal(str(data["settlementAmount"])) if data.get("settlementAmount") is not None else None,
+            approved_by      = data.get("approvedBy"),
+            approval_date    = data.get("approvalDate"),
+            denial_reason    = data.get("denialReason"),
+            adjuster_id      = data.get("adjusterId"),
+            created_at       = data.get("createdAt", datetime.utcnow()),
+            updated_at       = data.get("updatedAt", datetime.utcnow()),
+        )
+```
+
+### Step 2: Implement claim CRUD in `ClaimService`
+
+Open `services/claim_service.py` and complete the methods. Mirror the structure of `policy_service.py`.
+
+```python
+# services/claim_service.py
+from __future__ import annotations
+from datetime import datetime
+from decimal import Decimal
+from typing import Any
+
+from models.claim import Claim
+
+
+class ClaimService:
+    def __init__(self, database, client):
+        self.db         = database
+        self.client     = client                         # for sessions / transactions
+        self.collection = database.claims
+        self._ensure_indexes()
+
+    def _ensure_indexes(self):
+        try:
+            self.collection.create_index("claimNumber", unique=True)
+            self.collection.create_index([("customerId", 1), ("status", 1)])
+            self.collection.create_index([("policyNumber", 1)])
+        except Exception as exc:                          # noqa: BLE001
+            print(f"Index warning: {exc}")
+
+    # ------------- Create -------------
+    def create_claim(self, claim_data: dict[str, Any]) -> str:
+        """Build, validate, dedupe, insert. claim_data is snake_case kwargs."""
+        claim = Claim(**claim_data)
+        claim.validate()
+        existing = self.collection.find_one({"claimNumber": claim.claim_number})
+        if existing:
+            raise ValueError(f"Claim {claim.claim_number} already exists")
+        result = self.collection.insert_one(claim.to_dict())
+        return str(result.inserted_id)
+
+    # ------------- Read -------------
+    def get_claim_by_number(self, claim_number: str) -> Claim | None:
+        doc = self.collection.find_one({"claimNumber": claim_number})
+        return Claim.from_dict(doc) if doc else None
+
+    def get_claims_by_customer(self, customer_id: str) -> list[Claim]:
+        return [Claim.from_dict(d) for d in self.collection.find({"customerId": customer_id})]
+
+    def get_claims_by_policy(self, policy_number: str) -> list[Claim]:
+        return [Claim.from_dict(d) for d in self.collection.find({"policyNumber": policy_number})]
+
+    def get_claims_by_status(self, status: str) -> list[Claim]:
+        return [Claim.from_dict(d) for d in self.collection.find({"status": status})]
+
+    def get_open_claims(self) -> list[Claim]:
+        cursor = self.collection.find({
+            "status": {"$in": ["submitted", "under_review", "investigating"]}
+        })
+        return [Claim.from_dict(d) for d in cursor]
+
+    # ------------- Update -------------
+    def update_claim_status(self, claim_number: str, new_status: str) -> int:
+        result = self.collection.update_one(
+            {"claimNumber": claim_number},
+            {"$set": {"status": new_status, "updatedAt": datetime.utcnow()}},
+        )
+        return result.modified_count
+
+    def approve_claim(self, claim_number: str, settlement_amount: Decimal, approved_by: str) -> int:
+        result = self.collection.update_one(
+            {"claimNumber": claim_number},
+            {"$set": {
+                "status":           "approved",
+                "settlementAmount": str(settlement_amount),
+                "approvedBy":       approved_by,
+                "approvalDate":     datetime.utcnow(),
+                "updatedAt":        datetime.utcnow(),
+            }},
+        )
+        return result.modified_count
+
+    def deny_claim(self, claim_number: str, denial_reason: str) -> int:
+        result = self.collection.update_one(
+            {"claimNumber": claim_number},
+            {"$set": {"status": "denied", "denialReason": denial_reason, "updatedAt": datetime.utcnow()}},
+        )
+        return result.modified_count
+
+    def assign_adjuster(self, claim_number: str, adjuster_id: str) -> int:
+        result = self.collection.update_one(
+            {"claimNumber": claim_number},
+            {"$set": {"adjusterId": adjuster_id, "status": "under_review", "updatedAt": datetime.utcnow()}},
+        )
+        return result.modified_count
+
+    # ------------- Delete -------------
+    def delete_claim(self, claim_number: str) -> int:
+        return self.collection.delete_one({"claimNumber": claim_number}).deleted_count
+
+    # ------------- Aggregation -------------
+    def get_claim_stats_by_status(self) -> list[dict]:
+        pipeline = [
+            {"$group": {
+                "_id":         "$status",
+                "count":       {"$sum": 1},
+                "totalAmount": {"$sum": {"$toDecimal": "$claimAmount"}},
+                "avgAmount":   {"$avg": {"$toDecimal": "$claimAmount"}},
+            }},
+            {"$sort": {"count": -1}},
+        ]
+        return list(self.collection.aggregate(pipeline))
+
+    def get_claim_stats_by_type(self) -> list[dict]:
+        pipeline = [
+            {"$group": {
+                "_id":       "$claimType",
+                "count":     {"$sum": 1},
+                "avgAmount": {"$avg": {"$toDecimal": "$claimAmount"}},
+            }},
+            {"$sort": {"count": -1}},
+        ]
+        return list(self.collection.aggregate(pipeline))
+
+    # file_claim_atomically and watch_claims are added in the next two steps.
+```
+
+### Step 3: Drive claim CRUD from `main.py`
+
+```python
+from decimal import Decimal
+from services.claim_service import ClaimService
+
+claim_service = ClaimService(db, client)
+
+# Create
+claim_service.create_claim({
+    "claim_number":  "CLM-PY-001",
+    "customer_id":   "CUST000001",
+    "policy_number": "POL-AUTO-001",
+    "claim_type":    "Auto Accident",
+    "claim_amount":  Decimal("4250"),
+    "description":   "Rear-end collision at Main and 5th",
+})
+
+# Approve
+claim_service.approve_claim("CLM-PY-001", Decimal("4100"), "adjuster_005")
+
+# Read back
+claim = claim_service.get_claim_by_number("CLM-PY-001")
+print("Summary:", claim.get_summary())
+
+# Stats
+print("Status stats:", claim_service.get_claim_stats_by_status())
+```
+
+### Step 4: Add `file_claim_atomically` — multi-collection transaction
 
 A claim filing should atomically (a) insert the claim, (b) increment the policy's `claimsCount` + `lastClaimDate`, and (c) write an `audit_log` row. PyMongo gives you `client.start_session()` and `session.with_transaction()` to batch them. `with_transaction()` automatically retries the whole callback on `TransientTransactionError`.
 
@@ -717,7 +974,7 @@ def file_claim_atomically(self, claim_data: dict) -> dict:
 
 > `session.with_transaction()` does the retry-on-`TransientTransactionError` for you — raise inside the callback to abort.
 
-### Drive it from `main.py`
+### Step 5: Drive `file_claim_atomically` from `main.py`
 
 ```python
 result = claim_service.file_claim_atomically({
@@ -737,7 +994,7 @@ Expected: `{'success': True, 'claim_number': 'CLM-PY-DEMO'}`. Check `audit_log` 
 
 The same change-stream concept lab 13 demonstrated in mongosh is available from PyMongo via `collection.watch()`. The driver returns a `ChangeStream` you iterate as a normal Python iterable.
 
-### Add `watch_claims` to `ClaimService`
+### Step 1: Add `watch_claims` to `ClaimService`
 
 ```python
 # services/claim_service.py
@@ -768,7 +1025,7 @@ def watch_claims(self, handler, pipeline=None, stop_event=None):
             raise
 ```
 
-### Drive it from `main.py`
+### Step 2: Drive it from `main.py`
 
 ```python
 import threading

@@ -760,15 +760,260 @@ use insurance_company
 db.policies.find({"policyNumber": "POL-JS-2024-001"})
 ```
 
-## Part F: Multi-Document Transactions (10 minutes)
+## Part F: Claims Domain — Model, Service, and Transactions (20 minutes)
 
-The starter includes `services/ClaimService.js` and `models/Claim.js` skeletons (Claim parity with Policy / Customer). Implement claim CRUD as practice, then add the atomic-filing method below.
+The starter ships `services/ClaimService.js` and `models/Claim.js` as skeletons. This part walks through the Claim domain in the same depth Part B/C used for Policy.
 
-### Step 1: Implement claim CRUD in `ClaimService`
+### Step 1: Fill in the Claim model
 
-Mirror what you did for `PolicyService`: fill in `createClaim`, `getClaimByNumber`, `getClaimsByCustomer`, `updateClaimStatus`, `deleteClaim`. Use the `claims` collection.
+Open `models/Claim.js` and complete the constructor and helpers. Mirror the shape of `Policy.js`.
 
-### Step 2: Add `fileClaimAtomically` — multi-collection transaction
+```javascript
+// models/Claim.js
+const { ObjectId } = require('mongodb');
+
+class Claim {
+    constructor(data = {}) {
+        this._id              = data._id              || new ObjectId();
+        this.claimNumber      = data.claimNumber      || '';
+        this.customerId       = data.customerId       || '';
+        this.policyNumber     = data.policyNumber     || '';
+        this.claimType        = data.claimType        || '';        // Auto, Property, Life, Health
+        this.claimAmount      = data.claimAmount      || 0;         // Decimal128 in production
+        this.status           = data.status           || 'submitted'; // submitted/under_review/approved/denied/settled
+        this.incidentDate     = data.incidentDate     || null;
+        this.filedDate        = data.filedDate        || new Date();
+        this.description      = data.description      || '';
+        this.settlementAmount = data.settlementAmount || null;
+        this.approvedBy       = data.approvedBy       || null;
+        this.approvalDate     = data.approvalDate     || null;
+        this.denialReason     = data.denialReason     || null;
+        this.adjusterId       = data.adjusterId       || null;
+        this.createdAt        = data.createdAt        || new Date();
+        this.updatedAt        = data.updatedAt        || new Date();
+    }
+
+    validate() {
+        const errors = [];
+        if (!this.claimNumber)                            errors.push('claimNumber is required');
+        if (!this.customerId)                             errors.push('customerId is required');
+        if (!this.policyNumber)                           errors.push('policyNumber is required');
+        if (typeof this.claimAmount !== 'number' ||
+            this.claimAmount <= 0)                        errors.push('claimAmount must be > 0');
+        const validStatuses = ['submitted', 'under_review', 'investigating', 'approved', 'denied', 'settled'];
+        if (!validStatuses.includes(this.status))          errors.push(`status must be one of ${validStatuses.join(', ')}`);
+        return { isValid: errors.length === 0, errors };
+    }
+
+    daysOpen() {
+        return Math.floor((new Date() - this.filedDate) / (1000 * 60 * 60 * 24));
+    }
+
+    getSummary() {
+        return {
+            claimNumber: this.claimNumber,
+            status:      this.status,
+            amount:      this.claimAmount,
+            daysOpen:    this.daysOpen(),
+        };
+    }
+
+    toMongo() {
+        return {
+            _id:              this._id,
+            claimNumber:      this.claimNumber,
+            customerId:       this.customerId,
+            policyNumber:     this.policyNumber,
+            claimType:        this.claimType,
+            claimAmount:      this.claimAmount,
+            status:           this.status,
+            incidentDate:     this.incidentDate,
+            filedDate:        this.filedDate,
+            description:      this.description,
+            settlementAmount: this.settlementAmount,
+            approvedBy:       this.approvedBy,
+            approvalDate:     this.approvalDate,
+            denialReason:     this.denialReason,
+            adjusterId:       this.adjusterId,
+            createdAt:        this.createdAt,
+            updatedAt:        this.updatedAt,
+        };
+    }
+}
+
+module.exports = Claim;
+```
+
+### Step 2: Implement claim CRUD in `ClaimService`
+
+Open `services/ClaimService.js` and complete the methods. Mirror the structure of `PolicyService.js` — the operations are conceptually identical, just against the `claims` collection.
+
+```javascript
+// services/ClaimService.js
+const Claim = require('../models/Claim');
+
+class ClaimService {
+    constructor(db, client) {
+        this.db         = db;
+        this.client     = client;                       // for sessions / transactions
+        this.collection = db.collection('claims');
+    }
+
+    // ---------- Create ----------
+    async createClaim(claimData) {
+        const claim      = new Claim(claimData);
+        const validation = claim.validate();
+        if (!validation.isValid) {
+            throw new Error('Validation failed: ' + validation.errors.join('; '));
+        }
+
+        const existing = await this.collection.findOne({ claimNumber: claim.claimNumber });
+        if (existing) {
+            throw new Error(`Claim ${claim.claimNumber} already exists`);
+        }
+
+        const result = await this.collection.insertOne(claim.toMongo());
+        return { success: true, claimId: result.insertedId, claimNumber: claim.claimNumber };
+    }
+
+    // ---------- Read ----------
+    async getClaimByNumber(claimNumber) {
+        const doc = await this.collection.findOne({ claimNumber });
+        return doc ? new Claim(doc) : null;
+    }
+
+    async getClaimsByCustomer(customerId) {
+        const docs = await this.collection.find({ customerId }).toArray();
+        return docs.map(d => new Claim(d));
+    }
+
+    async getClaimsByPolicy(policyNumber) {
+        const docs = await this.collection.find({ policyNumber }).toArray();
+        return docs.map(d => new Claim(d));
+    }
+
+    async getClaimsByStatus(status) {
+        const docs = await this.collection.find({ status }).toArray();
+        return docs.map(d => new Claim(d));
+    }
+
+    async getOpenClaims() {
+        const docs = await this.collection.find({
+            status: { $in: ['submitted', 'under_review', 'investigating'] },
+        }).toArray();
+        return docs.map(d => new Claim(d));
+    }
+
+    // ---------- Update ----------
+    async updateClaimStatus(claimNumber, newStatus) {
+        const result = await this.collection.updateOne(
+            { claimNumber },
+            { $set: { status: newStatus, updatedAt: new Date() } },
+        );
+        return { success: result.modifiedCount > 0, modifiedCount: result.modifiedCount };
+    }
+
+    async approveClaim(claimNumber, settlementAmount, approvedBy) {
+        const result = await this.collection.updateOne(
+            { claimNumber },
+            { $set: {
+                status:           'approved',
+                settlementAmount,
+                approvedBy,
+                approvalDate:     new Date(),
+                updatedAt:        new Date(),
+            }},
+        );
+        return { success: result.modifiedCount > 0 };
+    }
+
+    async denyClaim(claimNumber, denialReason) {
+        const result = await this.collection.updateOne(
+            { claimNumber },
+            { $set: { status: 'denied', denialReason, updatedAt: new Date() } },
+        );
+        return { success: result.modifiedCount > 0 };
+    }
+
+    async assignAdjuster(claimNumber, adjusterId) {
+        const result = await this.collection.updateOne(
+            { claimNumber },
+            { $set: { adjusterId, status: 'under_review', updatedAt: new Date() } },
+        );
+        return { success: result.modifiedCount > 0 };
+    }
+
+    // ---------- Delete ----------
+    async deleteClaim(claimNumber) {
+        const result = await this.collection.deleteOne({ claimNumber });
+        return { success: result.deletedCount > 0, deletedCount: result.deletedCount };
+    }
+
+    // ---------- Aggregation ----------
+    async getClaimStatsByStatus() {
+        const pipeline = [
+            { $group: {
+                _id:         '$status',
+                count:       { $sum: 1 },
+                totalAmount: { $sum: '$claimAmount' },
+                avgAmount:   { $avg: '$claimAmount' },
+            }},
+            { $sort: { count: -1 } },
+        ];
+        return await this.collection.aggregate(pipeline).toArray();
+    }
+
+    async getClaimStatsByType() {
+        const pipeline = [
+            { $group: {
+                _id:           '$claimType',
+                count:         { $sum: 1 },
+                avgAmount:     { $avg: '$claimAmount' },
+                avgSettlement: { $avg: '$settlementAmount' },
+            }},
+            { $sort: { count: -1 } },
+        ];
+        return await this.collection.aggregate(pipeline).toArray();
+    }
+
+    // fileClaimAtomically and watchClaims are added in the next two steps.
+}
+
+module.exports = ClaimService;
+```
+
+### Step 3: Drive claim CRUD from `app.js`
+
+Wire up `ClaimService` next to `PolicyService` and exercise the new methods so you can see them work before adding the transactional version.
+
+```javascript
+// In app.js, after policyService is built:
+const ClaimService = require('./services/ClaimService');
+const claimService = new ClaimService(db, client);
+
+// Create a claim
+const created = await claimService.createClaim({
+    claimNumber:  'CLM-JS-001',
+    customerId:   'CUST000001',
+    policyNumber: 'POL-AUTO-001',
+    claimType:    'Auto Accident',
+    claimAmount:  4250,
+    description:  'Rear-end collision at Main and 5th',
+});
+console.log('Created:', created);
+
+// Approve it
+await claimService.approveClaim('CLM-JS-001', 4100, 'adjuster_005');
+
+// Read it back
+const claim = await claimService.getClaimByNumber('CLM-JS-001');
+console.log('Summary:', claim.getSummary());
+
+// Stats
+console.log('Status stats:', await claimService.getClaimStatsByStatus());
+```
+
+### Step 4: Add `fileClaimAtomically` — multi-collection transaction
 
 A claim filing should atomically (a) insert the claim, (b) increment the policy's claim count, and (c) write an audit-log row. The driver gives you `client.withSession()` and `session.withTransaction()` to batch them. `withTransaction` automatically retries on `TransientTransactionError`.
 
@@ -814,7 +1059,7 @@ async fileClaimAtomically(claimData) {
 
 > `session.withTransaction()` does the retry-on-`TransientTransactionError` for you — you do **not** need to wrap it in a manual loop. Just throw inside the callback to abort.
 
-### Step 3: Drive it from `app.js`
+### Step 5: Drive `fileClaimAtomically` from `app.js`
 
 ```javascript
 // In app.js, after services are wired up:
