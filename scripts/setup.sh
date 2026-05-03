@@ -111,16 +111,8 @@ sleep 15
 
 # Step 4: Initialize replica set
 print_status "Initializing replica set..."
-docker exec mongo1 mongosh --quiet --eval "
-rs.initiate({
-  _id: 'rs0',
-  members: [
-    { _id: 0, host: 'mongo1:27017', priority: 2 },
-    { _id: 1, host: 'mongo2:27017', priority: 1 },
-    { _id: 2, host: 'mongo3:27017', priority: 1 }
-  ]
-});
-"
+docker exec mongo1 mongosh --quiet --eval \
+    "rs.initiate({_id:'rs0',members:[{_id:0,host:'mongo1:27017',priority:2},{_id:1,host:'mongo2:27017',priority:1},{_id:2,host:'mongo3:27017',priority:1}]});"
 print_success "Replica set initialized"
 
 # Step 5: Wait for replica set to stabilize
@@ -153,32 +145,22 @@ if [ $attempt -gt $max_attempts ]; then
     exit 1
 fi
 
-docker exec mongo1 mongosh --quiet --eval "
-db = db.getMongo().getDB('admin');
-db.adminCommand({
-  setDefaultRWConcern: 1,
-  defaultWriteConcern: { w: 'majority', wtimeout: 5000 }
-});
-"
+docker exec mongo1 mongosh --quiet --eval \
+    "db.adminCommand({setDefaultRWConcern:1,defaultWriteConcern:{w:'majority',wtimeout:5000}});"
 print_success "Write concern configured"
 
 # Step 7: Verify setup
 print_status "Verifying replica set status..."
 echo ""
-docker exec mongo1 mongosh --quiet --eval "
-rs.status().members.forEach(function(m) { print('  ' + m.name + ': ' + m.stateStr); });
-"
+docker exec mongo1 mongosh --quiet --eval \
+    "rs.status().members.forEach(function(m){print('  '+m.name+': '+m.stateStr);});"
 echo ""
 
 # Step 8: Test basic operations
 print_status "Testing basic operations..."
-docker exec mongo1 mongosh --quiet --eval "
-use test_setup;
-db.test.insertOne({message: 'Setup test', timestamp: new Date()});
-var doc = db.test.findOne();
-print('  Test document: ' + doc.message);
-db.test.drop();
-" > /dev/null
+docker exec mongo1 mongosh --quiet --eval \
+    "var d=db.getSiblingDB('test_setup');d.test.insertOne({message:'Setup test',timestamp:new Date()});var doc=d.test.findOne();print('  Test document: '+doc.message);d.test.drop();" \
+    > /dev/null
 
 print_success "Basic operations working"
 
