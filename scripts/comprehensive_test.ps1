@@ -48,6 +48,27 @@ function Write-Success { param([string]$m) Write-Host "[SUCCESS] $m" -Foreground
 function Write-Warn    { param([string]$m) Write-Host "[WARNING] $m" -ForegroundColor Yellow }
 function Write-Err     { param([string]$m) Write-Host "[ERROR] $m"   -ForegroundColor Red    }
 
+# Always tee everything to a log file in the repo root. This lets a Windows VM
+# user run the test, then `git add comprehensive_test.log && git commit && push`
+# (or just paste the file contents) so the failure can be diagnosed off-machine.
+$LogFile = Join-Path (Split-Path -Parent $PSScriptRoot) "comprehensive_test.log"
+try { Stop-Transcript *> $null } catch { }   # in case a prior run left one open
+Start-Transcript -Path $LogFile -Force | Out-Null
+Write-Status "Logging full output to: $LogFile"
+
+# Wrap exit so the transcript always flushes and the user is told where the
+# log file is, even on early-exit failures (image build, setup, etc.).
+function Exit-WithLog {
+    param([int]$Code)
+    if ($Code -ne 0) {
+        Write-Err "Full log (commit and push to share): $LogFile"
+    } else {
+        Write-Status "Full log: $LogFile"
+    }
+    try { Stop-Transcript | Out-Null } catch { }
+    exit $Code
+}
+
 # $PSScriptRoot is the directory of THIS script; it is the most reliable way
 # to locate the repo regardless of how the script was invoked (relative path,
 # absolute path, dot-sourced, pwsh -File, etc.). Resolve-Path canonicalizes
@@ -123,7 +144,7 @@ function Add-SuiteResult { param([string]$r) $script:SuiteResults += $r }
 $dockerCmd = Get-Command docker -ErrorAction SilentlyContinue
 if (-not $dockerCmd) {
     Write-Err "docker not found on PATH. Install Docker Desktop and try again."
-    exit 127
+    Exit-WithLog 127
 }
 
 # Build the course-tools image up-front if missing.
@@ -134,7 +155,7 @@ function Ensure-CourseToolsImage {
         & docker build -t $Image -f $Dockerfile (Join-Path $RepoRoot "utilities")
         if ($LASTEXITCODE -ne 0) {
             Write-Err "Failed to build $Image"
-            exit 1
+            Exit-WithLog 1
         }
     }
 }
@@ -194,16 +215,20 @@ function Test-CourseToolsMount {
     Write-Host  "  Candidates:   $($HostPathCandidates -join ' | ')"
 
     $sentinel = "/work/utilities/lab_fence_runner.sh"
+    $attempts = @()
     foreach ($style in @("--mount", "-v")) {
         foreach ($cand in $HostPathCandidates) {
             $mountArgs = Get-MountArgs -HostPath $cand -Style $style
             $probeArgs = @("run", "--rm") + $mountArgs + @(
                 "--entrypoint", "/bin/sh",
                 $Image,
-                "-c", "test -f $sentinel"
+                "-c", "test -f $sentinel && echo OK || (echo MISSING; ls -la /work 2>&1; exit 1)"
             )
-            & docker @probeArgs *> $null
-            if ($LASTEXITCODE -eq 0) {
+            # Capture stdout+stderr so we can dump it to the log on total failure.
+            $out = & docker @probeArgs 2>&1 | Out-String
+            $rc  = $LASTEXITCODE
+            $attempts += [pscustomobject]@{ Style = $style; Cand = $cand; RC = $rc; Out = $out }
+            if ($rc -eq 0) {
                 $script:HostRepoRootDocker = $cand
                 $script:MountStyle         = $style
                 Write-Success "Bind mount works: style=$style src=$cand"
@@ -214,12 +239,15 @@ function Test-CourseToolsMount {
     }
 
     Write-Err "No bind-mount form exposes $sentinel inside the container."
-    Write-Err "Tried styles: --mount, -v"
-    Write-Err "Tried sources: $($HostPathCandidates -join ' | ')"
+    Write-Err "Attempts:"
+    foreach ($a in $attempts) {
+        Write-Err "  style=$($a.Style)  src=$($a.Cand)  rc=$($a.RC)"
+        foreach ($line in ($a.Out -split "`n")) { if ($line) { Write-Err "    | $line" } }
+    }
     Write-Err ""
     Write-Err "On Windows: open Docker Desktop > Settings > Resources > File Sharing"
     Write-Err "and confirm the drive containing the repo is shared. Then re-run."
-    exit 1
+    Exit-WithLog 1
 }
 
 # Run a test script inside the course-tools container with all standard mounts.
@@ -268,7 +296,7 @@ Write-Status "Step 2/8: Running setup.ps1 (3-node replica set)..."
 & $SetupPs1
 if ($LASTEXITCODE -ne 0) {
     Write-Err "Replica set setup failed; aborting"
-    exit 1
+    Exit-WithLog 1
 }
 Write-Success "Replica set setup completed"
 Write-Host ""
@@ -279,7 +307,7 @@ Write-Status "Step 3/8: Running setup_sharding.ps1 (config + shards + mongos)...
 if ($LASTEXITCODE -ne 0) {
     Write-Err "Sharded cluster setup failed; aborting"
     try { & $TeardownPs1 *> $null } catch { }
-    exit 1
+    Exit-WithLog 1
 }
 Write-Success "Sharded cluster setup completed"
 Write-Host ""
@@ -298,8 +326,10 @@ if (-not (Test-Path $DataLoader)) {
     $OverallPass = $false
     Add-SuiteResult "Data load: SKIPPED (missing)"
 } else {
+    # Don't redirect mongosh output to /dev/null -- on failure we need to see
+    # the parse error / connection error / etc. in the transcript.
     $rc = Invoke-CourseToolsScript -ContainerScript "/bin/bash" `
-        -Arguments @("-c", "mongosh `"$RsUri`" --quiet < /work/data/comprehensive_data_loader.js > /dev/null")
+        -Arguments @("-c", "mongosh `"$RsUri`" --quiet < /work/data/comprehensive_data_loader.js")
     if ($rc -eq 0) {
         Write-Success "Data loaded"
         Add-SuiteResult "Data load: PASS"
@@ -375,9 +405,9 @@ Write-Host "==================================================" -ForegroundColor
 if ($OverallPass) {
     Write-Success "COMPREHENSIVE TEST: PASS"
     Write-Host "==================================================" -ForegroundColor Blue
-    exit 0
+    Exit-WithLog 0
 } else {
     Write-Err "COMPREHENSIVE TEST: FAIL"
     Write-Host "==================================================" -ForegroundColor Blue
-    exit 1
+    Exit-WithLog 1
 }
