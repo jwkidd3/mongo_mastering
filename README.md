@@ -307,8 +307,7 @@ mongo_mastering/
 │   └── fix_data_relationships.js       # Data relationship repair helper
 └── extras/                       # Supplemental reference guides
     ├── TROUBLESHOOTING.md        # Common student errors and fixes
-    ├── comparison.md
-    ├── dockersetup.md
+    ├── comparison.md             # MongoDB vs other NoSQL stores
     ├── mongodb_config_guide.md
     ├── mongodb_docker_memory_guide.md
     ├── mongodb_encryption_guide.md
