@@ -326,10 +326,12 @@ if (-not (Test-Path $DataLoader)) {
     $OverallPass = $false
     Add-SuiteResult "Data load: SKIPPED (missing)"
 } else {
-    # Don't redirect mongosh output to /dev/null -- on failure we need to see
-    # the parse error / connection error / etc. in the transcript.
-    $rc = Invoke-CourseToolsScript -ContainerScript "/bin/bash" `
-        -Arguments @("-c", "mongosh `"$RsUri`" --quiet < /work/data/comprehensive_data_loader.js")
+    # Invoke mongosh directly with --file instead of `bash -c "mongosh ... < file"`.
+    # Shell redirection through PowerShell -> docker -> bash -> mongosh is fragile
+    # on Windows: PS 5.1 mangles the `<`, the embedded quotes around the URI, and
+    # the `&` inside the URI. --file takes a path directly with no shell layer.
+    $rc = Invoke-CourseToolsScript -ContainerScript "mongosh" `
+        -Arguments @($RsUri, "--quiet", "--file", "/work/data/comprehensive_data_loader.js")
     if ($rc -eq 0) {
         Write-Success "Data loaded"
         Add-SuiteResult "Data load: PASS"
