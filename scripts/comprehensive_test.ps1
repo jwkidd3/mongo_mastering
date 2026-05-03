@@ -155,23 +155,28 @@ function Get-MountArgs {
     )
 }
 
-# Strip CRLF from .sh files in utilities/ and scripts/. On Windows checkouts
-# with core.autocrlf=true (the default) git rewrites .sh files with CRLF; the
-# kernel then can't exec their shebang line ("#!/bin/bash\r" -> looks for
-# "/bin/bash\r") and Docker surfaces this as "exec /work/...: no such file or
+# Strip CRLF from script files that are exec'd or sourced inside Linux
+# containers. On Windows checkouts with core.autocrlf=true (the default) git
+# rewrites these files with CRLF; the kernel then can't exec a shebang line
+# ending in "\r" and Docker surfaces this as "exec /work/...: no such file or
 # directory" -- an error that LOOKS like the bind mount is broken but isn't.
+# Mongo data loader .js files with CRLF cause separate but similarly opaque
+# parse failures inside mongosh.
 #
 # This is a no-op on macOS/Linux (sed exits 0, nothing changes). On Windows
 # it edits the files in-place via the bind mount, fixing existing checkouts
 # without requiring a re-clone. Future fresh checkouts are protected by the
 # .gitattributes file at the repo root.
 function Repair-ShellLineEndings {
-    Write-Status "Normalizing .sh line endings (defensive against Windows CRLF checkouts)..."
+    Write-Status "Normalizing line endings on .sh and data .js files (defensive against Windows CRLF)..."
     $mountArgs = Get-MountArgs -HostPath $script:HostRepoRootDocker -Style $script:MountStyle
     $fixArgs = @("run", "--rm") + $mountArgs + @(
         "--entrypoint", "/bin/sh",
         $Image,
-        "-c", "find /work/utilities /work/scripts -maxdepth 2 -type f -name '*.sh' -exec sed -i 's/\r$//' {} +"
+        "-c", @"
+find /work/utilities /work/scripts -maxdepth 2 -type f -name '*.sh' -exec sed -i 's/\r$//' {} + ;
+find /work/data /work/utilities -maxdepth 2 -type f -name '*.js' -exec sed -i 's/\r$//' {} +
+"@
     )
     & docker @fixArgs *> $null
     if ($LASTEXITCODE -ne 0) {
