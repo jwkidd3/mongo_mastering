@@ -205,8 +205,9 @@ The four index types below cover production cases the basic compound/text/partia
    db.policies_wildcard.find({ "attributes.color": "red"   }).explain("executionStats").queryPlanner.winningPlan.inputStage.stage
    db.policies_wildcard.find({ "attributes.make":  "Tesla" }).explain("executionStats").queryPlanner.winningPlan.inputStage.stage
    db.policies_wildcard.find({ "attributes.breed": "Labrador" }).explain("executionStats").queryPlanner.winningPlan.inputStage.stage
-   // All three should print "IXSCAN"
    ```
+
+   **Expected output:** all three lines print `IXSCAN`. If any prints `COLLSCAN`, the wildcard index didn't get created — check `db.policies_wildcard.getIndexes()`.
 
 2. **TTL indexes** — auto-delete documents after a deadline. Perfect for sessions, audit logs, expired quotes.
 
@@ -307,6 +308,13 @@ print("RIGHT order -- has SORT in plan? " +
       JSON.stringify(right.queryPlanner.winningPlan).includes("SORT"));
 print("RIGHT order -- docs examined: " + right.executionStats.totalDocsExamined +
       ", returned: " + right.executionStats.nReturned);
+```
+
+**Expected output:**
+```
+WRONG order -- has SORT in plan? true
+RIGHT order -- has SORT in plan? false
+RIGHT order -- docs examined: ~1250, returned: ~625
 ```
 
 The wrong-order plan contains a `SORT` stage (in-memory sort). The right-order plan does not -- the sort comes for free from the index direction. **Equality first, then the field you sort by, then the range.**

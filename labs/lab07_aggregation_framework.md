@@ -310,6 +310,24 @@ These four operators are how production MongoDB applications build dashboards, t
 
    The output is a single document with three keys (`byType`, `topEarners`, `premiumStats`), each holding the result of its sub-pipeline. Notice this is one query — much cheaper than three round-trips.
 
+   **Expected output (shape, exact numbers will match the loaded data):**
+   ```javascript
+   [{
+       byType: [
+           { _id: 'Property', count: 4, avgPremium: ... },   // 6 policy types
+           { _id: 'Auto',     count: 3, avgPremium: ... },
+           // ...
+       ],
+       topEarners: [
+           { policyNumber: 'POL-HEALTH-001', policyType: 'Health', annualPremium: 8999.99 },
+           // 5 entries total
+       ],
+       premiumStats: [
+           { _id: null, total: 36249.86, min: ..., max: ..., avg: ... }
+       ]
+   }]
+   ```
+
 2. **`$bucket`** — group documents into explicit ranges (premium tiers, age brackets, score buckets). Useful for histograms.
 
    ```javascript
@@ -330,6 +348,17 @@ These four operators are how production MongoDB applications build dashboards, t
    ```
 
    Each output `_id` is a left-edge boundary (`0`, `1000`, `2500`, ...). Documents whose `annualPremium` falls into `[boundary[i], boundary[i+1])` go into that bucket.
+
+   **Expected output (shape):**
+   ```javascript
+   [
+       { premiumTier: 0,    policyCount: 3, totalRevenue: ..., sampleSize: 3 },   // < $1000
+       { premiumTier: 1000, policyCount: 8, totalRevenue: ..., sampleSize: 8 },   // $1k-$2.5k
+       { premiumTier: 2500, policyCount: 3, totalRevenue: ..., sampleSize: 3 },   // $2.5k-$5k
+       { premiumTier: 5000, policyCount: 1, totalRevenue: ..., sampleSize: 1 }    // $5k-$10k
+   ]
+   ```
+   Counts add up to the total `isActive: true` policies in the loaded data.
 
 3. **`$bucketAuto`** — same idea as `$bucket` but you specify how many buckets and MongoDB picks the boundaries automatically (equal-frequency). Useful when you don't know the data distribution.
 
@@ -400,6 +429,18 @@ Key knobs:
 - `sortBy` — order *within* each partition. Required when window operators care about position (`$rank`, running totals, lag/lead).
 - `window: { documents: ["unbounded", "current"] }` — running total from the start of the partition through the current row.
 - `window: { documents: [-1, 1] }` — moving window of 3 rows centered on current.
+
+**Expected output (first row per partition):**
+```javascript
+[
+    { policyType: 'Auto',       premiumRank: 1, runningTotal: 1299.99, movingAvg3: ... },
+    { policyType: 'Auto',       premiumRank: 2, runningTotal: 2199.98, movingAvg3: ... },
+    { policyType: 'Auto',       premiumRank: 3, runningTotal: 3499.97, movingAvg3: ... },
+    { policyType: 'Commercial', premiumRank: 1, runningTotal: 2499.99, movingAvg3: ... },
+    // ...
+]
+```
+Notice `runningTotal` resets at the partition boundary (Auto → Commercial); rank starts back at 1 inside each partition; the running total accumulates within each `policyType` group ordered by `effectiveDate`.
 
 Try changing `$rank` to `$denseRank` or `$documentNumber` and re-running to see the differences. Add `$shift` (window functions' equivalent of SQL `LAG`/`LEAD`) to see prior-row deltas.
 
