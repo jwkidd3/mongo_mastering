@@ -321,6 +321,12 @@ Test-CourseToolsMount
 
 # Step 4: Load comprehensive data via the course-tools image.
 Write-Status "Step 4/8: Loading comprehensive data loader (via course-tools)..."
+Write-Status "  Resolved paths:"
+Write-Status "    `$PSScriptRoot       = $PSScriptRoot"
+Write-Status "    `$RepoRoot           = $RepoRoot"
+Write-Status "    `$DataLoader (host)  = $DataLoader"
+Write-Status "    bind src for /work  = $($script:HostRepoRootDocker)"
+Write-Status "    path passed to mongosh = /work/data/comprehensive_data_loader.js"
 if (-not (Test-Path $DataLoader)) {
     Write-Err "Cannot find data loader at: $DataLoader"
     $OverallPass = $false
