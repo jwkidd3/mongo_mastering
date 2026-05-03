@@ -129,11 +129,15 @@ function Invoke-CourseToolsScript {
         [string]$ContainerScript,        # /work/... path inside container
         [string[]]$Arguments = @()
     )
+    # Use --mount (key=value, comma-separated) instead of -v (colon-separated).
+    # On Windows the host path contains a drive-letter colon, and Docker's -v
+    # parser sometimes silently mounts an empty dir when colons collide, which
+    # is why /work/utilities/*.sh appears "missing" inside the container.
     $dockerArgs = @(
         "run", "--rm",
         "--network", $Network,
-        "-v", "${HostRepoRootDocker}:/work:rw",
-        "-v", "/var/run/docker.sock:/var/run/docker.sock",
+        "--mount", "type=bind,src=${HostRepoRootDocker},dst=/work",
+        "--mount", "type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock",
         "-e", "MONGO_URI=$RsUri",
         "-e", "MONGOS_URI=$ShUri",
         "-e", "CLEAN_RUN=false",
