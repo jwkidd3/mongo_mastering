@@ -3,7 +3,9 @@
 
 Per-block durations · 5.5 h instructional / day · 67% lab
 
-Note: This file is the slide content for `schedule.html`. The HTML wrapper loads it via reveal.js's markdown plugin, splits on `---`, and applies styling from its embedded `<style>` block. Edit this file to change content; edit `schedule.html` to change look.
+Note: This is the slide content. Two ways to render it as a deck:
+&nbsp;&nbsp;1. `bash utilities/serve_decks.sh` then open the manual wrapper `schedule.html` (HTML + embedded CSS).
+&nbsp;&nbsp;2. `bash utilities/serve_revealmd.sh` to serve via reveal-md (this `.md` is the deck; `schedule.css` provides theming).
 
 ---
 

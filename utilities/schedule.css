@@ -1,0 +1,25 @@
+/* Custom styling for the schedule deck. Used both by:
+ *   - utilities/schedule.html  (manual reveal.js wrapper, embedded copy of these rules)
+ *   - reveal-md schedule.md --css schedule.css  (this file, injected by reveal-md)
+ *
+ * Selectors are scoped to .reveal so they only affect deck contents, not any
+ * surrounding chrome. */
+
+.reveal { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+.reveal h1, .reveal h2 { color: #2C5F41; text-transform: none; }
+.reveal .slides > section { overflow-y: auto; max-height: 88vh; }
+
+.reveal table { margin: auto; border-collapse: collapse; font-size: 0.78em; }
+.reveal table th { background: #4A8B3B; color: white; padding: 0.4em 0.8em; }
+.reveal table td { padding: 0.3em 0.8em; border-bottom: 1px solid #ddd; }
+
+/* Lab rows are detected by the bolded label (**Lab N** in markdown becomes
+ * <strong>Lab N</strong> in HTML). :has() is supported in all modern
+ * browsers (Chrome / Edge / Safari / Firefox 2024+). */
+.reveal table tr:has(td strong) { background: #fff7f5; }
+
+/* Right-most column is duration -- bold-green for visual scan. */
+.reveal table td:last-child { font-weight: bold; color: #2C5F41; white-space: nowrap; }
+
+.reveal .progress { background: rgba(44,95,65,0.2); }
+.reveal .progress span { background: #4A8B3B; }
