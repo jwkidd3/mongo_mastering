@@ -251,31 +251,31 @@ mongosh < data/comprehensive_data_loader.js
 3. **Update with Array Filters**
    ```javascript
    // Update specific array elements
-   db.policies.deleteOne({policyNumber: "POL-MULTI-001"})
+   db.policies.deleteOne({ policyNumber: "POL-MULTI-001" })
 
    db.policies.insertOne({
      policyNumber: "POL-MULTI-001",
      annualPremium: 1499.99,
      policyType: "Auto",
      vehicles: [
-       { vin: "1HGBH41JXMN109186", covered: true, deductible: 500},
-       { vin: "2HGBH41JXMN109187", covered: false, deductible: 750},
-       { vin: "3HGBH41JXMN109188", covered: true, deductible: 1000}
+       { vin: "1HGBH41JXMN109186", covered: true,  deductible: 500  },
+       { vin: "2HGBH41JXMN109187", covered: false, deductible: 750  },
+       { vin: "3HGBH41JXMN109188", covered: true,  deductible: 1000 }
      ]
-  })
+   })
 
-   // Update specific vehicle
+   // Update one specific vehicle (set covered=true on the matching VIN)
    db.policies.updateOne(
-     {policyNumber: "POL-MULTI-001"},
-     {$set: {"vehicles.$[elem].covered": true}},
-     {arrayFilters: [{"elem.vin": "2HGBH41JXMN109187"}]}
+     { policyNumber: "POL-MULTI-001" },
+     { $set: { "vehicles.$[elem].covered": true } },
+     { arrayFilters: [ { "elem.vin": "2HGBH41JXMN109187" } ] }
    )
 
-   // Update multiple array elements
+   // Update multiple array elements at once (raise low deductibles by $100)
    db.policies.updateOne(
-     {policyNumber: "POL-MULTI-001"},
-     {$inc: {"vehicles.$[elem].deductible": 100}},
-     {arrayFilters: [{"elem.deductible": {$lt: 1000}}]}
+     { policyNumber: "POL-MULTI-001" },
+     { $inc: { "vehicles.$[elem].deductible": 100 } },
+     { arrayFilters: [ { "elem.deductible": { $lt: 1000 } } ] }
    )
    ```
 
