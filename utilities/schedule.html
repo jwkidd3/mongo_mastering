@@ -37,11 +37,17 @@
     <div class="reveal">
         <div class="slides">
 
-            <!-- All slide content sourced from schedule.md.
-                 ` --- ` lines split slides; ` -- ` lines split vertical sub-slides. -->
+            <!-- All slide content sourced from schedule.md (loaded via fetch).
+                 Slides split on `---` lines; vertical sub-slides on `--` lines.
+                 NOTE: this file MUST be served over HTTP -- opening via
+                 file:// triggers a browser security policy that blocks
+                 fetch() of local files, producing a blank deck. From the
+                 utilities/ directory, run:
+                     python3 -m http.server 8000
+                 then open  http://localhost:8000/schedule.html  -->
             <section data-markdown="schedule.md"
-                     data-separator="^\r?\n---\r?\n$"
-                     data-separator-vertical="^\r?\n--\r?\n$"
+                     data-separator="\r?\n---\r?\n"
+                     data-separator-vertical="\r?\n--\r?\n"
                      data-charset="utf-8">
             </section>
 
