@@ -249,29 +249,30 @@ mongosh < data/comprehensive_data_loader.js
    ```
 
 3. **Update with Array Filters**
+
+   Build a test policy with three nested vehicles, then use array filters to update specific elements inside the array.
+
    ```javascript
-   // Update specific array elements
+   // Reset the test policy so the step is rerun-safe
    db.policies.deleteOne({ policyNumber: "POL-MULTI-001" })
+   ```
 
-   db.policies.insertOne({
-     policyNumber: "POL-MULTI-001",
-     annualPremium: 1499.99,
-     policyType: "Auto",
-     vehicles: [
-       { vin: "1HGBH41JXMN109186", covered: true,  deductible: 500  },
-       { vin: "2HGBH41JXMN109187", covered: false, deductible: 750  },
-       { vin: "3HGBH41JXMN109188", covered: true,  deductible: 1000 }
-     ]
-   })
+   ```javascript
+   // Insert the test policy with three vehicles in the array
+   db.policies.insertOne({ policyNumber: "POL-MULTI-001", annualPremium: 1499.99, policyType: "Auto", vehicles: [ { vin: "1HGBH41JXMN109186", covered: true, deductible: 500 }, { vin: "2HGBH41JXMN109187", covered: false, deductible: 750 }, { vin: "3HGBH41JXMN109188", covered: true, deductible: 1000 } ] })
+   ```
 
-   // Update one specific vehicle (set covered=true on the matching VIN)
+   ```javascript
+   // Set covered=true on the vehicle matching a specific VIN
    db.policies.updateOne(
      { policyNumber: "POL-MULTI-001" },
      { $set: { "vehicles.$[elem].covered": true } },
      { arrayFilters: [ { "elem.vin": "2HGBH41JXMN109187" } ] }
    )
+   ```
 
-   // Update multiple array elements at once (raise low deductibles by $100)
+   ```javascript
+   // Raise the deductible by $100 on every vehicle whose deductible is < 1000
    db.policies.updateOne(
      { policyNumber: "POL-MULTI-001" },
      { $inc: { "vehicles.$[elem].deductible": 100 } },
