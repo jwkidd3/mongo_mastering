@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MongoDB Mastering — Course Schedule</title>
+    <title>MongoDB Mastering — Course Timings</title>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/theme/white.min.css">
@@ -17,9 +17,10 @@
         .reveal table { margin: auto; border-collapse: collapse; font-size: 0.78em; }
         .reveal table th { background: #4A8B3B; color: white; padding: 0.4em 0.8em; }
         .reveal table td { padding: 0.3em 0.8em; border-bottom: 1px solid #ddd; }
-        .reveal table td.t { font-weight: bold; color: #2C5F41; white-space: nowrap; }
+        .reveal table td.dur { font-weight: bold; color: #2C5F41; white-space: nowrap; text-align: right; }
         .reveal table tr.lab td { background: #fff7f5; }
-        .reveal table tr.brk td { color: #888; font-style: italic; }
+
+        .reveal .day-total { margin-top: 0.8em; font-size: 0.85em; color: #1f2d24; }
 
         .reveal .progress { background: rgba(44,95,65,0.2); }
         .reveal .progress span { background: #4A8B3B; }
@@ -31,74 +32,68 @@
 
             <section>
                 <h1>MongoDB Mastering</h1>
-                <h2>Course Schedule</h2>
-                <p>9:00 – 4:00 · 5.5 h instructional / day · 1 h lunch + two 15 min breaks</p>
+                <h2>Course Timings</h2>
+                <p>Per-block durations · 5.5 h instructional / day · 67% lab</p>
             </section>
 
             <section>
                 <h2>Day 1 — Fundamentals & Core Operations</h2>
                 <table>
-                    <tr><td class="t">9:00 – 9:25</td><td>NoSQL intro + Shell & Server Navigation</td></tr>
-                    <tr class="lab"><td class="t">9:25 – 10:10</td><td><strong>Lab 1</strong> — MongoDB Shell Mastery</td></tr>
-                    <tr class="brk"><td class="t">10:10 – 10:25</td><td>break</td></tr>
-                    <tr><td class="t">10:25 – 10:50</td><td>Database & Collection Management</td></tr>
-                    <tr class="lab"><td class="t">10:50 – 11:35</td><td><strong>Lab 2</strong> — Database & Collection Management</td></tr>
-                    <tr><td class="t">11:35 – 12:00</td><td>CRUD — Create & Insert</td></tr>
-                    <tr class="brk"><td class="t">12:00 – 1:00</td><td>lunch</td></tr>
-                    <tr class="lab"><td class="t">1:00 – 1:45</td><td><strong>Lab 3</strong> — CRUD Create & Insert</td></tr>
-                    <tr><td class="t">1:45 – 2:00</td><td>CRUD — Read & Query</td></tr>
-                    <tr class="lab"><td class="t">2:00 – 2:45</td><td><strong>Lab 4</strong> — CRUD Read & Query</td></tr>
-                    <tr class="brk"><td class="t">2:45 – 3:00</td><td>break</td></tr>
-                    <tr><td class="t">3:00 – 3:15</td><td>CRUD — Update & Delete</td></tr>
-                    <tr class="lab"><td class="t">3:15 – 4:00</td><td><strong>Lab 5</strong> — CRUD Update & Delete</td></tr>
+                    <tr><td>📽️ NoSQL intro + Shell & Server Navigation</td><td class="dur">25 min</td></tr>
+                    <tr class="lab"><td>🧪 <strong>Lab 1</strong> — MongoDB Shell Mastery</td><td class="dur">45 min</td></tr>
+                    <tr><td>📽️ Database & Collection Management</td><td class="dur">25 min</td></tr>
+                    <tr class="lab"><td>🧪 <strong>Lab 2</strong> — Database & Collection Management</td><td class="dur">45 min</td></tr>
+                    <tr><td>📽️ CRUD — Create & Insert</td><td class="dur">25 min</td></tr>
+                    <tr class="lab"><td>🧪 <strong>Lab 3</strong> — CRUD Create & Insert</td><td class="dur">45 min</td></tr>
+                    <tr><td>📽️ CRUD — Read & Query</td><td class="dur">15 min</td></tr>
+                    <tr class="lab"><td>🧪 <strong>Lab 4</strong> — CRUD Read & Query</td><td class="dur">45 min</td></tr>
+                    <tr><td>📽️ CRUD — Update & Delete</td><td class="dur">15 min</td></tr>
+                    <tr class="lab"><td>🧪 <strong>Lab 5</strong> — CRUD Update & Delete</td><td class="dur">45 min</td></tr>
                 </table>
+                <p class="day-total"><strong>Day 1 total:</strong> presentation 105 min · lab 225 min</p>
             </section>
 
             <section>
                 <h2>Day 2 — Advanced Querying & Performance</h2>
                 <table>
-                    <tr><td class="t">9:00 – 9:25</td><td>Advanced Querying Techniques</td></tr>
-                    <tr class="lab"><td class="t">9:25 – 10:10</td><td><strong>Lab 6</strong> — Advanced Query Techniques</td></tr>
-                    <tr class="brk"><td class="t">10:10 – 10:25</td><td>break</td></tr>
-                    <tr><td class="t">10:25 – 10:50</td><td>Aggregation Framework</td></tr>
-                    <tr class="lab"><td class="t">10:50 – 11:35</td><td><strong>Lab 7</strong> — Aggregation (45 min core; D/E stretch)</td></tr>
-                    <tr><td class="t">11:35 – 12:00</td><td>Indexing & Performance</td></tr>
-                    <tr class="brk"><td class="t">12:00 – 1:00</td><td>lunch</td></tr>
-                    <tr class="lab"><td class="t">1:00 – 1:45</td><td><strong>Lab 8</strong> — Indexing (45 min core; C/D stretch)</td></tr>
-                    <tr><td class="t">1:45 – 2:00</td><td>Schema Design Patterns</td></tr>
-                    <tr class="lab"><td class="t">2:00 – 2:45</td><td><strong>Lab 9</strong> — Data Modeling & Schema Design</td></tr>
-                    <tr class="brk"><td class="t">2:45 – 3:00</td><td>break</td></tr>
-                    <tr><td class="t">3:00 – 3:15</td><td>Transactions</td></tr>
-                    <tr class="lab"><td class="t">3:15 – 4:00</td><td><strong>Lab 10</strong> — MongoDB Transactions</td></tr>
+                    <tr><td>📽️ Advanced Querying Techniques</td><td class="dur">25 min</td></tr>
+                    <tr class="lab"><td>🧪 <strong>Lab 6</strong> — Advanced Query Techniques</td><td class="dur">45 min</td></tr>
+                    <tr><td>📽️ Aggregation Framework</td><td class="dur">25 min</td></tr>
+                    <tr class="lab"><td>🧪 <strong>Lab 7</strong> — Aggregation Framework</td><td class="dur">45 min core <span style="opacity:.7;font-weight:normal;">(D/E stretch)</span></td></tr>
+                    <tr><td>📽️ Indexing & Performance</td><td class="dur">25 min</td></tr>
+                    <tr class="lab"><td>🧪 <strong>Lab 8</strong> — Indexing & Performance</td><td class="dur">45 min core <span style="opacity:.7;font-weight:normal;">(C/D stretch)</span></td></tr>
+                    <tr><td>📽️ Schema Design Patterns</td><td class="dur">15 min</td></tr>
+                    <tr class="lab"><td>🧪 <strong>Lab 9</strong> — Data Modeling & Schema Design</td><td class="dur">45 min</td></tr>
+                    <tr><td>📽️ Transactions</td><td class="dur">15 min</td></tr>
+                    <tr class="lab"><td>🧪 <strong>Lab 10</strong> — MongoDB Transactions</td><td class="dur">45 min</td></tr>
                 </table>
+                <p class="day-total"><strong>Day 2 total:</strong> presentation 105 min · lab 225 min</p>
             </section>
 
             <section>
                 <h2>Day 3 — Advanced Features & Production</h2>
                 <table>
-                    <tr><td class="t">9:00 – 9:30</td><td>Replica Sets & High Availability</td></tr>
-                    <tr class="lab"><td class="t">9:30 – 10:15</td><td><strong>Lab 11</strong> — Replica Sets & HA</td></tr>
-                    <tr class="brk"><td class="t">10:15 – 10:30</td><td>break</td></tr>
-                    <tr><td class="t">10:30 – 10:55</td><td>Sharding & Horizontal Scaling</td></tr>
-                    <tr class="lab"><td class="t">10:55 – 11:55</td><td><strong>Lab 12</strong> — Sharding (60 min)</td></tr>
-                    <tr><td class="t">11:55 – 12:00</td><td>Wrap</td></tr>
-                    <tr class="brk"><td class="t">12:00 – 1:00</td><td>lunch</td></tr>
-                    <tr><td class="t">1:00 – 1:25</td><td>Change Streams</td></tr>
-                    <tr class="lab"><td class="t">1:25 – 2:15</td><td><strong>Lab 13</strong> — Change Streams (50 min)</td></tr>
-                    <tr class="brk"><td class="t">2:15 – 2:30</td><td>break</td></tr>
-                    <tr><td class="t">2:30 – 3:00</td><td>Production + Driver Integration</td></tr>
-                    <tr class="lab"><td class="t">3:00 – 4:00</td><td><strong>Lab 14a / 14b / 14c</strong> — Application Integration (60 min, pick one)</td></tr>
+                    <tr><td>📽️ Replica Sets & High Availability</td><td class="dur">30 min</td></tr>
+                    <tr class="lab"><td>🧪 <strong>Lab 11</strong> — Replica Sets & HA</td><td class="dur">45 min</td></tr>
+                    <tr><td>📽️ Sharding & Horizontal Scaling</td><td class="dur">25 min</td></tr>
+                    <tr class="lab"><td>🧪 <strong>Lab 12</strong> — Sharding</td><td class="dur">60 min</td></tr>
+                    <tr><td>📽️ Wrap</td><td class="dur">5 min</td></tr>
+                    <tr><td>📽️ Change Streams</td><td class="dur">25 min</td></tr>
+                    <tr class="lab"><td>🧪 <strong>Lab 13</strong> — Change Streams</td><td class="dur">50 min</td></tr>
+                    <tr><td>📽️ Production + Driver Integration</td><td class="dur">30 min</td></tr>
+                    <tr class="lab"><td>🧪 <strong>Lab 14a / 14b / 14c</strong> — Application Integration <span style="opacity:.7;font-weight:normal;">(pick one)</span></td><td class="dur">60 min</td></tr>
                 </table>
+                <p class="day-total"><strong>Day 3 total:</strong> presentation 115 min · lab 215 min</p>
             </section>
 
             <section>
-                <h2>Totals</h2>
+                <h2>Three-Day Totals</h2>
                 <table>
                     <tr><th>Day</th><th>Presentation</th><th>Lab</th></tr>
-                    <tr><td>Day 1</td><td>105 min</td><td>225 min</td></tr>
-                    <tr><td>Day 2</td><td>105 min</td><td>225 min</td></tr>
-                    <tr><td>Day 3</td><td>115 min</td><td>215 min</td></tr>
-                    <tr><td><strong>Sum</strong></td><td><strong>5h 25m</strong></td><td><strong>11h 5m</strong></td></tr>
+                    <tr><td>Day 1</td><td class="dur">105 min</td><td class="dur">225 min</td></tr>
+                    <tr><td>Day 2</td><td class="dur">105 min</td><td class="dur">225 min</td></tr>
+                    <tr><td>Day 3</td><td class="dur">115 min</td><td class="dur">215 min</td></tr>
+                    <tr><td><strong>Sum</strong></td><td class="dur"><strong>5h 25m</strong></td><td class="dur"><strong>11h 5m</strong></td></tr>
                 </table>
                 <p style="margin-top: 1em;">67% lab across the full 3-day course.</p>
             </section>
