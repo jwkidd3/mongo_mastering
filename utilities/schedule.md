@@ -3,7 +3,7 @@
 
 Per-block durations · 5.5 h instructional / day · 67% lab
 
-Note: The companion `schedule.html` is the same deck rendered from this Markdown source via the reveal.js markdown plugin.
+Note: This file is the slide content for `schedule.html`. The HTML wrapper loads it via reveal.js's markdown plugin, splits on `---`, and applies styling from its embedded `<style>` block. Edit this file to change content; edit `schedule.html` to change look.
 
 ---
 

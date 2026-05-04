@@ -9,18 +9,25 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/theme/white.min.css">
 
     <style>
+        /* Slide content lives in schedule.md (loaded below). This file is only
+           the reveal.js + theme wrapper. Edit schedule.md to change content;
+           edit this <style> block to change look. */
+
         .reveal { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         .reveal h1, .reveal h2 { color: #2C5F41; text-transform: none; }
-
         .reveal .slides > section { overflow-y: auto; max-height: 88vh; }
 
         .reveal table { margin: auto; border-collapse: collapse; font-size: 0.78em; }
         .reveal table th { background: #4A8B3B; color: white; padding: 0.4em 0.8em; }
         .reveal table td { padding: 0.3em 0.8em; border-bottom: 1px solid #ddd; }
-        .reveal table td.dur { font-weight: bold; color: #2C5F41; white-space: nowrap; text-align: right; }
-        .reveal table tr.lab td { background: #fff7f5; }
 
-        .reveal .day-total { margin-top: 0.8em; font-size: 0.85em; color: #1f2d24; }
+        /* The Markdown source can't tag individual rows with classes, so we
+           detect lab rows by their bolded label (**Lab N**) and tint them.
+           CSS :has() is supported in Chrome / Edge / Safari / Firefox 2024+. */
+        .reveal table tr:has(td strong) { background: #fff7f5; }
+
+        /* Right-most column = duration. Bold-green for visual scan. */
+        .reveal table td:last-child { font-weight: bold; color: #2C5F41; white-space: nowrap; }
 
         .reveal .progress { background: rgba(44,95,65,0.2); }
         .reveal .progress span { background: #4A8B3B; }
@@ -30,82 +37,24 @@
     <div class="reveal">
         <div class="slides">
 
-            <section>
-                <h1>MongoDB Mastering</h1>
-                <h2>Course Timings</h2>
-                <p>Per-block durations · 5.5 h instructional / day · 67% lab</p>
-            </section>
-
-            <section>
-                <h2>Day 1 — Fundamentals & Core Operations</h2>
-                <table>
-                    <tr><td>📽️ NoSQL intro + Shell & Server Navigation</td><td class="dur">25 min</td></tr>
-                    <tr class="lab"><td>🧪 <strong>Lab 1</strong> — MongoDB Shell Mastery</td><td class="dur">45 min</td></tr>
-                    <tr><td>📽️ Database & Collection Management</td><td class="dur">25 min</td></tr>
-                    <tr class="lab"><td>🧪 <strong>Lab 2</strong> — Database & Collection Management</td><td class="dur">45 min</td></tr>
-                    <tr><td>📽️ CRUD — Create & Insert</td><td class="dur">25 min</td></tr>
-                    <tr class="lab"><td>🧪 <strong>Lab 3</strong> — CRUD Create & Insert</td><td class="dur">45 min</td></tr>
-                    <tr><td>📽️ CRUD — Read & Query</td><td class="dur">15 min</td></tr>
-                    <tr class="lab"><td>🧪 <strong>Lab 4</strong> — CRUD Read & Query</td><td class="dur">45 min</td></tr>
-                    <tr><td>📽️ CRUD — Update & Delete</td><td class="dur">15 min</td></tr>
-                    <tr class="lab"><td>🧪 <strong>Lab 5</strong> — CRUD Update & Delete</td><td class="dur">45 min</td></tr>
-                </table>
-                <p class="day-total"><strong>Day 1 total:</strong> presentation 105 min · lab 225 min</p>
-            </section>
-
-            <section>
-                <h2>Day 2 — Advanced Querying & Performance</h2>
-                <table>
-                    <tr><td>📽️ Advanced Querying Techniques</td><td class="dur">25 min</td></tr>
-                    <tr class="lab"><td>🧪 <strong>Lab 6</strong> — Advanced Query Techniques</td><td class="dur">45 min</td></tr>
-                    <tr><td>📽️ Aggregation Framework</td><td class="dur">25 min</td></tr>
-                    <tr class="lab"><td>🧪 <strong>Lab 7</strong> — Aggregation Framework</td><td class="dur">45 min core <span style="opacity:.7;font-weight:normal;">(D/E stretch)</span></td></tr>
-                    <tr><td>📽️ Indexing & Performance</td><td class="dur">25 min</td></tr>
-                    <tr class="lab"><td>🧪 <strong>Lab 8</strong> — Indexing & Performance</td><td class="dur">45 min core <span style="opacity:.7;font-weight:normal;">(C/D stretch)</span></td></tr>
-                    <tr><td>📽️ Schema Design Patterns</td><td class="dur">15 min</td></tr>
-                    <tr class="lab"><td>🧪 <strong>Lab 9</strong> — Data Modeling & Schema Design</td><td class="dur">45 min</td></tr>
-                    <tr><td>📽️ Transactions</td><td class="dur">15 min</td></tr>
-                    <tr class="lab"><td>🧪 <strong>Lab 10</strong> — MongoDB Transactions</td><td class="dur">45 min</td></tr>
-                </table>
-                <p class="day-total"><strong>Day 2 total:</strong> presentation 105 min · lab 225 min</p>
-            </section>
-
-            <section>
-                <h2>Day 3 — Advanced Features & Production</h2>
-                <table>
-                    <tr><td>📽️ Replica Sets & High Availability</td><td class="dur">30 min</td></tr>
-                    <tr class="lab"><td>🧪 <strong>Lab 11</strong> — Replica Sets & HA</td><td class="dur">45 min</td></tr>
-                    <tr><td>📽️ Sharding & Horizontal Scaling</td><td class="dur">25 min</td></tr>
-                    <tr class="lab"><td>🧪 <strong>Lab 12</strong> — Sharding</td><td class="dur">60 min</td></tr>
-                    <tr><td>📽️ Wrap</td><td class="dur">5 min</td></tr>
-                    <tr><td>📽️ Change Streams</td><td class="dur">25 min</td></tr>
-                    <tr class="lab"><td>🧪 <strong>Lab 13</strong> — Change Streams</td><td class="dur">50 min</td></tr>
-                    <tr><td>📽️ Production + Driver Integration</td><td class="dur">30 min</td></tr>
-                    <tr class="lab"><td>🧪 <strong>Lab 14a / 14b / 14c</strong> — Application Integration <span style="opacity:.7;font-weight:normal;">(pick one)</span></td><td class="dur">60 min</td></tr>
-                </table>
-                <p class="day-total"><strong>Day 3 total:</strong> presentation 115 min · lab 215 min</p>
-            </section>
-
-            <section>
-                <h2>Three-Day Totals</h2>
-                <table>
-                    <tr><th>Day</th><th>Presentation</th><th>Lab</th></tr>
-                    <tr><td>Day 1</td><td class="dur">105 min</td><td class="dur">225 min</td></tr>
-                    <tr><td>Day 2</td><td class="dur">105 min</td><td class="dur">225 min</td></tr>
-                    <tr><td>Day 3</td><td class="dur">115 min</td><td class="dur">215 min</td></tr>
-                    <tr><td><strong>Sum</strong></td><td class="dur"><strong>5h 25m</strong></td><td class="dur"><strong>11h 5m</strong></td></tr>
-                </table>
-                <p style="margin-top: 1em;">67% lab across the full 3-day course.</p>
+            <!-- All slide content sourced from schedule.md.
+                 ` --- ` lines split slides; ` -- ` lines split vertical sub-slides. -->
+            <section data-markdown="schedule.md"
+                     data-separator="^\r?\n---\r?\n$"
+                     data-separator-vertical="^\r?\n--\r?\n$"
+                     data-charset="utf-8">
             </section>
 
         </div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/markdown/markdown.min.js"></script>
     <script>
         Reveal.initialize({
             hash: true, controls: true, progress: true, center: true,
             transition: 'slide',
+            plugins: [ RevealMarkdown ],
             width: 1280, height: 900, margin: 0.06,
             minScale: 0.2, maxScale: 1.5,
         });
